@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -71,7 +73,9 @@ fun SearchScreen() {
 }
 
 @Composable
-fun LibraryScreen() {
+fun LibraryScreen(
+    onOpenReader: (chapterTitle: String) -> Unit
+) {
     val context = LocalContext.current
 
     // Skeleton: tạo database + repository local-first trực tiếp (chưa dùng DI/Hilt).
@@ -88,7 +92,16 @@ fun LibraryScreen() {
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         items(items, key = { it.manga_id }) { item ->
-            Text(text = "${item.title} - ${item.status.toDisplayName()}")
+            ListItem(
+                headlineContent = { Text(text = item.title) },
+                supportingContent = { Text(text = item.status.toDisplayName()) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        val chapterTitle = "${item.title} - Chapter ${item.last_read_chapter_id ?: "Mock"}"
+                        onOpenReader(chapterTitle)
+                    }
+            )
         }
     }
 }

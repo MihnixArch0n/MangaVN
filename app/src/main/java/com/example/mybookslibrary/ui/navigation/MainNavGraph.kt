@@ -1,5 +1,6 @@
 package com.example.mybookslibrary.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 //import androidx.compose.material.icons.filled.Book
@@ -17,14 +18,17 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.mybookslibrary.ui.screens.DiscoverScreen
 import com.example.mybookslibrary.ui.screens.LibraryScreen
 import com.example.mybookslibrary.ui.screens.SearchScreen
 import com.example.mybookslibrary.ui.screens.SettingScreen
+import com.example.mybookslibrary.ui.screens.reader.ReaderScreen
 
 sealed class BottomNavDestination(
     val route: String,
@@ -63,27 +67,44 @@ private val bottomDestinations = listOf(
     BottomNavDestination.Setting
 )
 
+object ReaderDestination {
+    const val route = "reader"
+    private const val chapterTitleArg = "chapterTitle"
+    const val routePattern = "$route/{$chapterTitleArg}"
+
+    fun createRoute(chapterTitle: String): String {
+        return "$route/${Uri.encode(chapterTitle)}"
+    }
+
+    const val chapterTitleArgumentName = chapterTitleArg
+}
+
 @Composable
 fun MainNavHost() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val showBottomBar = currentDestination?.hierarchy?.any {
+        it.route?.startsWith(ReaderDestination.route) == true
+    } != true
 
     Scaffold(
         bottomBar = {
-            BottomBar(
-                destinations = bottomDestinations,
-                currentDestination = currentDestination,
-                onNavigate = { destination ->
-                    navController.navigate(destination.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+            if (showBottomBar) {
+                BottomBar(
+                    destinations = bottomDestinations,
+                    currentDestination = currentDestination,
+                    onNavigate = { destination ->
+                        navController.navigate(destination.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                }
-            )
+                )
+            }
         }
     ) { innerPadding ->
         NavHost(
@@ -98,10 +119,30 @@ fun MainNavHost() {
                 SearchScreen()
             }
             composable(BottomNavDestination.Library.route) {
-                LibraryScreen()
+                LibraryScreen(
+                    onOpenReader = { title ->
+                        navController.navigate(ReaderDestination.createRoute(title))
+                    }
+                )
             }
             composable(BottomNavDestination.Setting.route) {
                 SettingScreen()
+            }
+            composable(
+                route = ReaderDestination.routePattern,
+                arguments = listOf(
+                    navArgument(ReaderDestination.chapterTitleArgumentName) {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                val chapterTitle = backStackEntry.arguments
+                    ?.getString(ReaderDestination.chapterTitleArgumentName)
+                    .orEmpty()
+                ReaderScreen(
+                    chapterTitle = chapterTitle,
+                    onBackClick = { navController.popBackStack() }
+                )
             }
         }
     }
