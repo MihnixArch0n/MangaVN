@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.LibraryRepository
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -43,8 +44,7 @@ class ReaderViewModel(
             delay(500)
             _state.update { current ->
                 current.copy(
-                    pages = buildMockPages(),
-                    lastReadPageIndex = 0
+                    pages = buildMockPages()
                 )
             }
         }
@@ -96,11 +96,11 @@ class ReaderViewModel(
     private fun buildMockPages(): List<String> {
         val packageName = "com.example.mybookslibrary"
         val mockResIds = listOf(
-            R.drawable.mock_img_1,
-            R.drawable.mock_img_2,
-            R.drawable.mock_img_2,
-            R.drawable.mock_img_3,
-            R.drawable.mock_img_4
+            R.drawable.mock_l_img_1,
+            R.drawable.mock_l_img_2,
+            R.drawable.mock_l_img_3,
+            R.drawable.mock_l_img_4,
+            R.drawable.mock_l_img_5,
         )
         return mockResIds.map { resId ->
             "android.resource://$packageName/$resId"

@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -78,8 +78,14 @@ fun ReaderScreen(
 
     LaunchedEffect(listState, state.pages.size) {
         if (state.pages.isEmpty()) return@LaunchedEffect
-        snapshotFlow { listState.firstVisibleItemIndex }
-            .map { it.coerceIn(0, state.pages.lastIndex) }
+        snapshotFlow {
+            val visible = listState.layoutInfo.visibleItemsInfo
+            val firstVisible = listState.firstVisibleItemIndex
+            val lastVisible = visible.lastOrNull()?.index ?: -1
+            Triple(firstVisible, lastVisible, listState.layoutInfo.totalItemsCount)
+        }
+            .distinctUntilChanged()
+            .map { (_, lastVisible, _) -> lastVisible.coerceIn(0, state.pages.lastIndex) }
             .distinctUntilChanged()
             .filter { it >= 0 }
             .collect(viewModel::onVisiblePageChanged)
@@ -173,7 +179,7 @@ private fun BoxScope.ReaderTopBar(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
                     }
