@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -150,9 +148,7 @@ private fun BoxScope.ReaderTopBar(
         visible = isVisible,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-        modifier = Modifier
-            .align(Alignment.TopCenter)
-            .statusBarsPadding()
+        modifier = Modifier.align(Alignment.TopCenter)
     ) {
         Surface(color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)) {
             TopAppBar(
@@ -190,9 +186,7 @@ private fun BoxScope.ReaderBottomBar(
         visible = isVisible,
         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-        modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .navigationBarsPadding()
+        modifier = Modifier.align(Alignment.BottomCenter)
     ) {
         Surface(color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)) {
             Column(
