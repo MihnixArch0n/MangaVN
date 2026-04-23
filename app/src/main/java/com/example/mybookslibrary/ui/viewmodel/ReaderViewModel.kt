@@ -4,10 +4,9 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.LibraryRepository
+import com.example.mybookslibrary.data.repository.MangaRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,13 +19,16 @@ data class ReaderState(
     val chapterTitle: String = "",
     val pages: List<String> = emptyList(),
     val isOverlayVisible: Boolean = false,
-    val lastReadPageIndex: Int = 0
+    val lastReadPageIndex: Int = 0,
+    val isLoading: Boolean = false,
+    val error: String? = null
 )
 
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val repository: LibraryRepository
+    private val mangaRepository: MangaRepository,
+    private val libraryRepository: LibraryRepository
 ) : ViewModel() {
 
     private val mangaId: String = savedStateHandle.get<String>(MANGA_ID_ARG).orEmpty()
@@ -42,12 +44,36 @@ class ReaderViewModel @Inject constructor(
     val state: StateFlow<ReaderState> = _state.asStateFlow()
 
     init {
-        viewModelScope.launch {
-            delay(500)
-            _state.update { current ->
-                current.copy(
-                    pages = buildMockPages()
-                )
+        loadChapterPages()
+    }
+
+    private fun loadChapterPages() {
+        if (chapterId.isEmpty()) {
+            _state.update { it.copy(error = "Missing chapterId") }
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.update { it.copy(isLoading = true, error = null) }
+            try {
+                mangaRepository.getChapterPages(chapterId).onSuccess { urls ->
+                    _state.update { state ->
+                        state.copy(
+                            pages = urls,
+                            isLoading = false,
+                            error = null
+                        )
+                    }
+                    Log.d(TAG, "loadChapterPages: Loaded ${urls.size} pages for chapterId=$chapterId")
+                }.onFailure { throwable ->
+                    val errorMsg = throwable.message ?: "Failed to load chapter pages"
+                    _state.update { it.copy(isLoading = false, error = errorMsg) }
+                    Log.e(TAG, "loadChapterPages error: $errorMsg", throwable)
+                }
+            } catch (t: Throwable) {
+                val errorMsg = t.message ?: "Unexpected error"
+                _state.update { it.copy(isLoading = false, error = errorMsg) }
+                Log.e(TAG, "loadChapterPages exception: $errorMsg", t)
             }
         }
     }
@@ -81,7 +107,7 @@ class ReaderViewModel @Inject constructor(
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                repository.updateReadingProgress(
+                libraryRepository.updateReadingProgress(
                     mangaId = mangaId,
                     chapterId = chapterId,
                     pageIndex = pageIndex
@@ -89,27 +115,13 @@ class ReaderViewModel @Inject constructor(
                 lastSyncedPageIndex = pageIndex
                 Log.d(TAG, "syncProgressToRoom(mangaId=$mangaId, chapterId=$chapterId, pageIndex=$pageIndex)")
             } catch (t: Throwable) {
-                throw t
+                Log.e(TAG, "syncProgressToRoom error", t)
             }
         }
     }
 
     private fun saveProgressToDataStore(index: Int) {
         Log.d(TAG, "saveProgressToDataStore(index=$index)")
-    }
-
-    private fun buildMockPages(): List<String> {
-        val packageName = "com.example.mybookslibrary"
-        val mockResIds = listOf(
-            R.drawable.mock_l_img_1,
-            R.drawable.mock_l_img_2,
-            R.drawable.mock_l_img_3,
-            R.drawable.mock_l_img_4,
-            R.drawable.mock_l_img_5,
-        )
-        return mockResIds.map { resId ->
-            "android.resource://$packageName/$resId"
-        }
     }
 
     companion object {
@@ -120,3 +132,4 @@ class ReaderViewModel @Inject constructor(
         private const val START_PAGE_INDEX_ARG = "startPageIndex"
     }
 }
+

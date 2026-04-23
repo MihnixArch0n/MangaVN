@@ -1,5 +1,6 @@
 package com.example.mybookslibrary.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -12,17 +13,20 @@ import kotlinx.coroutines.launch
 class LibraryViewModel(
     private val repository: LibraryRepository
 ) : ViewModel() {
+    companion object {
+        private const val TAG = "LibraryViewModel"
+    }
 
     val libraryItems: Flow<List<LibraryItemEntity>> = repository
         .observeLibraryItems()
         .onStart {
-            // UI có thể hiển thị sớm; seed sẽ chạy song song ngay dưới đây.
+            // Seed mocks trước khi emit data
+            Log.d(TAG, "LibraryViewModel: Seeding mock data before emitting...")
+            repository.seedMockIfEmpty()
         }
 
     init {
-        viewModelScope.launch {
-            repository.seedMockIfEmpty()
-        }
+        Log.d(TAG, "LibraryViewModel: Created")
     }
 }
 

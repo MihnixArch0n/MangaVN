@@ -41,5 +41,7 @@ interface LibraryDao {
         pageIndex: Int,
         updatedAt: Long
     ): Int
-}
 
+    @Query("DELETE FROM library_items")
+    suspend fun deleteAll()
+}

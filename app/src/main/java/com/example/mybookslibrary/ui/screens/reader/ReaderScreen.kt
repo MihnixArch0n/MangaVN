@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -93,11 +94,33 @@ fun ReaderScreen(
                 detectTapGestures(onTap = { viewModel.toggleOverlay() })
             }
     ) {
-        VerticalReaderContent(
-            pages = state.pages,
-            listState = listState,
-            modifier = Modifier.fillMaxSize()
-        )
+        when {
+            state.isLoading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+
+            state.error != null -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Error: ${state.error}")
+                }
+            }
+
+            else -> {
+                VerticalReaderContent(
+                    pages = state.pages,
+                    listState = listState,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
 
         ReaderTopBar(
             chapterTitle = state.chapterTitle,
