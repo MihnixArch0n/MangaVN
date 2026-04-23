@@ -78,3 +78,16 @@ fun MangaDataDto.extractCoverUrl(): String? {
     return "https://uploads.mangadex.org/covers/$id/$coverFileName"
 }
 
+// At-Home Server DTOs for Reader
+data class AtHomeResponseDto(
+    @SerializedName("result") val result: String,
+    @SerializedName("baseUrl") val baseUrl: String,
+    @SerializedName("chapter") val chapter: AtHomeChapterDto
+)
+
+data class AtHomeChapterDto(
+    @SerializedName("hash") val hash: String,
+    @SerializedName("data") val data: List<String> = emptyList(),
+    @SerializedName("dataSaver") val dataSaver: List<String> = emptyList()
+)
+

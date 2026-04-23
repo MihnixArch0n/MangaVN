@@ -14,29 +14,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mybookslibrary.data.local.AppDatabase
 import com.example.mybookslibrary.data.local.LibraryStatus
-import com.example.mybookslibrary.data.remote.NetworkModule
 import com.example.mybookslibrary.data.repository.LibraryRepository
-import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModel
-import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModelFactory
 import com.example.mybookslibrary.ui.viewmodel.LibraryViewModel
 import com.example.mybookslibrary.ui.viewmodel.LibraryViewModelFactory
 import coil.compose.AsyncImage
 
 @Composable
 fun DiscoverScreen() {
-    val repository = remember { MangaRepository(NetworkModule.mangaDexApi) }
-    val factory = remember(repository) { DiscoverViewModelFactory(repository) }
-    val vm: DiscoverViewModel = viewModel(factory = factory)
+    val vm: DiscoverViewModel = hiltViewModel()
     val uiState by vm.uiState.collectAsState()
 
     when {
@@ -66,6 +61,7 @@ fun DiscoverScreen() {
         }
     }
 }
+
 
 @Composable
 fun SearchScreen() {

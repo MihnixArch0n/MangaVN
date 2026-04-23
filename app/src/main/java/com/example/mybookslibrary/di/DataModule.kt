@@ -1,9 +1,14 @@
 package com.example.mybookslibrary.di
 
 import android.content.Context
+import coil.ImageLoader
 import com.example.mybookslibrary.data.local.AppDatabase
+import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.data.local.userPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.LibraryDao
+import com.example.mybookslibrary.data.remote.MangaDexApi
 import com.example.mybookslibrary.data.repository.LibraryRepository
+import com.example.mybookslibrary.data.repository.MangaRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,5 +34,25 @@ object DataModule {
     fun provideLibraryRepository(libraryDao: LibraryDao): LibraryRepository {
         return LibraryRepository(libraryDao)
     }
+
+    @Provides
+    @Singleton
+    fun provideUserPreferencesDataStore(
+        @ApplicationContext context: Context
+    ): UserPreferencesDataStore =
+        UserPreferencesDataStore(context.userPreferencesDataStore)
+
+    @Provides
+    @Singleton
+    fun provideMangaRepository(
+        api: MangaDexApi,
+        preferencesDataStore: UserPreferencesDataStore
+    ): MangaRepository = MangaRepository(api, preferencesDataStore)
+
+    @Provides
+    @Singleton
+    fun provideCoilImageLoader(imageLoader: ImageLoader): ImageLoader = imageLoader
 }
+
+
 
