@@ -162,24 +162,8 @@ fun MainNavHost() {
                         type = NavType.IntType
                     }
                 )
-            ) { backStackEntry ->
-                val mangaId = backStackEntry.arguments
-                    ?.getString(ReaderDestination.mangaIdArgumentName)
-                    .orEmpty()
-                val chapterId = backStackEntry.arguments
-                    ?.getString(ReaderDestination.chapterIdArgumentName)
-                    .orEmpty()
-                val chapterTitle = backStackEntry.arguments
-                    ?.getString(ReaderDestination.chapterTitleArgumentName)
-                    .orEmpty()
-                val startPageIndex = backStackEntry.arguments
-                    ?.getInt(ReaderDestination.startPageIndexArgumentName)
-                    ?: 0
+            ) {
                 ReaderScreen(
-                    mangaId = mangaId,
-                    chapterId = chapterId,
-                    chapterTitle = chapterTitle,
-                    initialPageIndex = startPageIndex,
                     onBackClick = { navController.popBackStack() }
                 )
             }

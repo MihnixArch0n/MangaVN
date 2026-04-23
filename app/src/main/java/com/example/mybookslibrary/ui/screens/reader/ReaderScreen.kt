@@ -8,11 +8,15 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -40,38 +44,19 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.mybookslibrary.data.local.AppDatabase
-import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
-import com.example.mybookslibrary.ui.viewmodel.ReaderViewModelFactory
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 
 @Composable
 fun ReaderScreen(
-    mangaId: String,
-    chapterId: String,
-    chapterTitle: String,
-    initialPageIndex: Int,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ReaderViewModel = hiltViewModel()
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val database = remember(context) { AppDatabase.getInstance(context) }
-    val repository = remember(database) { LibraryRepository(database.libraryDao()) }
-    val factory = remember(chapterTitle, mangaId, chapterId, initialPageIndex, repository) {
-        ReaderViewModelFactory(
-            chapterTitle = chapterTitle,
-            mangaId = mangaId,
-            chapterId = chapterId,
-            initialPageIndex = initialPageIndex,
-            repository = repository
-        )
-    }
-    val viewModel: ReaderViewModel = viewModel(factory = factory)
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val hasRestoredInitialPage = remember { mutableStateOf(false) }
@@ -79,15 +64,15 @@ fun ReaderScreen(
     LaunchedEffect(listState, state.pages.size) {
         if (state.pages.isEmpty()) return@LaunchedEffect
         snapshotFlow {
-            val visible = listState.layoutInfo.visibleItemsInfo
-            val firstVisible = listState.firstVisibleItemIndex
-            val lastVisible = visible.lastOrNull()?.index ?: -1
-            Triple(firstVisible, lastVisible, listState.layoutInfo.totalItemsCount)
+            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            val totalItemsCount = listState.layoutInfo.totalItemsCount
+            lastVisible to totalItemsCount
         }
             .distinctUntilChanged()
-            .map { (_, lastVisible, _) -> lastVisible.coerceIn(0, state.pages.lastIndex) }
+            .filter { (_, totalItemsCount) -> totalItemsCount > 0 }
+            .filter { (lastVisible, _) -> lastVisible >= 0 }
             .distinctUntilChanged()
-            .filter { it >= 0 }
+            .map { (lastVisible, _) -> lastVisible.coerceIn(0, state.pages.lastIndex) }
             .collect(viewModel::onVisiblePageChanged)
     }
 
@@ -133,7 +118,7 @@ fun ReaderScreen(
 @Composable
 private fun VerticalReaderContent(
     pages: List<String>,
-    listState: androidx.compose.foundation.lazy.LazyListState,
+    listState: LazyListState,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -165,7 +150,9 @@ private fun BoxScope.ReaderTopBar(
         visible = isVisible,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-        modifier = Modifier.align(Alignment.TopCenter)
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .statusBarsPadding()
     ) {
         Surface(color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)) {
             TopAppBar(
@@ -203,26 +190,32 @@ private fun BoxScope.ReaderBottomBar(
         visible = isVisible,
         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-        modifier = Modifier.align(Alignment.BottomCenter)
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .navigationBarsPadding()
     ) {
         Surface(color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = progressText,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                IconButton(onClick = {}) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = "Reader settings",
-                        tint = Color.Unspecified
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = progressText,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f)
                     )
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Reader settings",
+                            tint = Color.Unspecified
+                        )
+                    }
                 }
             }
         }

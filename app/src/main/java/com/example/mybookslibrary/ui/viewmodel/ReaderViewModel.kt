@@ -1,13 +1,11 @@
 package com.example.mybookslibrary.ui.viewmodel
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.LibraryRepository
-import java.io.File
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 data class ReaderState(
     val chapterTitle: String = "",
@@ -23,18 +23,20 @@ data class ReaderState(
     val lastReadPageIndex: Int = 0
 )
 
-class ReaderViewModel(
-    chapterTitle: String,
-    private val mangaId: String,
-    private val chapterId: String,
-    initialPageIndex: Int,
+@HiltViewModel
+class ReaderViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val repository: LibraryRepository
 ) : ViewModel() {
 
+    private val mangaId: String = savedStateHandle.get<String>(MANGA_ID_ARG).orEmpty()
+    private val chapterId: String = savedStateHandle.get<String>(CHAPTER_ID_ARG).orEmpty()
+    private var lastSyncedPageIndex: Int? = null
+
     private val _state = MutableStateFlow(
         ReaderState(
-            chapterTitle = chapterTitle,
-            lastReadPageIndex = initialPageIndex
+            chapterTitle = savedStateHandle.get<String>(CHAPTER_TITLE_ARG).orEmpty(),
+            lastReadPageIndex = savedStateHandle.get<Int>(START_PAGE_INDEX_ARG) ?: 0
         )
     )
     val state: StateFlow<ReaderState> = _state.asStateFlow()
@@ -75,13 +77,16 @@ class ReaderViewModel(
 
     fun syncProgressToRoom() {
         val pageIndex = _state.value.lastReadPageIndex
-        CoroutineScope(Dispatchers.IO).launch {
+        if (lastSyncedPageIndex == pageIndex) return
+
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 repository.updateReadingProgress(
                     mangaId = mangaId,
                     chapterId = chapterId,
                     pageIndex = pageIndex
                 )
+                lastSyncedPageIndex = pageIndex
                 Log.d(TAG, "syncProgressToRoom(mangaId=$mangaId, chapterId=$chapterId, pageIndex=$pageIndex)")
             } catch (t: Throwable) {
                 throw t
@@ -109,27 +114,9 @@ class ReaderViewModel(
 
     companion object {
         private const val TAG = "ReaderViewModel"
-    }
-}
-
-class ReaderViewModelFactory(
-    private val chapterTitle: String,
-    private val mangaId: String,
-    private val chapterId: String,
-    private val initialPageIndex: Int,
-    private val repository: LibraryRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ReaderViewModel::class.java)) {
-            return ReaderViewModel(
-                chapterTitle = chapterTitle,
-                mangaId = mangaId,
-                chapterId = chapterId,
-                initialPageIndex = initialPageIndex,
-                repository = repository
-            ) as T
-        }
-        error("Unknown ViewModel class: ${modelClass.name}")
+        private const val MANGA_ID_ARG = "mangaId"
+        private const val CHAPTER_ID_ARG = "chapterId"
+        private const val CHAPTER_TITLE_ARG = "chapterTitle"
+        private const val START_PAGE_INDEX_ARG = "startPageIndex"
     }
 }
