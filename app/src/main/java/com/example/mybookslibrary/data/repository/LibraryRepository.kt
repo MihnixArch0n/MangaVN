@@ -1,21 +1,24 @@
 package com.example.mybookslibrary.data.repository
 
 import android.util.Log
+import com.example.mybookslibrary.data.local.ChapterProgressEntity
+import com.example.mybookslibrary.data.local.ChapterStatus
 import com.example.mybookslibrary.data.local.LibraryItemEntity
-import com.example.mybookslibrary.data.local.LibraryStatus
+import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 
 class LibraryRepository(
-    private val libraryDao: LibraryDao
+    private val libraryDao: LibraryDao,
+    private val chapterDao: ChapterDao
 ) {
     companion object {
         private const val TAG = "LibraryRepository"
     }
 
-    fun observeLibraryItems(): Flow<List<LibraryItemEntity>> = libraryDao.observeAll()
+    fun observeLibraryItems(): Flow<List<LibraryItemEntity>> = libraryDao.getBookmarkedMangas()
 
     /**
      * Mock data flow dùng để test UI trước khi build đầy đủ tính năng.
@@ -27,39 +30,25 @@ class LibraryRepository(
                 manga_id = "manga_test_001",
                 title = "Test Manga: API Reading Demo",
                 cover_url = "https://example.com/cover_test.jpg",
-                status = LibraryStatus.READING,
-                // REPLACE_WITH_REAL_CHAPTER_ID: Get a real chapter UUID from MangaDex
-                // Example: Go to https://mangadex.org/chapter/{chapter_id}
-                last_read_chapter_id = "ed39bc37-2d3d-40c7-9bdd-bec6865756d7",
-                last_read_page_index = 0,
-                updated_at = now
+                added_at = now
             ),
             LibraryItemEntity(
                 manga_id = "manga_fst_001",
                 title = "Fake Manga One",
                 cover_url = "https://example.com/cover_one.jpg",
-                status = LibraryStatus.READING,
-                last_read_chapter_id = "ch_010",
-                last_read_page_index = 2,
-                updated_at = now - 3_600_000L
+                added_at = now - 3_600_000L
             ),
             LibraryItemEntity(
                 manga_id = "manga_fst_002",
                 title = "Fake Manga Two",
                 cover_url = "https://example.com/cover_two.jpg",
-                status = LibraryStatus.FAVORITE,
-                last_read_chapter_id = "ch_000",
-                last_read_page_index = 0,
-                updated_at = now - 7_200_000L
+                added_at = now - 7_200_000L
             ),
             LibraryItemEntity(
                 manga_id = "manga_fst_003",
                 title = "Fake Manga Three",
                 cover_url = "https://example.com/cover_three.jpg",
-                status = LibraryStatus.READING,
-                last_read_chapter_id = "ch_002",
-                last_read_page_index = 5,
-                updated_at = now - 10_800_000L
+                added_at = now - 10_800_000L
             )
         )
         return flowOf(items)
@@ -113,11 +102,16 @@ class LibraryRepository(
         chapterId: String,
         pageIndex: Int
     ) {
-        libraryDao.updateReadingProgress(
-            mangaId = mangaId,
-            chapterId = chapterId,
-            pageIndex = pageIndex,
-            updatedAt = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        chapterDao.upsertChapterProgress(
+            ChapterProgressEntity(
+                chapter_id = chapterId,
+                manga_id = mangaId,
+                status = ChapterStatus.READING,
+                last_read_page = pageIndex,
+                total_pages = 0,
+                updated_at = now
+            )
         )
     }
 }

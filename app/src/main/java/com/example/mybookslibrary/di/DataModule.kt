@@ -5,6 +5,7 @@ import coil3.ImageLoader
 import com.example.mybookslibrary.data.local.AppDatabase
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.userPreferencesDataStore
+import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 import com.example.mybookslibrary.data.remote.MangaDexApi
 import com.example.mybookslibrary.data.repository.LibraryRepository
@@ -30,9 +31,15 @@ object DataModule {
     fun provideLibraryDao(database: AppDatabase): LibraryDao = database.libraryDao()
 
     @Provides
+    fun provideChapterDao(database: AppDatabase): ChapterDao = database.chapterDao()
+
+    @Provides
     @Singleton
-    fun provideLibraryRepository(libraryDao: LibraryDao): LibraryRepository {
-        return LibraryRepository(libraryDao)
+    fun provideLibraryRepository(
+        libraryDao: LibraryDao,
+        chapterDao: ChapterDao
+    ): LibraryRepository {
+        return LibraryRepository(libraryDao, chapterDao)
     }
 
     @Provides

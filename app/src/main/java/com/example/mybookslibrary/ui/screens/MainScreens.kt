@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.mybookslibrary.data.local.AppDatabase
-import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModel
@@ -81,7 +80,12 @@ fun LibraryScreen(
 
     // Skeleton: tạo database + repository local-first trực tiếp (chưa dùng DI/Hilt).
     val database = androidx.compose.runtime.remember(context) { AppDatabase.getInstance(context) }
-    val repository = androidx.compose.runtime.remember(database) { LibraryRepository(database.libraryDao()) }
+    val repository = androidx.compose.runtime.remember(database) {
+        LibraryRepository(
+            libraryDao = database.libraryDao(),
+            chapterDao = database.chapterDao()
+        )
+    }
     val factory = androidx.compose.runtime.remember(repository) { LibraryViewModelFactory(repository) }
 
     val vm: LibraryViewModel = viewModel(factory = factory)
@@ -95,17 +99,17 @@ fun LibraryScreen(
         items(items, key = { it.manga_id }) { item ->
             ListItem(
                 headlineContent = { Text(text = item.title) },
-                supportingContent = { Text(text = item.status.toDisplayName()) },
+                supportingContent = { Text(text = "Bookmarked") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        val chapterId = item.last_read_chapter_id ?: "mock_chapter"
+                        val chapterId = "mock_chapter"
                         val chapterTitle = "${item.title} - Chapter $chapterId"
                         onOpenReader(
                             item.manga_id,
                             chapterId,
                             chapterTitle,
-                            item.last_read_page_index
+                            0
                         )
                     }
             )
@@ -128,11 +132,6 @@ private fun CenteredText(text: String) {
     }
 }
 
-private fun LibraryStatus.toDisplayName(): String = when (this) {
-    LibraryStatus.READING -> "Đang đọc"
-    LibraryStatus.COMPLETED -> "Đã đọc"
-    LibraryStatus.FAVORITE -> "Yêu thích"
-}
 
 @Composable
 private fun DiscoverListItem(manga: MangaModel) {
