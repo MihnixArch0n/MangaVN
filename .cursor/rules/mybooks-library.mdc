@@ -28,6 +28,10 @@ Dự án áp dụng MVVM + Clean Architecture cơ bản.
 - **Image Loading:** Coil (`coil-compose`).
 
 ## 4. MangaDex API Conventions
+- **Chapter Feed (`GET /manga/{id}/feed`):**
+  - **Edge Case 1:** Bắt buộc xử lý phân trang bằng vòng lặp (`limit` tối đa 500, dùng `offset` để lấy tiếp) nếu response `total` lớn hơn `limit`.
+  - **Edge Case 2:** Truyền query `includeUnavailable=0` và chủ động filter bỏ các chapter có `attributes.isUnavailable == true` ở client.
+  - **UI Grouping:** Khuyến khích nhóm danh sách trả về theo `attributes.volume` khi hiển thị trên UI.
 - **Base API:** `https://api.mangadex.org/`
 - **DTOs:** Tuân thủ map theo cấu trúc `data`, `attributes`, `relationships` của JSON response.
 - **Cover Art:** Sử dụng URL chuẩn `https://uploads.mangadex.org/covers/{manga_id}/{file_name}`. (Sử dụng/tạo helper như `extractCoverUrl()` trong DTO để parse).
