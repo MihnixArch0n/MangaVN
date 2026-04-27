@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.data.remote.models
 
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.domain.model.ChapterModel
 import com.google.gson.annotations.SerializedName
 
 data class MangaListResponseDto(
@@ -76,6 +77,44 @@ fun MangaDataDto.extractCoverUrl(): String? {
         ?: return null
 
     return "https://uploads.mangadex.org/covers/$id/$coverFileName"
+}
+
+data class ChapterListDto(
+    @SerializedName("data") val data: List<ChapterDto> = emptyList(),
+    @SerializedName("total") val total: Int = 0,
+    @SerializedName("limit") val limit: Int = 0,
+    @SerializedName("offset") val offset: Int = 0
+)
+
+data class ChapterDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("attributes") val attributes: ChapterAttributesDto? = null,
+    @SerializedName("relationships") val relationships: List<RelationshipDto> = emptyList()
+)
+
+data class ChapterAttributesDto(
+    @SerializedName("volume") val volume: String? = null,
+    @SerializedName("chapter") val chapter: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("pages") val pages: Int? = null,
+    @SerializedName("isUnavailable") val isUnavailable: Boolean? = null
+)
+
+fun ChapterDto.toDomainModel(fallbackMangaId: String): ChapterModel {
+    val mangaId = relationships
+        .firstOrNull { it.type == "manga" }
+        ?.id
+        ?: fallbackMangaId
+
+    return ChapterModel(
+        id = id,
+        mangaId = mangaId,
+        volume = attributes?.volume,
+        chapterNumber = attributes?.chapter,
+        title = attributes?.title,
+        pages = attributes?.pages ?: 0,
+        isUnavailable = attributes?.isUnavailable == true
+    )
 }
 
 // At-Home Server DTOs for Reader
