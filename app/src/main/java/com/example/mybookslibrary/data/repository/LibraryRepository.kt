@@ -114,4 +114,8 @@ class LibraryRepository(
             )
         )
     }
+
+    suspend fun removeBookmark(mangaId: String) {
+        chapterDao.deleteLibraryItemAndProgress(mangaId)
+    }
 }

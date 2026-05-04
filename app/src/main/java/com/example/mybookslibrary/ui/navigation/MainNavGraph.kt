@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.mybookslibrary.ui.screens.DiscoverScreen
 import com.example.mybookslibrary.ui.screens.LibraryScreen
+import com.example.mybookslibrary.ui.screens.MangaDetailScreen
 import com.example.mybookslibrary.ui.screens.SearchScreen
 import com.example.mybookslibrary.ui.screens.SettingScreen
 import com.example.mybookslibrary.ui.screens.reader.ReaderScreen
@@ -89,13 +90,24 @@ object ReaderDestination {
     const val startPageIndexArgumentName = startPageIndexArg
 }
 
+object MangaDetailDestination {
+    const val route = "mangaDetail"
+    private const val mangaIdArg = "mangaId"
+    const val routePattern = "$route/{$mangaIdArg}"
+
+    fun createRoute(mangaId: String): String = "$route/${Uri.encode(mangaId)}"
+
+    const val mangaIdArgumentName = mangaIdArg
+}
+
 @Composable
 fun MainNavHost() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val showBottomBar = currentDestination?.hierarchy?.any {
-        it.route?.startsWith(ReaderDestination.route) == true
+        it.route?.startsWith(ReaderDestination.route) == true ||
+            it.route?.startsWith(MangaDetailDestination.route) == true
     } != true
 
     Scaffold(
@@ -130,20 +142,28 @@ fun MainNavHost() {
             }
             composable(BottomNavDestination.Library.route) {
                 LibraryScreen(
-                    onOpenReader = { mangaId, chapterId, title, startPageIndex ->
-                        navController.navigate(
-                            ReaderDestination.createRoute(
-                                mangaId = mangaId,
-                                chapterId = chapterId,
-                                chapterTitle = title,
-                                startPageIndex = startPageIndex
-                            )
-                        )
+                    onOpenMangaDetail = { mangaId ->
+                        navController.navigate(MangaDetailDestination.createRoute(mangaId))
                     }
                 )
             }
             composable(BottomNavDestination.Setting.route) {
                 SettingScreen()
+            }
+            composable(
+                route = MangaDetailDestination.routePattern,
+                arguments = listOf(
+                    navArgument(MangaDetailDestination.mangaIdArgumentName) {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                MangaDetailScreen(
+                    mangaId = backStackEntry
+                        .arguments
+                        ?.getString(MangaDetailDestination.mangaIdArgumentName)
+                        .orEmpty()
+                )
             }
             composable(
                 route = ReaderDestination.routePattern,

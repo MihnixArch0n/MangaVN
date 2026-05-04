@@ -29,6 +29,16 @@ class LibraryViewModel(
             }
         }
     }
+
+    fun onRemoveBookmark(mangaId: String) {
+        viewModelScope.launch {
+            runCatching {
+                repository.removeBookmark(mangaId)
+            }.onFailure { error ->
+                Log.e(TAG, "LibraryViewModel: Failed to remove bookmark", error)
+            }
+        }
+    }
 }
 
 class LibraryViewModelFactory(
