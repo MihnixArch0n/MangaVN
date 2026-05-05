@@ -3,9 +3,10 @@ package com.example.mybookslibrary
 import android.app.Application
 import android.util.Log
 import com.example.mybookslibrary.data.repository.LibraryRepository
+import com.example.mybookslibrary.di.IoDispatcher
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,7 +17,11 @@ class MyBooksLibraryApp : Application() {
 	@Inject
 	lateinit var libraryRepository: LibraryRepository
 
-	private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+	@Inject
+	@IoDispatcher
+	lateinit var ioDispatcher: CoroutineDispatcher
+
+	private val appScope by lazy { CoroutineScope(SupervisorJob() + ioDispatcher) }
 
 	override fun onCreate() {
 		super.onCreate()

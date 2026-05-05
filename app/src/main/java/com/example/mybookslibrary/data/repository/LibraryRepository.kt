@@ -100,17 +100,21 @@ class LibraryRepository(
     suspend fun updateReadingProgress(
         mangaId: String,
         chapterId: String,
-        pageIndex: Int
+        pageIndex: Int,
+        totalPages: Int
     ) {
-        val now = System.currentTimeMillis()
+        val boundedTotalPages = totalPages.coerceAtLeast(0)
+        val boundedPageIndex = pageIndex.coerceAtLeast(0)
+        val isCompleted = boundedTotalPages > 0 && boundedPageIndex >= (boundedTotalPages - 1)
+
         chapterDao.upsertChapterProgress(
             ChapterProgressEntity(
                 chapter_id = chapterId,
                 manga_id = mangaId,
-                status = ChapterStatus.READING,
-                last_read_page = pageIndex,
-                total_pages = 0,
-                updated_at = now
+                status = if (isCompleted) ChapterStatus.COMPLETED else ChapterStatus.READING,
+                last_read_page = if (isCompleted) boundedTotalPages else boundedPageIndex,
+                total_pages = boundedTotalPages,
+                updated_at = System.currentTimeMillis()
             )
         )
     }

@@ -6,7 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
-import kotlinx.coroutines.Dispatchers
+import com.example.mybookslibrary.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,7 +29,8 @@ data class ReaderState(
 class ReaderViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val mangaRepository: MangaRepository,
-    private val libraryRepository: LibraryRepository
+    private val libraryRepository: LibraryRepository,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val mangaId: String = savedStateHandle.get<String>(MANGA_ID_ARG).orEmpty()
@@ -53,7 +55,7 @@ class ReaderViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             _state.update { it.copy(isLoading = true, error = null) }
             try {
                 mangaRepository.getChapterPages(chapterId).onSuccess { urls ->
@@ -103,14 +105,16 @@ class ReaderViewModel @Inject constructor(
 
     fun syncProgressToRoom() {
         val pageIndex = _state.value.lastReadPageIndex
+        val totalPages = _state.value.pages.size
         if (lastSyncedPageIndex == pageIndex) return
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             try {
                 libraryRepository.updateReadingProgress(
                     mangaId = mangaId,
                     chapterId = chapterId,
-                    pageIndex = pageIndex
+                    pageIndex = pageIndex,
+                    totalPages = totalPages
                 )
                 lastSyncedPageIndex = pageIndex
                 Log.d(TAG, "syncProgressToRoom(mangaId=$mangaId, chapterId=$chapterId, pageIndex=$pageIndex)")
