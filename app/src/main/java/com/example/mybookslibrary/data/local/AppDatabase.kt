@@ -16,6 +16,7 @@ import com.example.mybookslibrary.data.local.dao.UserDao
     version = 1,
     exportSchema = false
 )
+@TypeConverters(LibraryStatusConverters::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao

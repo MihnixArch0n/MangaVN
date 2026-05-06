@@ -1,0 +1,111 @@
+<resources>
+    <string name="app_name">MyBooksLibrary</string>
+
+    <!-- Điều hướng -->
+    <string name="nav_discover">Khám phá</string>
+    <string name="nav_search">Tìm kiếm</string>
+    <string name="nav_library">Thư viện</string>
+    <string name="nav_setting">Cài đặt</string>
+
+    <!-- Discover -->
+    <string name="brand_name">Kanso</string>
+    <string name="section_spotlight">Nổi bật</string>
+    <string name="section_popular">Phổ biến</string>
+    <string name="section_new_releases">Mới cập nhật</string>
+    <string name="section_explore">Khám phá thêm</string>
+    <string name="action_see_all">Xem tất cả</string>
+    <string name="action_collapse">Thu gọn</string>
+    <string name="error_prefix">Lỗi: %1$s</string>
+
+    <!-- Top Bar -->
+    <string name="cd_menu">Menu</string>
+    <string name="cd_search">Tìm kiếm</string>
+    <string name="cd_profile">Hồ sơ</string>
+    <string name="cd_back">Quay lại</string>
+
+    <!-- Search -->
+    <string name="search_title">Tìm kiếm</string>
+    <string name="search_placeholder">Tìm truyện…</string>
+    <string name="search_error_title">Không thể kết nối server</string>
+    <string name="search_error_subtitle">Kiểm tra kết nối mạng và thử lại</string>
+    <string name="search_prompt_title">Khám phá câu chuyện tiếp theo</string>
+    <string name="search_prompt_subtitle">Nhập ít nhất 2 ký tự để tìm kiếm</string>
+    <string name="search_no_results">Không tìm thấy kết quả cho \"%1$s\"</string>
+
+    <!-- Library -->
+    <string name="library_title">Thư viện của tôi</string>
+    <string name="library_empty_title">Thư viện trống</string>
+    <string name="library_empty_subtitle">Bắt đầu đọc để xây dựng bộ sưu tập</string>
+
+    <!-- Trạng thái -->
+    <string name="status_reading">Đang đọc</string>
+    <string name="status_completed">Đã đọc</string>
+    <string name="status_favorite">Yêu thích</string>
+
+    <!-- Chi tiết manga -->
+    <string name="detail_synopsis">Tóm tắt</string>
+    <string name="detail_chapters">Danh sách chương</string>
+    <string name="detail_chapters_error">Không tải được danh sách chương</string>
+    <string name="detail_chapters_empty">Chưa có chương nào</string>
+    <string name="detail_read_now">ĐỌC NGAY</string>
+    <string name="detail_loading">ĐANG TẢI…</string>
+    <string name="detail_in_library">TRONG THƯ VIỆN</string>
+    <string name="detail_add_to_library">THÊM VÀO THƯ VIỆN</string>
+    <string name="detail_pages_suffix">%1$d trang</string>
+    <string name="detail_error">Không tải được chi tiết truyện</string>
+    <string name="detail_translating">Đang dịch…</string>
+    <string name="detail_translated">Đã dịch (tự động)</string>
+    <string name="detail_original">Bản gốc</string>
+
+    <!-- Chapter -->
+    <string name="chapter_vol_prefix">Tập %1$s </string>
+    <string name="chapter_num_prefix">Ch.%1$s</string>
+    <string name="chapter_oneshot">Oneshot</string>
+
+    <!-- Reader -->
+    <string name="reader_page_description">Trang %1$d</string>
+    <string name="reader_pages_label">Trang</string>
+
+    <!-- Cài đặt -->
+    <string name="settings_title">Cài đặt</string>
+    <string name="settings_section_appearance">Giao diện &amp; Ngôn ngữ</string>
+    <string name="settings_section_reading">Đọc truyện</string>
+    <string name="settings_section_storage">Bộ nhớ</string>
+    <string name="settings_section_data">Dữ liệu</string>
+    <string name="settings_section_account">Tài khoản</string>
+    <string name="settings_image_quality">Chất lượng ảnh</string>
+    <string name="settings_quality_original">Gốc</string>
+    <string name="settings_quality_data_saver">Tiết kiệm dữ liệu</string>
+    <string name="settings_clear_cache">Xóa bộ nhớ đệm ảnh</string>
+    <string name="settings_cache_cleared">Đã xóa ✓</string>
+    <string name="settings_cache_subtitle">Giải phóng bộ nhớ từ ảnh đã tải</string>
+    <string name="settings_backup">Sao lưu thư viện</string>
+    <string name="settings_backup_subtitle">Xuất lịch sử đọc dạng JSON</string>
+    <string name="settings_backup_success">Đã sao lưu %1$d mục</string>
+    <string name="settings_backup_failed">Sao lưu thất bại: %1$s</string>
+    <string name="settings_restore">Khôi phục thư viện</string>
+    <string name="settings_restore_subtitle">Nhập từ file sao lưu</string>
+    <string name="settings_restore_success">Đã khôi phục %1$d mục</string>
+    <string name="settings_restore_failed">Khôi phục thất bại: %1$s</string>
+    <string name="settings_sign_out">Đăng xuất</string>
+    <string name="settings_signed_out">Đã đăng xuất</string>
+    <string name="settings_sign_out_subtitle">Xóa toàn bộ dữ liệu</string>
+    <string name="settings_signed_out_subtitle">Đã xóa dữ liệu</string>
+    <string name="settings_dark_mode">Chủ đề</string>
+    <string name="settings_theme_system">Theo hệ thống</string>
+    <string name="settings_theme_light">Sáng</string>
+    <string name="settings_theme_dark">Tối</string>
+    <string name="settings_language">Ngôn ngữ</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_vietnamese">Tiếng Việt</string>
+
+    <!-- Định dạng chapter thư viện -->
+    <string name="library_chapter_title">%1$s — Ch.%2$s</string>
+
+    <!-- Lỗi -->
+    <string name="error_missing_chapter">Thiếu ID chương</string>
+    <string name="error_load_pages">Không tải được trang truyện</string>
+    <string name="error_load_discover">Không tải được danh sách truyện</string>
+    <string name="error_unknown">Lỗi không xác định</string>
+    <string name="error_unexpected">Lỗi không mong muốn</string>
+</resources>

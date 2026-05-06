@@ -1,14 +1,17 @@
 package com.example.mybookslibrary.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.MangaModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,10 +21,12 @@ data class DiscoverUiState(
     val error: String? = null
 )
 
+// ViewModel cho DiscoverScreen — tải danh sách manga từ MangaDex API
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
+    application: Application,
     private val repository: MangaRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(DiscoverUiState())
     val uiState: StateFlow<DiscoverUiState> = _uiState.asStateFlow()
@@ -31,36 +36,20 @@ class DiscoverViewModel @Inject constructor(
     }
 
     fun loadDiscover(limit: Int = 20, offset: Int = 0) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(isLoading = true, error = null) }
             repository.getDiscoverManga(limit, offset).collect { result ->
                 result.onSuccess { mangas ->
-                    _uiState.value = DiscoverUiState(
-                        isLoading = false,
-                        items = mangas,
-                        error = null
-                    )
+                    _uiState.update { it.copy(isLoading = false, items = mangas, error = null) }
                 }.onFailure { throwable ->
-                    _uiState.value = DiscoverUiState(
-                        isLoading = false,
-                        items = emptyList(),
-                        error = throwable.message ?: "Failed to load discover mangas"
-                    )
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            error = throwable.message ?: getApplication<Application>().getString(R.string.error_load_discover)
+                        )
+                    }
                 }
             }
         }
     }
 }
-
-class DiscoverViewModelFactory(
-    private val repository: MangaRepository
-) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(DiscoverViewModel::class.java)) {
-            return DiscoverViewModel(repository) as T
-        }
-        error("Unknown ViewModel class: ${modelClass.name}")
-    }
-}
-

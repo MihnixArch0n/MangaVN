@@ -16,14 +16,18 @@ class LibraryStatusConverters {
     fun fromStatus(status: LibraryStatus): String = status.name
 
     @androidx.room.TypeConverter
-    fun toStatus(value: String): LibraryStatus = LibraryStatus.valueOf(value)
+    fun toStatus(value: String): LibraryStatus = try {
+        LibraryStatus.valueOf(value)
+    } catch (_: IllegalArgumentException) {
+        LibraryStatus.READING
+    }
 }
 
 @Entity(tableName = "library_items")
 @TypeConverters(LibraryStatusConverters::class)
 data class LibraryItemEntity(
     @PrimaryKey
-    @ColumnInfo(name = "manga_id") val manga_id: String, // PK - lấy từ MangaDex
+    @ColumnInfo(name = "manga_id") val manga_id: String,
     val title: String,
     @ColumnInfo(name = "cover_url") val cover_url: String,
     val status: LibraryStatus,
