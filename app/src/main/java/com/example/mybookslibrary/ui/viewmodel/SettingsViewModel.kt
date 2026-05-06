@@ -20,15 +20,21 @@ import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
 
+sealed class BackupRestoreResult {
+    data class Success(val count: Int) : BackupRestoreResult()
+    data class Failure(val message: String) : BackupRestoreResult()
+}
+
 data class SettingsUiState(
     val quality: String = "data",
+    val themeMode: String = "system",
+    val language: String = "en",
     val cacheCleared: Boolean = false,
     val signedOut: Boolean = false,
-    val backupMessage: String? = null,
-    val restoreMessage: String? = null
+    val backupResult: BackupRestoreResult? = null,
+    val restoreResult: BackupRestoreResult? = null
 )
 
-// ViewModel cho SettingScreen — quản lý chất lượng ảnh, cache, backup/restore và đăng xuất
 @OptIn(coil.annotation.ExperimentalCoilApi::class)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -45,7 +51,9 @@ class SettingsViewModel @Inject constructor(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             val q = preferencesDataStore.getReaderQuality()
-            _uiState.update { it.copy(quality = q) }
+            val t = preferencesDataStore.getThemeMode()
+            val l = preferencesDataStore.getLanguage()
+            _uiState.update { it.copy(quality = q, themeMode = t, language = l) }
         }
     }
 
@@ -54,6 +62,25 @@ class SettingsViewModel @Inject constructor(
             val newQuality = if (_uiState.value.quality == "data") "data-saver" else "data"
             preferencesDataStore.setReaderQuality(newQuality)
             _uiState.update { it.copy(quality = newQuality) }
+        }
+    }
+
+    fun cycleThemeMode() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val next = when (_uiState.value.themeMode) {
+                "system" -> "light"
+                "light" -> "dark"
+                else -> "system"
+            }
+            preferencesDataStore.setThemeMode(next)
+            _uiState.update { it.copy(themeMode = next) }
+        }
+    }
+
+    fun setLanguage(language: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            preferencesDataStore.setLanguage(language)
+            _uiState.update { it.copy(language = language) }
         }
     }
 
@@ -67,9 +94,10 @@ class SettingsViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch(Dispatchers.IO) {
-            preferencesDataStore.clearAll()
+            // Chỉ reset quality về mặc định, giữ nguyên language + theme
+            preferencesDataStore.setReaderQuality("data")
             libraryRepository.clearAll()
-            _uiState.update { it.copy(signedOut = true) }
+            _uiState.update { it.copy(signedOut = true, quality = "data") }
         }
     }
 
@@ -90,9 +118,9 @@ class SettingsViewModel @Inject constructor(
                 }
                 val json = gson.toJson(jsonItems)
                 outputStream.bufferedWriter().use { it.write(json) }
-                _uiState.update { it.copy(backupMessage = "Backed up ${items.size} items") }
+                _uiState.update { it.copy(backupResult = BackupRestoreResult.Success(items.size)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(backupMessage = "Backup failed: ${e.message}") }
+                _uiState.update { it.copy(backupResult = BackupRestoreResult.Failure(e.message ?: "")) }
             }
         }
     }
@@ -103,21 +131,29 @@ class SettingsViewModel @Inject constructor(
                 val json = inputStream.bufferedReader().use { it.readText() }
                 val type = object : TypeToken<List<Map<String, Any>>>() {}.type
                 val rawItems: List<Map<String, Any>> = gson.fromJson(json, type)
-                val entities = rawItems.map { map ->
-                    LibraryItemEntity(
-                        manga_id = map["manga_id"] as String,
-                        title = map["title"] as String,
-                        cover_url = map["cover_url"] as String,
-                        status = LibraryStatus.valueOf(map["status"] as String),
-                        last_read_chapter_id = (map["last_read_chapter_id"] as String).ifBlank { null },
-                        last_read_page_index = (map["last_read_page_index"] as Double).toInt(),
-                        updated_at = (map["updated_at"] as Double).toLong()
-                    )
+                val entities = rawItems.mapNotNull { map ->
+                    try {
+                        LibraryItemEntity(
+                            manga_id = map["manga_id"] as? String ?: return@mapNotNull null,
+                            title = map["title"] as? String ?: return@mapNotNull null,
+                            cover_url = map["cover_url"] as? String ?: "",
+                            status = try {
+                                LibraryStatus.valueOf(map["status"] as? String ?: "READING")
+                            } catch (_: IllegalArgumentException) {
+                                LibraryStatus.READING
+                            },
+                            last_read_chapter_id = (map["last_read_chapter_id"] as? String)?.ifBlank { null },
+                            last_read_page_index = (map["last_read_page_index"] as? Number)?.toInt() ?: 0,
+                            updated_at = (map["updated_at"] as? Number)?.toLong() ?: System.currentTimeMillis()
+                        )
+                    } catch (_: Exception) {
+                        null
+                    }
                 }
                 libraryRepository.restoreItems(entities)
-                _uiState.update { it.copy(restoreMessage = "Restored ${entities.size} items") }
+                _uiState.update { it.copy(restoreResult = BackupRestoreResult.Success(entities.size)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(restoreMessage = "Restore failed: ${e.message}") }
+                _uiState.update { it.copy(restoreResult = BackupRestoreResult.Failure(e.message ?: "")) }
             }
         }
     }

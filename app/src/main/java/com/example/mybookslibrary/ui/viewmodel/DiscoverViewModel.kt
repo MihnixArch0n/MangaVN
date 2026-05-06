@@ -1,10 +1,13 @@
 package com.example.mybookslibrary.ui.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.MangaModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,8 +24,9 @@ data class DiscoverUiState(
 // ViewModel cho DiscoverScreen — tải danh sách manga từ MangaDex API
 @HiltViewModel
 class DiscoverViewModel @Inject constructor(
+    application: Application,
     private val repository: MangaRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(DiscoverUiState())
     val uiState: StateFlow<DiscoverUiState> = _uiState.asStateFlow()
@@ -32,7 +36,7 @@ class DiscoverViewModel @Inject constructor(
     }
 
     fun loadDiscover(limit: Int = 20, offset: Int = 0) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true, error = null) }
             repository.getDiscoverManga(limit, offset).collect { result ->
                 result.onSuccess { mangas ->
@@ -41,7 +45,7 @@ class DiscoverViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = throwable.message ?: "Failed to load discover mangas"
+                            error = throwable.message ?: getApplication<Application>().getString(R.string.error_load_discover)
                         )
                     }
                 }

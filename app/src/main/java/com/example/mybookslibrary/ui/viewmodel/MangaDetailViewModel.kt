@@ -7,6 +7,7 @@ import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.ChapterModel
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.ui.navigation.MangaDetailDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,13 +19,13 @@ import javax.inject.Inject
 
 data class MangaDetailUiState(
     val mangaDetail: MangaModel? = null,
+    val detailError: String? = null,
     val chapters: List<ChapterModel> = emptyList(),
     val isLoadingChapters: Boolean = false,
     val chaptersError: String? = null,
     val isInLibrary: Boolean = false
 )
 
-// ViewModel cho MangaDetailScreen — tải chi tiết manga + danh sách chapter + quản lý library
 @HiltViewModel
 class MangaDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -32,7 +33,9 @@ class MangaDetailViewModel @Inject constructor(
     private val libraryRepository: LibraryRepository
 ) : ViewModel() {
 
-    private val mangaId: String = savedStateHandle.get<String>("mangaId").orEmpty()
+    private val mangaId: String = savedStateHandle.get<String>(
+        MangaDetailDestination.mangaIdArgumentName
+    ).orEmpty()
 
     private val _uiState = MutableStateFlow(MangaDetailUiState())
     val uiState: StateFlow<MangaDetailUiState> = _uiState.asStateFlow()
@@ -47,7 +50,9 @@ class MangaDetailViewModel @Inject constructor(
         if (mangaId.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
             mangaRepository.getMangaDetail(mangaId).onSuccess { manga ->
-                _uiState.update { it.copy(mangaDetail = manga) }
+                _uiState.update { it.copy(mangaDetail = manga, detailError = null) }
+            }.onFailure { e ->
+                _uiState.update { it.copy(detailError = e.message) }
             }
         }
     }
@@ -57,13 +62,9 @@ class MangaDetailViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoadingChapters = true, chaptersError = null) }
             mangaRepository.getChapterFeed(mangaId).onSuccess { chapters ->
-                _uiState.update {
-                    it.copy(chapters = chapters, isLoadingChapters = false)
-                }
+                _uiState.update { it.copy(chapters = chapters, isLoadingChapters = false) }
             }.onFailure { e ->
-                _uiState.update {
-                    it.copy(isLoadingChapters = false, chaptersError = e.message)
-                }
+                _uiState.update { it.copy(isLoadingChapters = false, chaptersError = e.message) }
             }
         }
     }
@@ -76,7 +77,6 @@ class MangaDetailViewModel @Inject constructor(
         }
     }
 
-    // Tự động thêm vào thư viện khi user bắt đầu đọc (để ReaderVM lưu được tiến độ)
     fun ensureInLibrary(title: String, coverUrl: String) {
         if (_uiState.value.isInLibrary) return
         viewModelScope.launch(Dispatchers.IO) {
@@ -90,11 +90,7 @@ class MangaDetailViewModel @Inject constructor(
             if (_uiState.value.isInLibrary) {
                 libraryRepository.removeFromLibrary(mangaId)
             } else {
-                libraryRepository.addToLibrary(
-                    mangaId = mangaId,
-                    title = title,
-                    coverUrl = coverUrl
-                )
+                libraryRepository.addToLibrary(mangaId = mangaId, title = title, coverUrl = coverUrl)
             }
             _uiState.update { it.copy(isInLibrary = !it.isInLibrary) }
         }

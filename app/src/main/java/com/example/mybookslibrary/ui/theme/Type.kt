@@ -7,7 +7,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 val KansoTypography = Typography(
-    // H1 — 36px serif bold (hero/title)
+    // H1 — 36px serif đậm (tiêu đề chính / hero)
     displayLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
@@ -15,7 +15,7 @@ val KansoTypography = Typography(
         lineHeight = 44.sp,
         letterSpacing = (-0.25).sp
     ),
-    // H1 alt — 32px serif bold
+    // H1 phụ — 32px serif đậm
     displayMedium = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
@@ -30,7 +30,7 @@ val KansoTypography = Typography(
         lineHeight = 36.sp,
         letterSpacing = 0.sp
     ),
-    // H2 — 24px serif section headers
+    // H2 — 24px serif tiêu đề section
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
@@ -38,7 +38,7 @@ val KansoTypography = Typography(
         lineHeight = 32.sp,
         letterSpacing = 0.sp
     ),
-    // H3 — 20px serif subtitles
+    // H3 — 20px serif phụ đề
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
@@ -53,7 +53,7 @@ val KansoTypography = Typography(
         lineHeight = 24.sp,
         letterSpacing = 0.sp
     ),
-    // Card titles — 18px serif
+    // Tiêu đề card — 18px serif
     titleLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
@@ -75,7 +75,7 @@ val KansoTypography = Typography(
         lineHeight = 20.sp,
         letterSpacing = 0.sp
     ),
-    // Body — 16px sans-serif, 1.6 line-height
+    // Nội dung — 16px sans-serif, line-height 1.6
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -90,7 +90,7 @@ val KansoTypography = Typography(
         lineHeight = 22.sp,
         letterSpacing = 0.sp
     ),
-    // Small/info — 13px
+    // Thông tin phụ — 13px
     bodySmall = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -98,7 +98,7 @@ val KansoTypography = Typography(
         lineHeight = 20.sp,
         letterSpacing = 0.sp
     ),
-    // Buttons — 14px medium all-caps 0.1em tracking
+    // Nút bấm — 14px medium all-caps tracking 0.1em
     labelLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,

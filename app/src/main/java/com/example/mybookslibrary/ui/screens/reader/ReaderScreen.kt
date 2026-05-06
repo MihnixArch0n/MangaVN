@@ -41,13 +41,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import com.example.mybookslibrary.ui.util.appString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.example.mybookslibrary.ui.theme.KansoCard
-import com.example.mybookslibrary.ui.theme.KansoGraphite
-import com.example.mybookslibrary.ui.theme.KansoInk
+import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -88,7 +87,7 @@ fun ReaderScreen(
         onDispose { viewModel.syncProgressToRoom() }
     }
 
-    // Immersive black background per design spec
+    // Nền đen immersive cho trải nghiệm đọc
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -99,67 +98,36 @@ fun ReaderScreen(
     ) {
         when {
             state.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = KansoCard)
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.surface)
                 }
             }
-
             state.error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "Error: ${state.error}",
+                        text = appString(R.string.error_prefix, state.error ?: ""),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = KansoCard
+                        color = MaterialTheme.colorScheme.surface
                     )
                 }
             }
-
             else -> {
-                VerticalReaderContent(
-                    pages = state.pages,
-                    listState = listState,
-                    modifier = Modifier.fillMaxSize()
-                )
+                VerticalReaderContent(state.pages, listState, Modifier.fillMaxSize())
             }
         }
 
-        ReaderTopBar(
-            chapterTitle = state.chapterTitle,
-            isVisible = state.isOverlayVisible,
-            onBackClick = onBackClick
-        )
-
-        ReaderBottomBar(
-            isVisible = state.isOverlayVisible,
-            currentPage = state.lastReadPageIndex,
-            totalPages = state.pages.size
-        )
+        ReaderTopBar(state.chapterTitle, state.isOverlayVisible, onBackClick)
+        ReaderBottomBar(state.isOverlayVisible, state.lastReadPageIndex, state.pages.size)
     }
 }
 
 @Composable
-private fun VerticalReaderContent(
-    pages: List<String>,
-    listState: LazyListState,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier,
-        state = listState
-    ) {
-        itemsIndexed(
-            items = pages,
-            key = { index, _ -> index }
-        ) { index, page ->
+private fun VerticalReaderContent(pages: List<String>, listState: LazyListState, modifier: Modifier = Modifier) {
+    LazyColumn(modifier = modifier, state = listState) {
+        itemsIndexed(items = pages, key = { index, _ -> index }) { index, page ->
             AsyncImage(
                 model = page,
-                contentDescription = "Reader page ${index + 1}",
+                contentDescription = appString(R.string.reader_page_description, index + 1),
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -168,38 +136,31 @@ private fun VerticalReaderContent(
 }
 
 @Composable
-private fun BoxScope.ReaderTopBar(
-    chapterTitle: String,
-    isVisible: Boolean,
-    onBackClick: () -> Unit
-) {
+private fun BoxScope.ReaderTopBar(chapterTitle: String, isVisible: Boolean, onBackClick: () -> Unit) {
     AnimatedVisibility(
         visible = isVisible,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
         modifier = Modifier.align(Alignment.TopCenter)
     ) {
-        // 90% opacity KansoInk overlay per design spec
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(KansoInk.copy(alpha = 0.9f))
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 .statusBarsPadding()
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
                 Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(KansoCard.copy(alpha = 0.15f)),
+                    modifier = Modifier.size(36.dp).clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = KansoCard,
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = appString(R.string.cd_back),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -207,23 +168,17 @@ private fun BoxScope.ReaderTopBar(
             Text(
                 text = chapterTitle,
                 style = MaterialTheme.typography.titleMedium,
-                color = KansoCard,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 8.dp)
+                modifier = Modifier.weight(1f).padding(start = 8.dp)
             )
         }
     }
 }
 
 @Composable
-private fun BoxScope.ReaderBottomBar(
-    isVisible: Boolean,
-    currentPage: Int,
-    totalPages: Int
-) {
+private fun BoxScope.ReaderBottomBar(isVisible: Boolean, currentPage: Int, totalPages: Int) {
     val safeTotalPages = totalPages.coerceAtLeast(1)
     val displayPage = (currentPage + 1).coerceIn(1, safeTotalPages)
 
@@ -236,21 +191,20 @@ private fun BoxScope.ReaderBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(KansoInk.copy(alpha = 0.9f))
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 .padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Serif page counter per design spec: "12 / 45"
             Text(
                 text = "$displayPage / $safeTotalPages",
                 style = MaterialTheme.typography.titleMedium,
-                color = KansoCard,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = "Pages",
+                text = appString(R.string.reader_pages_label),
                 style = MaterialTheme.typography.bodySmall,
-                color = KansoGraphite
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

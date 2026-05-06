@@ -16,7 +16,11 @@ class LibraryStatusConverters {
     fun fromStatus(status: LibraryStatus): String = status.name
 
     @androidx.room.TypeConverter
-    fun toStatus(value: String): LibraryStatus = LibraryStatus.valueOf(value)
+    fun toStatus(value: String): LibraryStatus = try {
+        LibraryStatus.valueOf(value)
+    } catch (_: IllegalArgumentException) {
+        LibraryStatus.READING
+    }
 }
 
 @Entity(tableName = "library_items")

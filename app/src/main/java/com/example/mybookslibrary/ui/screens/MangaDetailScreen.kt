@@ -43,18 +43,25 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import com.example.mybookslibrary.ui.util.appString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ChapterModel
-import com.example.mybookslibrary.ui.theme.KansoCard
-import com.example.mybookslibrary.ui.theme.KansoGraphite
-import com.example.mybookslibrary.ui.theme.KansoInk
-import com.example.mybookslibrary.ui.theme.KansoPaper
-import com.example.mybookslibrary.ui.theme.KansoSoftInk
-import com.example.mybookslibrary.ui.theme.KansoTerracotta
 import com.example.mybookslibrary.ui.viewmodel.MangaDetailViewModel
+
+private object DetailDimensions {
+    val BackdropHeight = 280.dp
+    val CoverWidth = 160.dp
+    val CoverHeight = 240.dp
+    val CoverRowOffset = (-80).dp
+    val ActionOffset = (-60).dp
+    val SynopsisOffset = (-40).dp
+    val ChaptersOffset = (-20).dp
+    val BlurRadius = 20.dp
+}
 
 @Composable
 fun MangaDetailScreen(
@@ -75,198 +82,138 @@ fun MangaDetailScreen(
     val displayCoverArt = coverArt.ifBlank { detail?.coverArt ?: "" }
     val coverUrl = displayCoverArt.ifBlank { null }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(KansoPaper)
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
 
-            // ── Blurred backdrop header ──────────────────────────────
+            // Ảnh nền mờ
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(280.dp)
-                ) {
+                Box(modifier = Modifier.fillMaxWidth().height(DetailDimensions.BackdropHeight)) {
                     AsyncImage(
-                        model = coverUrl,
-                        contentDescription = null,
+                        model = coverUrl, contentDescription = null,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .blur(radius = 20.dp)
+                        modifier = Modifier.fillMaxSize().blur(radius = DetailDimensions.BlurRadius)
                     )
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        KansoInk.copy(alpha = 0.15f),
-                                        KansoPaper
-                                    ),
-                                    startY = 120f
-                                )
+                        modifier = Modifier.fillMaxSize().background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    MaterialTheme.colorScheme.background
+                                ), startY = 120f
                             )
+                        )
                     )
                 }
             }
 
-            // ── Cover art + title row ────────────────────────────────
+            // Bìa + tiêu đề
             item {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .offset(y = (-80).dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)
+                        .offset(y = DetailDimensions.CoverRowOffset),
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Card(
-                        modifier = Modifier.size(width = 160.dp, height = 240.dp),
+                        modifier = Modifier.size(DetailDimensions.CoverWidth, DetailDimensions.CoverHeight),
                         shape = RoundedCornerShape(16.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = KansoPaper)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
                     ) {
-                        AsyncImage(
-                            model = coverUrl,
-                            contentDescription = title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                        AsyncImage(model = coverUrl, contentDescription = displayTitle, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                     }
-
-                    Column(
-                        modifier = Modifier
-                            .padding(start = 20.dp, bottom = 8.dp)
-                            .weight(1f)
-                    ) {
+                    Column(modifier = Modifier.padding(start = 20.dp, bottom = 8.dp).weight(1f)) {
                         if (displayTags.isNotEmpty()) {
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 displayTags.take(2).forEach { tag ->
                                     Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(24.dp))
-                                            .background(KansoInk.copy(alpha = 0.08f))
+                                        modifier = Modifier.clip(RoundedCornerShape(24.dp))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
                                             .padding(horizontal = 10.dp, vertical = 4.dp)
                                     ) {
-                                        Text(
-                                            text = tag,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = KansoGraphite
-                                        )
+                                        Text(tag, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
                         }
-                        Text(
-                            text = displayTitle,
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = KansoInk,
-                            maxLines = 4,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Text(displayTitle, style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary,
+                            maxLines = 4, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
 
-            // ── Action buttons ───────────────────────────────────────
+            // Nút hành động
             item {
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
-                        .offset(y = (-60).dp)
-                ) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp).offset(y = DetailDimensions.ActionOffset)) {
                     val firstChapter = uiState.chapters.firstOrNull()
+                    val firstChapterTitle = firstChapter?.let { buildChapterTitle(it) } ?: ""
                     Button(
                         onClick = {
                             if (firstChapter != null) {
                                 viewModel.ensureInLibrary(displayTitle, displayCoverArt)
-                                val chTitle = buildChapterTitle(firstChapter)
-                                onReadChapter(mangaId, firstChapter.id, chTitle)
+                                onReadChapter(mangaId, firstChapter.id, firstChapterTitle)
                             }
                         },
                         enabled = firstChapter != null,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = KansoInk,
-                            contentColor = KansoCard
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
                         Text(
-                            text = if (firstChapter != null) "READ NOW" else "LOADING…",
+                            if (firstChapter != null) appString(R.string.detail_read_now) else appString(R.string.detail_loading),
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
                     Spacer(Modifier.height(12.dp))
                     OutlinedButton(
                         onClick = { viewModel.toggleLibrary(displayTitle, displayCoverArt) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            if (uiState.isInLibrary) KansoTerracotta else KansoGraphite.copy(alpha = 0.4f)
-                        ),
+                        border = BorderStroke(1.dp,
+                            if (uiState.isInLibrary) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (uiState.isInLibrary) KansoTerracotta else KansoInk
-                        )
+                            contentColor = if (uiState.isInLibrary) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(
-                            imageVector = if (uiState.isInLibrary) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            if (uiState.isInLibrary) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = null, modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = if (uiState.isInLibrary) "IN LIBRARY" else "ADD TO LIBRARY",
+                            if (uiState.isInLibrary) appString(R.string.detail_in_library) else appString(R.string.detail_add_to_library),
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
                 }
             }
 
-            // ── Synopsis ─────────────────────────────────────────────
+            // Tóm tắt — hiện nguyên bản từ MangaDex
             if (displayDescription.isNotBlank()) {
                 item {
-                    Column(
-                        modifier = Modifier
-                            .padding(horizontal = 24.dp)
-                            .offset(y = (-40).dp)
-                    ) {
-                        Text(
-                            text = "Synopsis",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = KansoInk
-                        )
+                    Column(modifier = Modifier.padding(horizontal = 24.dp).offset(y = DetailDimensions.SynopsisOffset)) {
+                        Text(appString(R.string.detail_synopsis), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(12.dp))
-                        Text(
-                            text = displayDescription,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = KansoSoftInk
-                        )
+                        Text(displayDescription, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
             }
 
-            // ── Chapters section ─────────────────────────────────────
+            // Lỗi tải chi tiết
+            if (uiState.detailError != null && detail == null) {
+                item {
+                    Text(appString(R.string.detail_error), style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 24.dp))
+                }
+            }
+
+            // Danh sách chương
             item {
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
-                        .offset(y = (-20).dp)
-                ) {
+                Column(modifier = Modifier.padding(horizontal = 24.dp).offset(y = DetailDimensions.ChaptersOffset)) {
                     Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = "Chapters",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = KansoInk
-                    )
+                    Text(appString(R.string.detail_chapters), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.height(12.dp))
                 }
             }
@@ -274,48 +221,30 @@ fun MangaDetailScreen(
             when {
                 uiState.isLoadingChapters -> {
                     item {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(color = KansoInk)
+                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
-
                 uiState.chaptersError != null -> {
                     item {
-                        Text(
-                            text = "Couldn't load chapters",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = KansoGraphite,
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        )
+                        Text(appString(R.string.detail_chapters_error), style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 24.dp))
                     }
                 }
-
                 uiState.chapters.isEmpty() -> {
                     item {
-                        Text(
-                            text = "No chapters available",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = KansoGraphite,
-                            modifier = Modifier.padding(horizontal = 24.dp)
-                        )
+                        Text(appString(R.string.detail_chapters_empty), style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 24.dp))
                     }
                 }
-
                 else -> {
                     items(uiState.chapters, key = { it.id }) { chapter ->
-                        ChapterRow(
-                            chapter = chapter,
-                            onClick = {
-                                viewModel.ensureInLibrary(displayTitle, displayCoverArt)
-                                onReadChapter(mangaId, chapter.id, buildChapterTitle(chapter))
-                            }
-                        )
+                        val chTitle = buildChapterTitle(chapter)
+                        ChapterRow(chapter, chTitle) {
+                            viewModel.ensureInLibrary(displayTitle, displayCoverArt)
+                            onReadChapter(mangaId, chapter.id, chTitle)
+                        }
                     }
                 }
             }
@@ -323,76 +252,46 @@ fun MangaDetailScreen(
             item { Spacer(Modifier.height(100.dp)) }
         }
 
-        // ── Floating back button ─────────────────────────────────────
+        // Nút quay lại
         IconButton(
             onClick = onBackClick,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
+            modifier = Modifier.align(Alignment.TopStart).statusBarsPadding().padding(8.dp)
         ) {
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(KansoInk.copy(alpha = 0.55f)),
+                modifier = Modifier.size(40.dp).clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = KansoCard,
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, appString(R.string.cd_back),
+                    tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(20.dp))
             }
         }
     }
 }
 
 @Composable
-private fun ChapterRow(chapter: ChapterModel, onClick: () -> Unit) {
+private fun ChapterRow(chapter: ChapterModel, chapterTitle: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp, vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 24.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = buildChapterTitle(chapter),
-                style = MaterialTheme.typography.titleMedium,
-                color = KansoSoftInk,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            Text(chapterTitle, style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (!chapter.title.isNullOrBlank()) {
-                Text(
-                    text = chapter.title,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = KansoGraphite,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Text(chapter.title, style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
-        Text(
-            text = "${chapter.pages}p",
-            style = MaterialTheme.typography.bodySmall,
-            color = KansoGraphite
-        )
+        Text(appString(R.string.detail_pages_suffix, chapter.pages), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .padding(horizontal = 24.dp)
-            .background(KansoGraphite.copy(alpha = 0.1f))
-    )
+    Box(modifier = Modifier.fillMaxWidth().height(1.dp).padding(horizontal = 24.dp)
+        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)))
 }
 
+@Composable
 private fun buildChapterTitle(ch: ChapterModel): String {
-    val vol = if (!ch.volume.isNullOrBlank()) "Vol.${ch.volume} " else ""
-    val num = if (!ch.chapter.isNullOrBlank()) "Ch.${ch.chapter}" else "Oneshot"
+    val vol = if (!ch.volume.isNullOrBlank()) appString(R.string.chapter_vol_prefix, ch.volume!!) else ""
+    val num = if (!ch.chapter.isNullOrBlank()) appString(R.string.chapter_num_prefix, ch.chapter!!) else appString(R.string.chapter_oneshot)
     return "$vol$num"
 }

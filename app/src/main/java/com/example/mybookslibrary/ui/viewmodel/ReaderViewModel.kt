@@ -1,9 +1,11 @@
 package com.example.mybookslibrary.ui.viewmodel
 
+import android.app.Application
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,10 +29,13 @@ data class ReaderState(
 // ViewModel cho ReaderScreen — tải ảnh chapter và đồng bộ tiến độ đọc
 @HiltViewModel
 class ReaderViewModel @Inject constructor(
+    application: Application,
     savedStateHandle: SavedStateHandle,
     private val mangaRepository: MangaRepository,
     private val libraryRepository: LibraryRepository
-) : ViewModel() {
+) : AndroidViewModel(application) {
+
+    private fun str(resId: Int) = getApplication<Application>().getString(resId)
 
     // Đọc nav args từ SavedStateHandle (key phải khớp với ReaderDestination)
     private val mangaId: String = savedStateHandle.get<String>(MANGA_ID_ARG).orEmpty()
@@ -53,7 +58,7 @@ class ReaderViewModel @Inject constructor(
     // Gọi At-Home API để lấy URL ảnh từng trang của chapter
     private fun loadChapterPages() {
         if (chapterId.isEmpty()) {
-            _state.update { it.copy(error = "Missing chapterId") }
+            _state.update { it.copy(error = str(R.string.error_missing_chapter)) }
             return
         }
 
@@ -62,15 +67,11 @@ class ReaderViewModel @Inject constructor(
             try {
                 mangaRepository.getChapterPages(chapterId).onSuccess { urls ->
                     _state.update { it.copy(pages = urls, isLoading = false, error = null) }
-                    Log.d(TAG, "Loaded ${urls.size} pages for chapter=$chapterId")
                 }.onFailure { throwable ->
-                    val errorMsg = throwable.message ?: "Failed to load chapter pages"
-                    _state.update { it.copy(isLoading = false, error = errorMsg) }
-                    Log.e(TAG, "loadChapterPages error: $errorMsg", throwable)
+                    _state.update { it.copy(isLoading = false, error = throwable.message ?: str(R.string.error_load_pages)) }
                 }
             } catch (t: Throwable) {
-                _state.update { it.copy(isLoading = false, error = t.message ?: "Unexpected error") }
-                Log.e(TAG, "loadChapterPages exception", t)
+                _state.update { it.copy(isLoading = false, error = t.message ?: str(R.string.error_unexpected)) }
             }
         }
     }
@@ -84,10 +85,8 @@ class ReaderViewModel @Inject constructor(
     fun onVisiblePageChanged(index: Int) {
         val pages = _state.value.pages
         if (pages.isEmpty()) return
-
         val boundedIndex = index.coerceIn(0, pages.lastIndex)
         if (boundedIndex == _state.value.lastReadPageIndex) return
-
         _state.update { it.copy(lastReadPageIndex = boundedIndex) }
         syncProgressToRoom()
     }
@@ -96,14 +95,9 @@ class ReaderViewModel @Inject constructor(
     fun syncProgressToRoom() {
         val pageIndex = _state.value.lastReadPageIndex
         if (lastSyncedPageIndex == pageIndex) return
-
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                libraryRepository.updateReadingProgress(
-                    mangaId = mangaId,
-                    chapterId = chapterId,
-                    pageIndex = pageIndex
-                )
+                libraryRepository.updateReadingProgress(mangaId = mangaId, chapterId = chapterId, pageIndex = pageIndex)
                 lastSyncedPageIndex = pageIndex
             } catch (t: Throwable) {
                 Log.e(TAG, "syncProgressToRoom error", t)

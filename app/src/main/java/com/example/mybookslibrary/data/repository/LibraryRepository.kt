@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 class LibraryRepository(
     private val libraryDao: LibraryDao
 ) {
-    // Observe realtime danh sách manga trong thư viện (dùng cho LibraryScreen)
+    // Theo dõi realtime danh sách manga trong thư viện (dùng cho LibraryScreen)
     fun observeLibraryItems(): Flow<List<LibraryItemEntity>> = libraryDao.observeAll()
 
     // Lấy toàn bộ items (dùng cho backup)

@@ -5,7 +5,6 @@ data class MangaModel(
     val title: String,
     val description: String,
     val coverArt: String?,
-    val rating: Double?,
     val tags: List<String>
 )
 

@@ -3,8 +3,13 @@ package com.example.mybookslibrary.data.remote.models
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.google.gson.annotations.SerializedName
 
-// DTO cho MangaDex API — map JSON response sang Kotlin data classes
-// Chuyển đổi sang domain model qua extension function toDomainModel()
+object MangaDexConstants {
+    const val QUALITY_ORIGINAL = "data"
+    const val QUALITY_DATA_SAVER = "data-saver"
+    const val COVER_BASE_URL = "https://uploads.mangadex.org/covers"
+    const val LANG_EN = "en"
+    const val LANG_VI = "vi"
+}
 
 data class MangaListResponseDto(
     @SerializedName("data") val data: List<MangaDataDto> = emptyList()
@@ -41,20 +46,22 @@ data class RelationshipAttributesDto(
     @SerializedName("fileName") val fileName: String? = null
 )
 
-// Chuyển DTO sang domain model, ưu tiên ngôn ngữ: en → vi → fallback giá trị đầu tiên
-fun MangaDataDto.toDomainModel(): MangaModel {
-    val mainTitle = attributes.title["en"]
-        ?: attributes.title["vi"]
-        ?: attributes.title.values.firstOrNull()
-        ?: "Untitled"
+fun MangaDataDto.toDomainModel(preferredLang: String = MangaDexConstants.LANG_EN): MangaModel {
+    val fallbackLang = if (preferredLang == MangaDexConstants.LANG_VI) MangaDexConstants.LANG_EN else MangaDexConstants.LANG_VI
 
-    val mainDescription = attributes.description["en"]
-        ?: attributes.description["vi"]
+    val mainTitle = attributes.title[preferredLang]
+        ?: attributes.title[fallbackLang]
+        ?: attributes.title.values.firstOrNull()
+        ?: ""
+
+    val mainDescription = attributes.description[preferredLang]
+        ?: attributes.description[fallbackLang]
         ?: attributes.description.values.firstOrNull()
         ?: ""
 
     val genres = attributes.tags.mapNotNull { tag ->
-        tag.attributes?.name?.get("en")
+        tag.attributes?.name?.get(preferredLang)
+            ?: tag.attributes?.name?.get(fallbackLang)
             ?: tag.attributes?.name?.values?.firstOrNull()
     }
 
@@ -63,12 +70,11 @@ fun MangaDataDto.toDomainModel(): MangaModel {
         title = mainTitle,
         description = mainDescription,
         coverArt = extractCoverUrl(),
-        rating = null,
         tags = genres
     )
 }
 
-// Cover URL được ghép từ relationships type=cover_art: uploads.mangadex.org/covers/{mangaId}/{fileName}
+// Ghép URL cover từ relationships type=cover_art: uploads.mangadex.org/covers/{mangaId}/{fileName}
 fun MangaDataDto.extractCoverUrl(): String? {
     val coverFileName = relationships
         .firstOrNull { it.type == "cover_art" }
@@ -76,15 +82,15 @@ fun MangaDataDto.extractCoverUrl(): String? {
         ?.fileName
         ?: return null
 
-    return "https://uploads.mangadex.org/covers/$id/$coverFileName"
+    return "${MangaDexConstants.COVER_BASE_URL}/$id/$coverFileName"
 }
 
-// Single Manga Detail Response
+// Response chi tiết 1 manga
 data class MangaDetailResponseDto(
     @SerializedName("data") val data: MangaDataDto
 )
 
-// Chapter Feed DTOs
+// DTO danh sách chapter
 data class ChapterListResponseDto(
     @SerializedName("data") val data: List<ChapterDataDto> = emptyList()
 )
@@ -102,7 +108,7 @@ data class ChapterAttributesDto(
     @SerializedName("pages") val pages: Int = 0
 )
 
-// At-Home Server DTOs for Reader
+// DTO At-Home Server cho Reader (tải ảnh trang truyện)
 data class AtHomeResponseDto(
     @SerializedName("result") val result: String,
     @SerializedName("baseUrl") val baseUrl: String,
