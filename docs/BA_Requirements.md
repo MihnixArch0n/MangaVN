@@ -11,24 +11,24 @@
 
 ## 2. Thực thể Dữ liệu (Entities & Models)
 
-### 2.1. Local Entities (Room Database)
+### 2.1. Local Entities (Room)
 * **UserEntity:** `id` (PK), `username`, `password` (mô phỏng), `avatar_path`, `created_at`.
-* **LibraryItemEntity** (Quản lý sách được Bookmark/Yêu thích):
-  * `manga_id` (PK - map với ID từ MangaDex).
-  * `title`, `cover_url` (Lưu đệm để hiển thị nhanh).
+* **LibraryItemEntity** (Bookmark/Yêu thích):
+  * `manga_id` (PK - map với MangaDex).
+  * `title`, `cover_url`.
   * `added_at` (Thời gian thêm vào thư viện để sắp xếp).
-* **ChapterProgressEntity** (Quản lý tiến độ đọc chi tiết của từng chapter):
-  * `chapter_id` (PK - map với ID chapter từ MangaDex).
-  * `manga_id` (FK map với LibraryItemEntity).
-  * `status` (Enum: UNREAD, READING, COMPLETED).
+* **ChapterProgressEntity** (Tiến độ đọc chapter):
+  * `chapter_id` (PK - map với MangaDex Chapter ID).
+  * `manga_id` (FK map với `LibraryItemEntity`).
+  * `status` (Enum: `UNREAD`, `READING`, `COMPLETED`).
   * `last_read_page` (Vị trí trang đang đọc dở).
   * `total_pages` (Tổng số trang của chapter).
   * `updated_at`.
 
-### 2.2. Remote Models (MangaDex API)
-*(Chỉ dùng để parse JSON trả về, không lưu vào Room)*
-* **MangaModel:** `id`, `title`, `description`, `cover_art`, `rating`, `tags/genres`.
-* **ChapterModel:** `id`, `manga_id`, `chapter_number`, `title`, `pages` (List URL ảnh).
+### 2.2. Domain / Remote Models
+* **MangaModel:** `id`, `title`, `description`, `coverArt`, `rating`, `tags`.
+* **ChapterModel:** `id`, `mangaId`, `volume`, `chapterNumber`, `title`, `pages`, `isUnavailable`.
+* **ChapterWithProgressModel:** `chapterId`, `mangaId`, `volume`, `chapterNumber`, `title`, `status`, `lastReadPage`, `totalPages`.
 
 ## 3. Phân định Logic
 - **MangaDex API:** Lấy danh sách truyện (Discover), tìm kiếm (Search), chi tiết truyện, và tải ảnh trang truyện.
@@ -51,8 +51,8 @@
   - Backup / Restore dữ liệu (Export/Import Local Database & Preferences).
   - Đăng xuất (Clear DataStore, quay về Auth Flow).
 
-**C. Detail & Reader Flow**
-- **`MangaDetailScreen`:** Hiện mô tả, ảnh, và **danh sách chapter**.
-  - Gọi API MangaDex (`/feed`) lấy danh sách chapter, gộp (merge) với `ChapterProgressEntity` từ Room để hiển thị trạng thái UI: Chưa đọc, Đang đọc (hiện % tiến độ), Hoàn thành (icon check).
-  - UI nhóm các chapter theo Volume (Quyển). Ẩn các chapter không khả dụng (`isUnavailable: true`).
-- **`ReaderScreen`:** Hiện trang truyện của 1 chapter. Khi đọc hoặc vuốt đến trang cuối, tự động cập nhật/upsert `last_read_page` và `status` (COMPLETED) vào `ChapterProgressEntity` xuống DB.
+**C. Detail & Reader flow**
+- **`MangaDetailScreen`**: Hiện mô tả, ảnh, và **danh sách chapter**.
+- Gọi API MangaDex (`/feed`) lấy danh sách chapter, gộp (merge) với `ChapterProgressEntity` từ Room để hiển thị trạng thái UI: `UNREAD` / `READING` / `COMPLETED`.
+- UI nhóm các chapter theo Volume (Quyển). Ẩn các chapter không khả dụng (`isUnavailable: true`).
+- **`ReaderScreen`**: tải ảnh chapter qua MangaDex at-home server, lưu tiến độ đọc vào Room.
