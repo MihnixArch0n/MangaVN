@@ -1,6 +1,6 @@
 package com.example.mybookslibrary.ui.viewmodel
 
-import coil.ImageLoader
+import coil3.ImageLoader
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.data.local.LibraryItemEntity
@@ -35,7 +35,7 @@ data class SettingsUiState(
     val restoreResult: BackupRestoreResult? = null
 )
 
-@OptIn(coil.annotation.ExperimentalCoilApi::class)
+@OptIn(coil3.annotation.ExperimentalCoilApi::class)
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val preferencesDataStore: UserPreferencesDataStore,

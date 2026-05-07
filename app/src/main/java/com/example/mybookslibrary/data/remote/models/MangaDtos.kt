@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.data.remote.models
 
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.domain.model.ChapterModel
 import com.google.gson.annotations.SerializedName
 
 object MangaDexConstants {
@@ -85,19 +86,22 @@ fun MangaDataDto.extractCoverUrl(): String? {
     return "${MangaDexConstants.COVER_BASE_URL}/$id/$coverFileName"
 }
 
+data class ChapterListDto(
+    @SerializedName("data") val data: List<ChapterDto> = emptyList(),
+    @SerializedName("total") val total: Int = 0,
+    @SerializedName("limit") val limit: Int = 0,
+    @SerializedName("offset") val offset: Int = 0
+)
+
+data class ChapterDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("attributes") val attributes: ChapterAttributesDto? = null,
+    @SerializedName("relationships") val relationships: List<RelationshipDto> = emptyList()
+)
+
 // Response chi tiết 1 manga
 data class MangaDetailResponseDto(
     @SerializedName("data") val data: MangaDataDto
-)
-
-// DTO danh sách chapter
-data class ChapterListResponseDto(
-    @SerializedName("data") val data: List<ChapterDataDto> = emptyList()
-)
-
-data class ChapterDataDto(
-    @SerializedName("id") val id: String,
-    @SerializedName("attributes") val attributes: ChapterAttributesDto
 )
 
 data class ChapterAttributesDto(
@@ -105,10 +109,28 @@ data class ChapterAttributesDto(
     @SerializedName("chapter") val chapter: String? = null,
     @SerializedName("title") val title: String? = null,
     @SerializedName("translatedLanguage") val translatedLanguage: String? = null,
-    @SerializedName("pages") val pages: Int = 0
+    @SerializedName("pages") val pages: Int? = null,
+    @SerializedName("isUnavailable") val isUnavailable: Boolean? = null
 )
 
-// DTO At-Home Server cho Reader (tải ảnh trang truyện)
+fun ChapterDto.toDomainModel(fallbackMangaId: String): ChapterModel {
+    val mangaId = relationships
+        .firstOrNull { it.type == "manga" }
+        ?.id
+        ?: fallbackMangaId
+
+    return ChapterModel(
+        id = id,
+        mangaId = mangaId,
+        volume = attributes?.volume,
+        chapterNumber = attributes?.chapter,
+        title = attributes?.title,
+        pages = attributes?.pages ?: 0,
+        isUnavailable = attributes?.isUnavailable == true
+    )
+}
+
+// At-Home Server DTOs for Reader
 data class AtHomeResponseDto(
     @SerializedName("result") val result: String,
     @SerializedName("baseUrl") val baseUrl: String,

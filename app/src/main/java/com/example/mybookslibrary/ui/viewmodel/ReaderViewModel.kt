@@ -8,8 +8,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
+import com.example.mybookslibrary.di.IoDispatcher
+import kotlinx.coroutines.CoroutineDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +33,8 @@ class ReaderViewModel @Inject constructor(
     application: Application,
     savedStateHandle: SavedStateHandle,
     private val mangaRepository: MangaRepository,
-    private val libraryRepository: LibraryRepository
+    private val libraryRepository: LibraryRepository,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AndroidViewModel(application) {
 
     private fun str(resId: Int) = getApplication<Application>().getString(resId)
@@ -62,7 +64,7 @@ class ReaderViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             _state.update { it.copy(isLoading = true, error = null) }
             try {
                 mangaRepository.getChapterPages(chapterId).onSuccess { urls ->
@@ -94,10 +96,17 @@ class ReaderViewModel @Inject constructor(
     // Lưu tiến độ đọc vào Room DB (chỉ cập nhật nếu manga đã có trong library)
     fun syncProgressToRoom() {
         val pageIndex = _state.value.lastReadPageIndex
+        val totalPages = _state.value.pages.size
         if (lastSyncedPageIndex == pageIndex) return
-        viewModelScope.launch(Dispatchers.IO) {
+
+        viewModelScope.launch(ioDispatcher) {
             try {
-                libraryRepository.updateReadingProgress(mangaId = mangaId, chapterId = chapterId, pageIndex = pageIndex)
+                libraryRepository.updateReadingProgress(
+                    mangaId = mangaId,
+                    chapterId = chapterId,
+                    pageIndex = pageIndex,
+                    totalPages = totalPages
+                )
                 lastSyncedPageIndex = pageIndex
             } catch (t: Throwable) {
                 Log.e(TAG, "syncProgressToRoom error", t)

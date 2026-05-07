@@ -4,15 +4,21 @@ import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.remote.MangaDexApi
 import com.example.mybookslibrary.data.remote.models.MangaDexConstants
 import com.example.mybookslibrary.data.remote.models.toDomainModel
+import com.example.mybookslibrary.data.remote.models.toDomainModel as chapterToDomainModel
 import com.example.mybookslibrary.domain.model.ChapterModel
 import com.example.mybookslibrary.domain.model.MangaModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.io.IOException
 
 class MangaRepository(
     private val api: MangaDexApi,
     private val preferencesDataStore: UserPreferencesDataStore
 ) {
+    companion object {
+        private const val FEED_PAGE_LIMIT = 500
+    }
+
     private suspend fun lang(): String = preferencesDataStore.getLanguage()
 
     fun getDiscoverManga(limit: Int = 20, offset: Int = 0): Flow<Result<List<MangaModel>>> = flow {
@@ -38,16 +44,47 @@ class MangaRepository(
         api.getMangaDetail(mangaId).data.toDomainModel(preferredLang)
     }
 
-    suspend fun getChapterFeed(mangaId: String): Result<List<ChapterModel>> = runCatching {
-        api.getChapterFeed(mangaId = mangaId).data.map { dto ->
-            ChapterModel(
-                id = dto.id,
-                chapter = dto.attributes.chapter,
-                title = dto.attributes.title,
-                pages = dto.attributes.pages,
-                volume = dto.attributes.volume
+    suspend fun getMangaFeed(
+        mangaId: String,
+        translatedLanguages: List<String>? = null
+    ): Result<List<ChapterModel>> = runCatching {
+        val languages = translatedLanguages
+            ?: listOf(lang(), MangaDexConstants.LANG_EN, MangaDexConstants.LANG_VI).distinct()
+        val chapters = mutableListOf<ChapterModel>()
+        var offset = 0
+        var total = Int.MAX_VALUE
+
+        while (offset < total) {
+            val response = api.getMangaFeed(
+                mangaId = mangaId,
+                translatedLanguages = languages,
+                limit = FEED_PAGE_LIMIT,
+                offset = offset,
+                includeUnavailable = 0
             )
+
+            if (!response.isSuccessful) {
+                throw IOException("Manga feed request failed: HTTP ${response.code()}")
+            }
+
+            val body = response.body() ?: throw IOException("Manga feed response body is null")
+            chapters += body.data
+                .asSequence()
+                .map { it.chapterToDomainModel(mangaId) }
+                .filterNot { it.isUnavailable }
+                .toList()
+
+            total = body.total
+            val pageSize = body.data.size
+            if (pageSize == 0) break
+            offset += pageSize
         }
+
+        chapters
+    }
+
+    suspend fun getChapterFeed(mangaId: String): Result<List<ChapterModel>> = runCatching {
+        getMangaFeed(mangaId).getOrThrow()
     }
 
     suspend fun getChapterPages(chapterId: String): Result<List<String>> = runCatching {

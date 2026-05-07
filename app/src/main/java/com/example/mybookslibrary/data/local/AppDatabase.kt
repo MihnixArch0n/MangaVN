@@ -5,13 +5,15 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 import com.example.mybookslibrary.data.local.dao.UserDao
 
 @Database(
     entities = [
         UserEntity::class,
-        LibraryItemEntity::class
+        LibraryItemEntity::class,
+        ChapterProgressEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -21,6 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao
     abstract fun libraryDao(): LibraryDao
+    abstract fun chapterDao(): ChapterDao
 
     companion object {
         @Volatile

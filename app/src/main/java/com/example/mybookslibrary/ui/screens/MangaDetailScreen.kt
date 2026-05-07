@@ -47,7 +47,7 @@ import com.example.mybookslibrary.ui.util.appString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ChapterModel
 import com.example.mybookslibrary.ui.viewmodel.MangaDetailViewModel

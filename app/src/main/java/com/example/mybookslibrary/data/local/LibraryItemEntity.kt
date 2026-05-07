@@ -3,8 +3,6 @@ package com.example.mybookslibrary.data.local
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
-
 enum class LibraryStatus {
     READING,
     COMPLETED,
@@ -24,15 +22,14 @@ class LibraryStatusConverters {
 }
 
 @Entity(tableName = "library_items")
-@TypeConverters(LibraryStatusConverters::class)
 data class LibraryItemEntity(
     @PrimaryKey
     @ColumnInfo(name = "manga_id") val manga_id: String,
     val title: String,
     @ColumnInfo(name = "cover_url") val cover_url: String,
-    val status: LibraryStatus,
-    @ColumnInfo(name = "last_read_chapter_id") val last_read_chapter_id: String?,
+    val status: LibraryStatus = LibraryStatus.READING,
+    @ColumnInfo(name = "last_read_chapter_id") val last_read_chapter_id: String? = null,
     @ColumnInfo(name = "last_read_page_index") val last_read_page_index: Int = 0,
-    @ColumnInfo(name = "updated_at") val updated_at: Long
+    @ColumnInfo(name = "updated_at") val updated_at: Long = System.currentTimeMillis()
 )
 

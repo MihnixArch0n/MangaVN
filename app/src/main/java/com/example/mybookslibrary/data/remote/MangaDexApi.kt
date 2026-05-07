@@ -1,9 +1,10 @@
 package com.example.mybookslibrary.data.remote
 
 import com.example.mybookslibrary.data.remote.models.AtHomeResponseDto
-import com.example.mybookslibrary.data.remote.models.ChapterListResponseDto
+import com.example.mybookslibrary.data.remote.models.ChapterListDto
 import com.example.mybookslibrary.data.remote.models.MangaDetailResponseDto
 import com.example.mybookslibrary.data.remote.models.MangaListResponseDto
+import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -34,14 +35,17 @@ interface MangaDexApi {
         @Query("includes[]") includes: List<String> = listOf("cover_art")
     ): MangaDetailResponseDto
 
-    // Lấy danh sách chapter của manga, sắp xếp tăng dần, lọc theo ngôn ngữ
+    // Lấy danh sách chapter của manga, hỗ trợ phân trang và loại chapter unavailable
     @GET("manga/{mangaId}/feed")
-    suspend fun getChapterFeed(
+    suspend fun getMangaFeed(
         @Path("mangaId") mangaId: String,
-        @Query("limit") limit: Int = 100,
-        @Query("translatedLanguage[]") language: List<String> = listOf("en"),
-        @Query("order[chapter]") order: String = "asc"
-    ): ChapterListResponseDto
+        @Query("translatedLanguage[]") translatedLanguages: List<String> = listOf("en", "vi"),
+        @Query("order[volume]") volumeOrder: String = "asc",
+        @Query("order[chapter]") chapterOrder: String = "asc",
+        @Query("limit") limit: Int = 500,
+        @Query("offset") offset: Int = 0,
+        @Query("includeUnavailable") includeUnavailable: Int = 0
+    ): Response<ChapterListDto>
 
     // At-Home API: lấy URL server + danh sách file ảnh của 1 chapter để đọc
     @GET("at-home/server/{chapterId}")

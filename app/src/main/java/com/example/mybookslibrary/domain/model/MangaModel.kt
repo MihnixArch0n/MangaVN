@@ -8,11 +8,4 @@ data class MangaModel(
     val tags: List<String>
 )
 
-data class ChapterModel(
-    val id: String,
-    val chapter: String?,
-    val title: String?,
-    val pages: Int,
-    val volume: String?
-)
 

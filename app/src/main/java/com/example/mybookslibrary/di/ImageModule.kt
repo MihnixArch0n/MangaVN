@@ -1,7 +1,8 @@
 package com.example.mybookslibrary.di
 
 import android.content.Context
-import coil.ImageLoader
+import coil3.ImageLoader
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +22,9 @@ object ImageModule {
         @ApplicationContext context: Context,
         @Named("ImageOkHttpClient") imageOkHttpClient: OkHttpClient
     ): ImageLoader = ImageLoader.Builder(context)
-        .okHttpClient(imageOkHttpClient)
+        .components {
+            add(OkHttpNetworkFetcherFactory(callFactory = { imageOkHttpClient }))
+        }
         .build()
 }
 

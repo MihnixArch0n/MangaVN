@@ -56,6 +56,6 @@ class MyBooksLibraryApp : Application() {
     }
 
     companion object {
-        const val TAG = "KansoApp"
+        private const val TAG = "MyBooksLibraryApp"
     }
 }
