@@ -85,6 +85,14 @@ fun DiscoverScreen(
 ) {
     val vm: DiscoverViewModel = hiltViewModel()
     val uiState by vm.uiState.collectAsState()
+    var expandedPopular by remember { mutableStateOf(false) }
+    var expandedNew by remember { mutableStateOf(false) }
+    var expandedExplore by remember { mutableStateOf(false) }
+
+    val items = uiState.items
+    val popularItems = remember(items) { if (items.size > 1) items.drop(1).take(5) else emptyList() }
+    val newItems = remember(items) { if (items.size > 6) items.drop(6).take(5) else emptyList() }
+    val exploreItems = remember(items) { if (items.size > 11) items.drop(11) else emptyList() }
 
     Scaffold(
         topBar = { EditorialTopBar(onSearchClick, onLibraryClick, onProfileClick) },
@@ -103,11 +111,6 @@ fun DiscoverScreen(
                 }
             }
             else -> {
-                val items = uiState.items
-                var expandedPopular by remember { mutableStateOf(false) }
-                var expandedNew by remember { mutableStateOf(false) }
-                var expandedExplore by remember { mutableStateOf(false) }
-
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
                     contentPadding = PaddingValues(bottom = 32.dp)
@@ -119,33 +122,30 @@ fun DiscoverScreen(
                         }
                     }
                     if (items.size > 1) {
-                        val sectionItems = items.drop(1).take(5)
                         item { Spacer(Modifier.height(32.dp)) }
                         item { SectionHeader(appString(R.string.section_popular), expandedPopular) { expandedPopular = !expandedPopular } }
                         if (expandedPopular) {
-                            item { ExpandedBookGrid(sectionItems, onMangaClick) }
+                            item { ExpandedBookGrid(popularItems, onMangaClick) }
                         } else {
-                            item { HorizontalBookScroll(sectionItems, onMangaClick) }
+                            item { HorizontalBookScroll(popularItems, onMangaClick) }
                         }
                     }
                     if (items.size > 6) {
-                        val sectionItems = items.drop(6).take(5)
                         item { Spacer(Modifier.height(32.dp)) }
                         item { SectionHeader(appString(R.string.section_new_releases), expandedNew) { expandedNew = !expandedNew } }
                         if (expandedNew) {
-                            item { ExpandedBookGrid(sectionItems, onMangaClick) }
+                            item { ExpandedBookGrid(newItems, onMangaClick) }
                         } else {
-                            item { HorizontalBookScroll(sectionItems, onMangaClick) }
+                            item { HorizontalBookScroll(newItems, onMangaClick) }
                         }
                     }
                     if (items.size > 11) {
-                        val sectionItems = items.drop(11)
                         item { Spacer(Modifier.height(32.dp)) }
                         item { SectionHeader(appString(R.string.section_explore), expandedExplore) { expandedExplore = !expandedExplore } }
                         if (expandedExplore) {
-                            item { ExpandedBookGrid(sectionItems, onMangaClick) }
+                            item { ExpandedBookGrid(exploreItems, onMangaClick) }
                         } else {
-                            item { HorizontalBookScroll(sectionItems, onMangaClick) }
+                            item { HorizontalBookScroll(exploreItems, onMangaClick) }
                         }
                     }
                 }
@@ -268,7 +268,7 @@ private fun HorizontalBookScroll(items: List<MangaModel>, onItemClick: (MangaMod
 @Composable
 private fun ExpandedBookGrid(items: List<MangaModel>, onItemClick: (MangaModel) -> Unit) {
     // Hiển thị dạng grid 3 cột khi mở rộng
-    val chunked = items.chunked(3)
+    val chunked = remember(items) { items.chunked(3) }
     Column(modifier = Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         chunked.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
