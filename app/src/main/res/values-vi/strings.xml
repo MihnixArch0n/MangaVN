@@ -63,6 +63,10 @@
     <string name="chapter_vol_prefix">Tập %1$s </string>
     <string name="chapter_num_prefix">Ch.%1$s</string>
     <string name="chapter_oneshot">Oneshot</string>
+    <string name="chapter_no_volume">Không có tập</string>
+    <string name="status_unread">Chưa đọc</string>
+    <string name="chapter_mark_completed">Đánh dấu đã đọc xong</string>
+    <string name="chapter_mark_unread">Đánh dấu chưa đọc</string>
 
     <!-- Reader -->
     <string name="reader_page_description">Trang %1$d</string>

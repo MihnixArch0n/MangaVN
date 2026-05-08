@@ -5,8 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
-import com.example.mybookslibrary.domain.model.ChapterModel
+import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.domain.usecase.GetChapterListWithProgressUseCase
 import com.example.mybookslibrary.ui.navigation.MangaDetailDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -20,7 +21,7 @@ import javax.inject.Inject
 data class MangaDetailUiState(
     val mangaDetail: MangaModel? = null,
     val detailError: String? = null,
-    val chapters: List<ChapterModel> = emptyList(),
+    val chapters: List<ChapterWithProgressModel> = emptyList(),
     val isLoadingChapters: Boolean = false,
     val chaptersError: String? = null,
     val isInLibrary: Boolean = false
@@ -30,7 +31,8 @@ data class MangaDetailUiState(
 class MangaDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val mangaRepository: MangaRepository,
-    private val libraryRepository: LibraryRepository
+    private val libraryRepository: LibraryRepository,
+    private val getChapterListWithProgressUseCase: GetChapterListWithProgressUseCase
 ) : ViewModel() {
 
     private val mangaId: String = savedStateHandle.get<String>(
@@ -42,7 +44,7 @@ class MangaDetailViewModel @Inject constructor(
 
     init {
         loadMangaDetail()
-        loadChapters()
+        observeChapters()
         checkLibraryStatus()
     }
 
@@ -57,13 +59,21 @@ class MangaDetailViewModel @Inject constructor(
         }
     }
 
-    private fun loadChapters() {
+    private fun observeChapters() {
         if (mangaId.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoadingChapters = true, chaptersError = null) }
-            mangaRepository.getChapterFeed(mangaId).onSuccess { chapters ->
-                _uiState.update { it.copy(chapters = chapters, isLoadingChapters = false) }
-            }.onFailure { e ->
+            try {
+                getChapterListWithProgressUseCase(mangaId).collect { chapters ->
+                    _uiState.update {
+                        it.copy(
+                            chapters = chapters,
+                            isLoadingChapters = false,
+                            chaptersError = null
+                        )
+                    }
+                }
+            } catch (e: Exception) {
                 _uiState.update { it.copy(isLoadingChapters = false, chaptersError = e.message) }
             }
         }
@@ -93,6 +103,18 @@ class MangaDetailViewModel @Inject constructor(
                 libraryRepository.addToLibrary(mangaId = mangaId, title = title, coverUrl = coverUrl)
             }
             _uiState.update { it.copy(isInLibrary = !it.isInLibrary) }
+        }
+    }
+
+    fun markChapterCompleted(chapterId: String, totalPages: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            libraryRepository.markChapterCompleted(mangaId, chapterId, totalPages)
+        }
+    }
+
+    fun markChapterUnread(chapterId: String, totalPages: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            libraryRepository.markChapterUnread(mangaId, chapterId, totalPages)
         }
     }
 }
