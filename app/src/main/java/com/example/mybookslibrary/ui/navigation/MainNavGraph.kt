@@ -43,10 +43,10 @@ import androidx.navigation.navArgument
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.screens.DiscoverScreen
 import com.example.mybookslibrary.ui.screens.LibraryScreen
-import com.example.mybookslibrary.ui.screens.MangaDetailScreen
 import com.example.mybookslibrary.ui.screens.SearchScreen
 import com.example.mybookslibrary.ui.screens.SettingScreen
 import com.example.mybookslibrary.ui.screens.reader.ReaderScreen
+import com.example.mybookslibrary.ui.screens.detail.MangaDetailScreen
 
 sealed class BottomNavDestination(
     val route: String,

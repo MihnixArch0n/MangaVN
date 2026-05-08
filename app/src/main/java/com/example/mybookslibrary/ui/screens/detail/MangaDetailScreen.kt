@@ -5,18 +5,21 @@ import androidx.compose.runtime.Composable
 @Composable
 fun MangaDetailScreen(
     mangaId: String,
-    onOpenReader: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -> Unit
+    title: String,
+    coverArt: String,
+    description: String,
+    tags: List<String>,
+    onBackClick: () -> Unit,
+    onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String) -> Unit
 ) {
     com.example.mybookslibrary.ui.screens.MangaDetailScreen(
         mangaId = mangaId,
-        title = "",
-        coverArt = "",
-        description = "",
-        tags = emptyList(),
-        onBackClick = {},
-        onReadChapter = { id, chapterId, chapterTitle ->
-            onOpenReader(id, chapterId, chapterTitle, 0)
-        }
+        title = title,
+        coverArt = coverArt,
+        description = description,
+        tags = tags,
+        onBackClick = onBackClick,
+        onReadChapter = onReadChapter
     )
 }
 
