@@ -36,6 +36,8 @@
     <string name="library_title">My Library</string>
     <string name="library_empty_title">Your library is empty</string>
     <string name="library_empty_subtitle">Start reading to build your collection</string>
+    <string name="library_remove_bookmark">Remove bookmark</string>
+    <string name="library_remove_bookmark_confirm">Remove "%1$s" from your library?</string>
 
     <!-- Library Status -->
     <string name="status_reading">Reading</string>
@@ -91,6 +93,7 @@
     <string name="settings_signed_out">Signed Out</string>
     <string name="settings_sign_out_subtitle">Clear all local data</string>
     <string name="settings_signed_out_subtitle">All data cleared</string>
+    <string name="action_cancel">Cancel</string>
     <string name="settings_dark_mode">Theme</string>
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>

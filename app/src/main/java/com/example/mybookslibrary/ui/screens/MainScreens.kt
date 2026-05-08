@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +39,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -57,8 +60,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.example.mybookslibrary.R
-import com.example.mybookslibrary.ui.util.appString
+import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
+import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.theme.KansoDarkSuccess
 import com.example.mybookslibrary.ui.theme.KansoDarkWarning
@@ -409,13 +413,14 @@ private fun SearchResultItem(manga: MangaModel, onClick: () -> Unit) {
 // Thư viện
 // ═══════════════════════════════════════════════════════════════════════
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
-    onOpenReader: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -> Unit,
     onOpenDetail: (mangaId: String, title: String, coverUrl: String) -> Unit
 ) {
     val vm: LibraryViewModel = hiltViewModel()
     val items by vm.libraryItems.collectAsState(initial = emptyList())
+    var pendingRemoval by remember { mutableStateOf<LibraryItemEntity?>(null) }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         if (items.isEmpty()) {
@@ -437,13 +442,41 @@ fun LibraryScreen(
                     Spacer(Modifier.height(8.dp))
                 }
                 items(items, key = { it.manga_id }) { item ->
-                    val chapterId = item.last_read_chapter_id
-                    val chapterLabel = if (chapterId != null) appString(R.string.library_chapter_title, item.title, chapterId) else ""
-                    LibraryItemCard(item.title, item.cover_url, item.status) {
-                        if (chapterId != null) {
-                            onOpenReader(item.manga_id, chapterId, chapterLabel, item.last_read_page_index)
-                        } else {
-                            onOpenDetail(item.manga_id, item.title, item.cover_url)
+                    LibraryItemCard(
+                        title = item.title,
+                        coverUrl = item.cover_url,
+                        status = item.status,
+                        onClick = { onOpenDetail(item.manga_id, item.title, item.cover_url) },
+                        onLongClick = { pendingRemoval = item }
+                    )
+                }
+            }
+        }
+
+        if (pendingRemoval != null) {
+            ModalBottomSheet(onDismissRequest = { pendingRemoval = null }) {
+                val item = pendingRemoval ?: return@ModalBottomSheet
+                Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+                    Text(
+                        text = appString(R.string.library_remove_bookmark),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = appString(R.string.library_remove_bookmark_confirm, item.title),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(24.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        TextButton(
+                            onClick = {
+                                vm.removeBookmark(item.manga_id)
+                                pendingRemoval = null
+                            }
+                        ) { Text(appString(R.string.library_remove_bookmark)) }
+                        TextButton(onClick = { pendingRemoval = null }) {
+                            Text(appString(R.string.action_cancel))
                         }
                     }
                 }
@@ -453,9 +486,15 @@ fun LibraryScreen(
 }
 
 @Composable
-private fun LibraryItemCard(title: String, coverUrl: String, status: LibraryStatus, onClick: () -> Unit) {
+private fun LibraryItemCard(
+    title: String,
+    coverUrl: String,
+    status: LibraryStatus,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)

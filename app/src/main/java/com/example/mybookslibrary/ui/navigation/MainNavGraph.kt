@@ -187,11 +187,6 @@ fun MainNavHost() {
             }
             composable(BottomNavDestination.Library.route) {
                 LibraryScreen(
-                    onOpenReader = { mangaId, chapterId, title, startPageIndex ->
-                        navController.navigate(
-                            ReaderDestination.createRoute(mangaId, chapterId, title, startPageIndex)
-                        )
-                    },
                     onOpenDetail = { mangaId, title, coverUrl ->
                         navController.navigate(
                             MangaDetailDestination.createRoute(mangaId, title, coverUrl, "", emptyList())
