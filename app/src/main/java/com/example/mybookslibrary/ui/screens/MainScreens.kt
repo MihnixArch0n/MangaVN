@@ -113,7 +113,7 @@ fun DiscoverScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    contentPadding = PaddingValues(bottom = 32.dp)
+                    contentPadding = PaddingValues(bottom = 120.dp)
                 ) {
                     if (items.isNotEmpty()) {
                         item { SectionHeader(appString(R.string.section_spotlight)) }
@@ -371,7 +371,7 @@ fun SearchScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyColumn(contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(uiState.results, key = { it.id }) { manga ->
                             SearchResultItem(manga) { onMangaClick(manga) }
                         }
@@ -434,7 +434,7 @@ fun LibraryScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 120.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
@@ -563,7 +563,7 @@ fun SettingScreen(
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp)
+            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 120.dp)
         ) {
             item {
                 Text(appString(R.string.settings_title), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)

@@ -141,7 +141,7 @@ fun MainNavHost() {
         NavHost(
             navController = navController,
             startDestination = BottomNavDestination.Discover.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier.padding(top = innerPadding.calculateTopPadding(), bottom = 0.dp)
         ) {
             composable(BottomNavDestination.Discover.route) {
                 DiscoverScreen(
@@ -245,13 +245,14 @@ private fun FloatingPillNavBar(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 32.dp, vertical = 16.dp),
+            .padding(horizontal = 32.dp, vertical = 16.dp)
+            .background(Color.Transparent),
         contentAlignment = Alignment.Center
     ) {
         Card(
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
