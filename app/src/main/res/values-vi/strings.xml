@@ -36,6 +36,8 @@
     <string name="library_title">Thư viện của tôi</string>
     <string name="library_empty_title">Thư viện trống</string>
     <string name="library_empty_subtitle">Bắt đầu đọc để xây dựng bộ sưu tập</string>
+    <string name="library_remove_bookmark">Xoá đánh dấu</string>
+    <string name="library_remove_bookmark_confirm">Xoá "%1$s" khỏi thư viện?</string>
 
     <!-- Trạng thái -->
     <string name="status_reading">Đang đọc</string>
@@ -61,6 +63,10 @@
     <string name="chapter_vol_prefix">Tập %1$s </string>
     <string name="chapter_num_prefix">Ch.%1$s</string>
     <string name="chapter_oneshot">Oneshot</string>
+    <string name="chapter_no_volume">Không có tập</string>
+    <string name="status_unread">Chưa đọc</string>
+    <string name="chapter_mark_completed">Đánh dấu đã đọc xong</string>
+    <string name="chapter_mark_unread">Đánh dấu chưa đọc</string>
 
     <!-- Reader -->
     <string name="reader_page_description">Trang %1$d</string>
@@ -91,6 +97,7 @@
     <string name="settings_signed_out">Đã đăng xuất</string>
     <string name="settings_sign_out_subtitle">Xóa toàn bộ dữ liệu</string>
     <string name="settings_signed_out_subtitle">Đã xóa dữ liệu</string>
+    <string name="action_cancel">Huỷ</string>
     <string name="settings_dark_mode">Chủ đề</string>
     <string name="settings_theme_system">Theo hệ thống</string>
     <string name="settings_theme_light">Sáng</string>

@@ -2,7 +2,12 @@ package com.example.mybookslibrary
 
 import android.app.Application
 import android.util.Log
+import coil3.SingletonImageLoader
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
+import dagger.hilt.components.SingletonComponent
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -15,6 +20,13 @@ class MyBooksLibraryApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        SingletonImageLoader.setSafe {
+            EntryPointAccessors.fromApplication(
+                this,
+                ImageLoaderEntryPoint::class.java
+            ).imageLoader()
+        }
 
         // Bắt toàn bộ uncaught exception → ghi log ra file + logcat
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
@@ -59,3 +71,10 @@ class MyBooksLibraryApp : Application() {
         private const val TAG = "MyBooksLibraryApp"
     }
 }
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface ImageLoaderEntryPoint {
+    fun imageLoader(): coil3.ImageLoader
+}
+
