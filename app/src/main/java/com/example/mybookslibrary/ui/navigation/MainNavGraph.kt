@@ -43,14 +43,14 @@ import androidx.navigation.navArgument
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.screens.DiscoverScreen
 import com.example.mybookslibrary.ui.screens.LibraryScreen
+import com.example.mybookslibrary.ui.screens.MangaDetailScreen
 import com.example.mybookslibrary.ui.screens.SearchScreen
 import com.example.mybookslibrary.ui.screens.SettingScreen
 import com.example.mybookslibrary.ui.screens.reader.ReaderScreen
-import com.example.mybookslibrary.ui.screens.detail.MangaDetailScreen
 
 sealed class BottomNavDestination(
     val route: String,
-    @StringRes val labelRes: Int,
+    @param:StringRes val labelRes: Int,
     val icon: ImageVector
 ) {
     data object Discover : BottomNavDestination("discover", R.string.nav_discover, Icons.Filled.Home)
@@ -124,7 +124,6 @@ fun MainNavHost() {
         bottomBar = {
             if (showBottomBar) {
                 FloatingPillNavBar(
-                    destinations = bottomDestinations,
                     currentDestination = currentDestination,
                     onNavigate = { destination ->
                         navController.navigate(destination.route) {
@@ -237,7 +236,6 @@ fun MainNavHost() {
 
 @Composable
 private fun FloatingPillNavBar(
-    destinations: List<BottomNavDestination>,
     currentDestination: NavDestination?,
     onNavigate: (BottomNavDestination) -> Unit
 ) {
@@ -258,7 +256,7 @@ private fun FloatingPillNavBar(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                destinations.forEach { destination ->
+                bottomDestinations.forEach { destination ->
                     val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
                     PillNavItem(
                         icon = destination.icon,

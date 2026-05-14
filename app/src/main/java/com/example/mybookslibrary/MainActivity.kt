@@ -13,7 +13,6 @@ import com.example.mybookslibrary.ui.navigation.MainNavHost
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.LocalAppLocale
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -24,15 +23,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val initialLang = runBlocking { preferencesDataStore.getLanguage() }
-        val initialTheme = runBlocking { preferencesDataStore.getThemeMode() }
-
         enableEdgeToEdge()
         setContent {
             val language by preferencesDataStore.observeLanguage()
-                .collectAsState(initial = initialLang)
+                .collectAsState(initial = "en")
             val themeMode by preferencesDataStore.observeThemeMode()
-                .collectAsState(initial = initialTheme)
+                .collectAsState(initial = "system")
 
             val darkTheme = when (themeMode) {
                 "dark" -> true
