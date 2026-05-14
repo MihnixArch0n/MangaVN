@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.MangaModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +13,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
@@ -26,7 +26,7 @@ data class SearchUiState(
 )
 
 // ViewModel cho SearchScreen — debounce 400ms, gọi API tìm kiếm khi query ≥ 2 ký tự
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val repository: MangaRepository
