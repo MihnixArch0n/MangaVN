@@ -40,13 +40,31 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.screens.DiscoverScreen
 import com.example.mybookslibrary.ui.screens.LibraryScreen
-import com.example.mybookslibrary.ui.screens.MangaDetailScreen
 import com.example.mybookslibrary.ui.screens.SearchScreen
 import com.example.mybookslibrary.ui.screens.SettingScreen
 import com.example.mybookslibrary.ui.screens.reader.ReaderScreen
+import com.example.mybookslibrary.ui.screens.MangaReviewScreen
+import com.example.mybookslibrary.ui.screens.detail.MangaDetailScreen
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
+val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
 
 sealed class BottomNavDestination(
     val route: String,
@@ -109,6 +127,17 @@ object MangaDetailDestination {
     const val tagsArgumentName = tagsArg
 }
 
+object MangaReviewDestination {
+    const val route = "manga_review"
+    private const val mangaIdArg = "mangaId"
+    const val routePattern = "$route/{$mangaIdArg}"
+    
+    fun createRoute(mangaId: String) = "$route/${Uri.encode(mangaId)}"
+    
+    const val mangaIdArgumentName = mangaIdArg
+}
+
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MainNavHost() {
     val navController = rememberNavController()
@@ -117,7 +146,8 @@ fun MainNavHost() {
 
     val showBottomBar = currentDestination?.hierarchy?.none { dest ->
         dest.route?.startsWith(ReaderDestination.route) == true ||
-            dest.route?.startsWith(MangaDetailDestination.route) == true
+            dest.route?.startsWith(MangaDetailDestination.route) == true ||
+            dest.route?.startsWith(MangaReviewDestination.route) == true
     } ?: true
 
     Scaffold(
@@ -137,63 +167,91 @@ fun MainNavHost() {
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavDestination.Discover.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(BottomNavDestination.Discover.route) {
-                DiscoverScreen(
-                    onMangaClick = { manga ->
-                        navController.navigate(
-                            MangaDetailDestination.createRoute(
-                                mangaId = manga.id, title = manga.title,
-                                coverArt = manga.coverArt, description = manga.description, tags = manga.tags
+        SharedTransitionLayout {
+            CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout) {
+                NavHost(
+                    navController = navController,
+                    startDestination = BottomNavDestination.Discover.route,
+                    modifier = Modifier.padding(top = innerPadding.calculateTopPadding(), bottom = 0.dp),
+                    enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                    exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                    popEnterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                    popExitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) }
+                ) {
+            composable(
+                route = BottomNavDestination.Discover.route,
+                enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + scaleIn(initialScale = 0.95f, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) }
+            ) {
+                CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
+                    DiscoverScreen(
+                        onMangaClick = { manga ->
+                            navController.navigate(
+                                MangaDetailDestination.createRoute(
+                                    mangaId = manga.id, title = manga.title,
+                                    coverArt = manga.coverArt, description = manga.description, tags = manga.tags
+                                )
                             )
-                        )
-                    },
-                    onSearchClick = {
-                        navController.navigate(BottomNavDestination.Search.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true; restoreState = true
+                        },
+                        onSearchClick = {
+                            navController.navigate(BottomNavDestination.Search.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true; restoreState = true
+                            }
+                        },
+                        onLibraryClick = {
+                            navController.navigate(BottomNavDestination.Library.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true; restoreState = true
+                            }
+                        },
+                        onProfileClick = {
+                            navController.navigate(BottomNavDestination.Setting.route) {
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                launchSingleTop = true; restoreState = true
+                            }
                         }
-                    },
-                    onLibraryClick = {
-                        navController.navigate(BottomNavDestination.Library.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true; restoreState = true
-                        }
-                    },
-                    onProfileClick = {
-                        navController.navigate(BottomNavDestination.Setting.route) {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true; restoreState = true
-                        }
-                    }
-                )
+                    )
+                }
             }
-            composable(BottomNavDestination.Search.route) {
-                SearchScreen(
-                    onMangaClick = { manga ->
-                        navController.navigate(
-                            MangaDetailDestination.createRoute(
-                                mangaId = manga.id, title = manga.title,
-                                coverArt = manga.coverArt, description = manga.description, tags = manga.tags
+            composable(
+                route = BottomNavDestination.Search.route,
+                enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + scaleIn(initialScale = 0.95f, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) }
+            ) {
+                CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
+                    SearchScreen(
+                        onMangaClick = { manga ->
+                            navController.navigate(
+                                MangaDetailDestination.createRoute(
+                                    mangaId = manga.id, title = manga.title,
+                                    coverArt = manga.coverArt, description = manga.description, tags = manga.tags
+                                )
                             )
-                        )
-                    }
-                )
+                        }
+                    )
+                }
             }
-            composable(BottomNavDestination.Library.route) {
-                LibraryScreen(
-                    onOpenDetail = { mangaId, title, coverUrl ->
-                        navController.navigate(
-                            MangaDetailDestination.createRoute(mangaId, title, coverUrl, "", emptyList())
-                        )
-                    }
-                )
+            composable(
+                route = BottomNavDestination.Library.route,
+                enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + scaleIn(initialScale = 0.95f, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) }
+            ) {
+                CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
+                    LibraryScreen(
+                        onOpenDetail = { mangaId, title, coverUrl ->
+                            navController.navigate(
+                                MangaDetailDestination.createRoute(mangaId, title, coverUrl, "", emptyList())
+                            )
+                        }
+                    )
+                }
             }
-            composable(BottomNavDestination.Setting.route) { SettingScreen() }
+            composable(
+                route = BottomNavDestination.Setting.route,
+                enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + scaleIn(initialScale = 0.95f, animationSpec = tween(300, easing = FastOutSlowInEasing)) },
+                exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) }
+            ) { SettingScreen() }
             composable(
                 route = MangaDetailDestination.routePattern,
                 arguments = listOf(
@@ -202,24 +260,45 @@ fun MainNavHost() {
                     navArgument(MangaDetailDestination.coverArtArgumentName) { type = NavType.StringType },
                     navArgument(MangaDetailDestination.descriptionArgumentName) { type = NavType.StringType },
                     navArgument(MangaDetailDestination.tagsArgumentName) { type = NavType.StringType }
-                )
+                ),
+                enterTransition = {
+                    scaleIn(initialScale = 0.9f, animationSpec = tween(300, easing = FastOutSlowInEasing)) +
+                            fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                },
+                popExitTransition = {
+                    scaleOut(targetScale = 0.9f, animationSpec = tween(300, easing = FastOutSlowInEasing)) +
+                            fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                }
             ) { backStackEntry ->
                 val args = backStackEntry.arguments ?: return@composable
                 val tagsString = args.getString(MangaDetailDestination.tagsArgumentName) ?: ""
                 val tags = tagsString.split(",").filter { it.isNotBlank() }
-                MangaDetailScreen(
-                    mangaId = args.getString(MangaDetailDestination.mangaIdArgumentName) ?: "",
-                    title = args.getString(MangaDetailDestination.titleArgumentName) ?: "",
-                    coverArt = args.getString(MangaDetailDestination.coverArtArgumentName) ?: "",
-                    description = args.getString(MangaDetailDestination.descriptionArgumentName) ?: "",
-                    tags = tags,
-                    onBackClick = { navController.popBackStack() },
-                    onReadChapter = { mangaId, chapterId, chapterTitle ->
-                        navController.navigate(
-                            ReaderDestination.createRoute(mangaId, chapterId, chapterTitle, 0)
-                        )
-                    }
+                CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
+                    MangaDetailScreen(
+                        mangaId = args.getString(MangaDetailDestination.mangaIdArgumentName) ?: "",
+                        title = args.getString(MangaDetailDestination.titleArgumentName) ?: "",
+                        coverArt = args.getString(MangaDetailDestination.coverArtArgumentName) ?: "",
+                        description = args.getString(MangaDetailDestination.descriptionArgumentName) ?: "",
+                        tags = tags,
+                        onBackClick = { navController.popBackStack() },
+                        onReadChapter = { mangaId, chapterId, chapterTitle ->
+                            navController.navigate(
+                                ReaderDestination.createRoute(mangaId, chapterId, chapterTitle, 0)
+                            )
+                        },
+                        onReviewClick = { mangaId ->
+                            navController.navigate(MangaReviewDestination.createRoute(mangaId))
+                        }
+                    )
+                }
+            }
+            composable(
+                route = MangaReviewDestination.routePattern,
+                arguments = listOf(
+                    navArgument(MangaReviewDestination.mangaIdArgumentName) { type = NavType.StringType }
                 )
+            ) {
+                MangaReviewScreen(onBackClick = { navController.popBackStack() })
             }
             composable(
                 route = ReaderDestination.routePattern,
@@ -228,8 +307,22 @@ fun MainNavHost() {
                     navArgument(ReaderDestination.chapterIdArgumentName) { type = NavType.StringType },
                     navArgument(ReaderDestination.chapterTitleArgumentName) { type = NavType.StringType },
                     navArgument(ReaderDestination.startPageIndexArgumentName) { type = NavType.IntType }
-                )
+                ),
+                enterTransition = {
+                    slideIntoContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(300, easing = FastOutSlowInEasing)
+                    ) + fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                }
             ) { ReaderScreen(onBackClick = { navController.popBackStack() }) }
+        }
+            }
         }
     }
 }
@@ -243,13 +336,14 @@ private fun FloatingPillNavBar(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 32.dp, vertical = 16.dp),
+            .padding(horizontal = 32.dp, vertical = 16.dp)
+            .background(Color.Transparent),
         contentAlignment = Alignment.Center
     ) {
         Card(
             shape = RoundedCornerShape(32.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(

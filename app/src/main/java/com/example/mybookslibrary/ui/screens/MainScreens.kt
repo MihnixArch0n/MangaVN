@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.viewmodel.SearchViewModel
 import com.example.mybookslibrary.ui.viewmodel.SettingsViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @Composable
 fun DiscoverScreen(
@@ -18,7 +19,7 @@ fun DiscoverScreen(
 @Composable
 fun SearchScreen(
     onMangaClick: (MangaModel) -> Unit = {},
-    viewModel: SearchViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+    viewModel: SearchViewModel = hiltViewModel()
 ) {
     SearchScreenContent(onMangaClick, viewModel)
 }
@@ -32,7 +33,7 @@ fun LibraryScreen(
 
 @Composable
 fun SettingScreen(
-    viewModel: SettingsViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     SettingScreenContent(viewModel)
 }
