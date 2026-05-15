@@ -58,7 +58,14 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.ui.composed
+import com.example.mybookslibrary.ui.navigation.LocalNavAnimatedVisibilityScope
+import com.example.mybookslibrary.ui.navigation.LocalSharedTransitionScope
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
@@ -71,6 +78,22 @@ import com.example.mybookslibrary.ui.theme.KansoWarning
 import com.example.mybookslibrary.ui.viewmodel.BackupRestoreResult
 import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModel
 import com.example.mybookslibrary.ui.viewmodel.LibraryViewModel
+
+@OptIn(ExperimentalSharedTransitionApi::class)
+fun Modifier.sharedCoverBounds(mangaId: String): Modifier = composed {
+    val sharedTransitionScope = LocalSharedTransitionScope.current
+    val animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
+    if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+        with(sharedTransitionScope) {
+            this@composed.sharedBounds(
+                sharedContentState = rememberSharedContentState(key = "cover_$mangaId"),
+                animatedVisibilityScope = animatedVisibilityScope
+            )
+        }
+    } else {
+        this@composed
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // Khám phá
@@ -113,7 +136,7 @@ fun DiscoverScreen(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    contentPadding = PaddingValues(bottom = 32.dp)
+                    contentPadding = PaddingValues(bottom = 120.dp)
                 ) {
                     if (items.isNotEmpty()) {
                         item { SectionHeader(appString(R.string.section_spotlight)) }
@@ -231,12 +254,18 @@ private fun SectionHeader(title: String, expanded: Boolean = false, onToggle: ((
 private fun SpotlightCard(manga: MangaModel, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Card(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(340.dp),
+        modifier = modifier.fillMaxWidth().height(340.dp).sharedCoverBounds(manga.id),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(Modifier.fillMaxSize()) {
-            AsyncImage(model = manga.coverArt, contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(manga.coverArt)
+                    .memoryCacheKey("cover_${manga.id}")
+                    .build(),
+                contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()
+            )
             Box(Modifier.fillMaxSize().background(
                 Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.82f)), startY = 300f)
             ))
@@ -286,12 +315,18 @@ private fun ExpandedBookGrid(items: List<MangaModel>, onItemClick: (MangaModel) 
 fun BookCoverCard(manga: MangaModel, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier = modifier.width(120.dp).clickable(onClick = onClick)) {
         Card(
-            modifier = Modifier.fillMaxWidth().height(180.dp),
+            modifier = Modifier.fillMaxWidth().height(180.dp).sharedCoverBounds(manga.id),
             shape = RoundedCornerShape(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
         ) {
-            AsyncImage(model = manga.coverArt, contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(manga.coverArt)
+                    .memoryCacheKey("cover_${manga.id}")
+                    .build(),
+                contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()
+            )
         }
         Spacer(Modifier.height(8.dp))
         Text(manga.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
@@ -371,7 +406,7 @@ fun SearchScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyColumn(contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 120.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(uiState.results, key = { it.id }) { manga ->
                             SearchResultItem(manga) { onMangaClick(manga) }
                         }
@@ -391,9 +426,15 @@ private fun SearchResultItem(manga: MangaModel, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Card(Modifier.size(56.dp, 84.dp), shape = RoundedCornerShape(8.dp),
+            Card(Modifier.size(56.dp, 84.dp).sharedCoverBounds(manga.id), shape = RoundedCornerShape(8.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                AsyncImage(model = manga.coverArt, contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(manga.coverArt)
+                        .memoryCacheKey("cover_${manga.id}")
+                        .build(),
+                    contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()
+                )
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
@@ -434,7 +475,7 @@ fun LibraryScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 120.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
@@ -443,6 +484,7 @@ fun LibraryScreen(
                 }
                 items(items, key = { it.manga_id }) { item ->
                     LibraryItemCard(
+                        mangaId = item.manga_id,
                         title = item.title,
                         coverUrl = item.cover_url,
                         status = item.status,
@@ -487,6 +529,7 @@ fun LibraryScreen(
 
 @Composable
 private fun LibraryItemCard(
+    mangaId: String,
     title: String,
     coverUrl: String,
     status: LibraryStatus,
@@ -500,9 +543,15 @@ private fun LibraryItemCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Card(Modifier.size(60.dp, 90.dp), shape = RoundedCornerShape(8.dp),
+            Card(Modifier.size(60.dp, 90.dp).sharedCoverBounds(mangaId), shape = RoundedCornerShape(8.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                AsyncImage(model = coverUrl, contentDescription = title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(coverUrl)
+                        .memoryCacheKey("cover_$mangaId")
+                        .build(),
+                    contentDescription = title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize()
+                )
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
@@ -563,7 +612,7 @@ fun SettingScreen(
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp)
+            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 120.dp)
         ) {
             item {
                 Text(appString(R.string.settings_title), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)

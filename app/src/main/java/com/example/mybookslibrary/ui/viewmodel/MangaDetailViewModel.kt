@@ -24,7 +24,10 @@ data class MangaDetailUiState(
     val chapters: List<ChapterWithProgressModel> = emptyList(),
     val isLoadingChapters: Boolean = false,
     val chaptersError: String? = null,
-    val isInLibrary: Boolean = false
+    val isInLibrary: Boolean = false,
+    val firstChapterPages: List<String> = emptyList(),
+    val isLoadingFirstChapterPages: Boolean = false,
+    val firstChapterPagesError: String? = null
 )
 
 @HiltViewModel
@@ -65,6 +68,7 @@ class MangaDetailViewModel @Inject constructor(
             _uiState.update { it.copy(isLoadingChapters = true, chaptersError = null) }
             try {
                 getChapterListWithProgressUseCase(mangaId).collect { chapters ->
+                    val isFirstLoad = _uiState.value.chapters.isEmpty() && chapters.isNotEmpty()
                     _uiState.update {
                         it.copy(
                             chapters = chapters,
@@ -72,9 +76,34 @@ class MangaDetailViewModel @Inject constructor(
                             chaptersError = null
                         )
                     }
+                    if (isFirstLoad) {
+                        loadFirstChapterPages(chapters.first().chapterId)
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoadingChapters = false, chaptersError = e.message) }
+            }
+        }
+    }
+
+    private fun loadFirstChapterPages(chapterId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _uiState.update { it.copy(isLoadingFirstChapterPages = true, firstChapterPagesError = null) }
+            mangaRepository.getChapterPages(chapterId).onSuccess { pages ->
+                _uiState.update { 
+                    it.copy(
+                        firstChapterPages = pages.take(5), 
+                        isLoadingFirstChapterPages = false,
+                        firstChapterPagesError = null
+                    ) 
+                }
+            }.onFailure { e ->
+                _uiState.update { 
+                    it.copy(
+                        isLoadingFirstChapterPages = false, 
+                        firstChapterPagesError = e.message
+                    ) 
+                }
             }
         }
     }

@@ -10,7 +10,8 @@ fun MangaDetailScreen(
     description: String,
     tags: List<String>,
     onBackClick: () -> Unit,
-    onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String) -> Unit
+    onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String) -> Unit,
+    onReviewClick: (mangaId: String) -> Unit = {}
 ) {
     com.example.mybookslibrary.ui.screens.MangaDetailScreen(
         mangaId = mangaId,
@@ -19,7 +20,8 @@ fun MangaDetailScreen(
         description = description,
         tags = tags,
         onBackClick = onBackClick,
-        onReadChapter = onReadChapter
+        onReadChapter = onReadChapter,
+        onReviewClick = onReviewClick
     )
 }
 
