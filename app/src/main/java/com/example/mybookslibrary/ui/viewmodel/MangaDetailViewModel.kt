@@ -89,7 +89,7 @@ class MangaDetailViewModel @Inject constructor(
     }
 
     private fun loadFirstChapterPages(chapterId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch(ioDispatcher) {
             _uiState.update { it.copy(isLoadingFirstChapterPages = true, firstChapterPagesError = null) }
             mangaRepository.getChapterPages(chapterId).onSuccess { pages ->
                 _uiState.update { 
