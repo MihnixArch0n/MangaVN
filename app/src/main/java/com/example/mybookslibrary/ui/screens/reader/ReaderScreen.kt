@@ -77,12 +77,24 @@ fun ReaderScreen(
             .collect(viewModel::onVisiblePageChanged)
     }
 
-    // Restore initial page position for vertical mode
-    LaunchedEffect(state.pages.size, state.lastReadPageIndex, state.currentReadingMode) {
+    // Restore initial page position for vertical mode (first load only)
+    LaunchedEffect(state.pages.size, state.currentReadingMode) {
         if (state.currentReadingMode != ReadingMode.VERTICAL) return@LaunchedEffect
         if (state.pages.isEmpty() || hasRestoredInitialPage.value) return@LaunchedEffect
         listState.scrollToItem(state.lastReadPageIndex.coerceIn(0, state.pages.lastIndex))
         hasRestoredInitialPage.value = true
+    }
+
+    // ────────────────────────────────────────────────────────────
+    // Mode switch sync: scroll the new mode's state to the current page
+    // ────────────────────────────────────────────────────────────
+    LaunchedEffect(state.currentReadingMode) {
+        if (state.pages.isEmpty()) return@LaunchedEffect
+        val targetPage = state.lastReadPageIndex.coerceIn(0, state.pages.lastIndex)
+        when (state.currentReadingMode) {
+            ReadingMode.VERTICAL -> listState.scrollToItem(targetPage)
+            ReadingMode.LTR, ReadingMode.RTL -> pagerState.scrollToPage(targetPage)
+        }
     }
 
     // ────────────────────────────────────────────────────────────
