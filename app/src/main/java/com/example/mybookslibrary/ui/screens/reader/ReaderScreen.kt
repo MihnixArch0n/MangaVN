@@ -1,14 +1,17 @@
 package com.example.mybookslibrary.ui.screens.reader
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,11 +29,16 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.domain.model.ReadingMode
+import com.example.mybookslibrary.domain.model.TapZoneEvaluator
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+
+private const val TAG = "ReaderScreen"
 
 @Composable
 fun ReaderScreen(
@@ -39,10 +47,22 @@ fun ReaderScreen(
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // --- Vertical mode state ---
     val listState = rememberLazyListState()
     val hasRestoredInitialPage = remember { mutableStateOf(false) }
 
-    LaunchedEffect(listState, state.pages.size) {
+    // --- Horizontal mode state ---
+    val pagerState = rememberPagerState(
+        initialPage = state.lastReadPageIndex,
+        pageCount = { state.pages.size }
+    )
+
+    // ────────────────────────────────────────────────────────────
+    // Vertical scroll → ViewModel page tracking
+    // ────────────────────────────────────────────────────────────
+    LaunchedEffect(listState, state.pages.size, state.currentReadingMode) {
+        if (state.currentReadingMode != ReadingMode.VERTICAL) return@LaunchedEffect
         if (state.pages.isEmpty()) return@LaunchedEffect
         snapshotFlow {
             val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
@@ -57,23 +77,55 @@ fun ReaderScreen(
             .collect(viewModel::onVisiblePageChanged)
     }
 
-    LaunchedEffect(state.pages.size, state.lastReadPageIndex) {
+    // Restore initial page position for vertical mode
+    LaunchedEffect(state.pages.size, state.lastReadPageIndex, state.currentReadingMode) {
+        if (state.currentReadingMode != ReadingMode.VERTICAL) return@LaunchedEffect
         if (state.pages.isEmpty() || hasRestoredInitialPage.value) return@LaunchedEffect
         listState.scrollToItem(state.lastReadPageIndex.coerceIn(0, state.pages.lastIndex))
         hasRestoredInitialPage.value = true
     }
 
+    // ────────────────────────────────────────────────────────────
+    // Horizontal pager → ViewModel page tracking
+    // ────────────────────────────────────────────────────────────
+    LaunchedEffect(pagerState, state.currentReadingMode) {
+        if (state.currentReadingMode == ReadingMode.VERTICAL) return@LaunchedEffect
+        snapshotFlow { pagerState.currentPage }
+            .distinctUntilChanged()
+            .collect(viewModel::onVisiblePageChanged)
+    }
+
+    // Listen to tap-zone navigation events and animate pager to target page
+    LaunchedEffect(pagerState, state.currentReadingMode) {
+        if (state.currentReadingMode == ReadingMode.VERTICAL) return@LaunchedEffect
+        viewModel.pageNavigationEvent.collectLatest { targetPage ->
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    // Sync progress to Room when leaving
     DisposableEffect(Unit) {
         onDispose { viewModel.syncProgressToRoom() }
     }
 
-    // Nền đen immersive cho trải nghiệm đọc
-    Box(
+    // ────────────────────────────────────────────────────────────
+    // Layout: Gesture Layer → Content → Overlay Bars
+    // ────────────────────────────────────────────────────────────
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = { viewModel.toggleOverlay() })
+            .pointerInput(state.currentReadingMode) {
+                detectTapGestures(onTap = { offset ->
+                    val action = TapZoneEvaluator.evaluateTap(
+                        x = offset.x,
+                        totalWidth = size.width.toFloat(),
+                        mode = state.currentReadingMode
+                    )
+                    Log.d(TAG, "Tap detected: x=${offset.x}, width=${size.width}, mode=${state.currentReadingMode}, action=$action")
+
+                    viewModel.navigateToPage(action)
+                })
             }
     ) {
         when {
@@ -92,7 +144,19 @@ fun ReaderScreen(
                 }
             }
             else -> {
-                VerticalReaderContent(state.pages, listState, Modifier.fillMaxSize())
+                when (state.currentReadingMode) {
+                    ReadingMode.VERTICAL -> {
+                        VerticalReaderContent(state.pages, listState, Modifier.fillMaxSize())
+                    }
+                    ReadingMode.LTR, ReadingMode.RTL -> {
+                        HorizontalReaderContent(
+                            pages = state.pages,
+                            pagerState = pagerState,
+                            readingMode = state.currentReadingMode,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
             }
         }
 

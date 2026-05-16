@@ -9,10 +9,15 @@ import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.di.IoDispatcher
+import com.example.mybookslibrary.domain.model.ReadingMode
+import com.example.mybookslibrary.domain.model.ReaderTapAction
 import kotlinx.coroutines.CoroutineDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -24,7 +29,8 @@ data class ReaderState(
     val isOverlayVisible: Boolean = false,
     val lastReadPageIndex: Int = 0,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val currentReadingMode: ReadingMode = ReadingMode.LTR
 )
 
 // ViewModel cho ReaderScreen — tải ảnh chapter và đồng bộ tiến độ đọc
@@ -52,6 +58,10 @@ class ReaderViewModel @Inject constructor(
         )
     )
     val state: StateFlow<ReaderState> = _state.asStateFlow()
+
+    // One-shot event: target page index for HorizontalPager to animate to
+    private val _pageNavigationEvent = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val pageNavigationEvent: SharedFlow<Int> = _pageNavigationEvent.asSharedFlow()
 
     init {
         loadChapterPages()
@@ -81,6 +91,40 @@ class ReaderViewModel @Inject constructor(
     // Bật/tắt overlay (top bar + bottom bar) khi tap vào màn hình
     fun toggleOverlay() {
         _state.update { it.copy(isOverlayVisible = !it.isOverlayVisible) }
+    }
+
+    /**
+     * Updates the current [ReadingMode] and logs the transition.
+     */
+    fun setReadingMode(mode: ReadingMode) {
+        val oldMode = _state.value.currentReadingMode
+        if (oldMode == mode) return
+        Log.d(TAG, "ReadingMode changed: $oldMode -> $mode")
+        _state.update { it.copy(isOverlayVisible = false, currentReadingMode = mode) }
+    }
+
+    /**
+     * Handles a [ReaderTapAction] from the tap zone system.
+     * For NEXT/PREVIOUS, computes the target page index and emits it
+     * via [pageNavigationEvent] for the Pager to consume.
+     */
+    fun navigateToPage(action: ReaderTapAction) {
+        val current = _state.value
+        if (current.pages.isEmpty()) return
+
+        val targetIndex = when (action) {
+            ReaderTapAction.NEXT_PAGE -> (current.lastReadPageIndex + 1).coerceAtMost(current.pages.lastIndex)
+            ReaderTapAction.PREVIOUS_PAGE -> (current.lastReadPageIndex - 1).coerceAtLeast(0)
+            ReaderTapAction.TOGGLE_OVERLAY -> {
+                toggleOverlay()
+                return
+            }
+            ReaderTapAction.NONE -> return
+        }
+
+        if (targetIndex == current.lastReadPageIndex) return
+        Log.d(TAG, "navigateToPage: action=$action, from=${current.lastReadPageIndex} to=$targetIndex")
+        _pageNavigationEvent.tryEmit(targetIndex)
     }
 
     // Cập nhật page index hiện tại và đồng bộ tiến độ vào Room trên mỗi lần chuyển trang
