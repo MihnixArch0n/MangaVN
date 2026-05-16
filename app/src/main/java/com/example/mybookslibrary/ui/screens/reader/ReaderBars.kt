@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.ImportContacts
+import com.example.mybookslibrary.domain.model.ReadingMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -73,9 +77,22 @@ fun BoxScope.ReaderTopBar(chapterTitle: String, isVisible: Boolean, onBackClick:
 }
 
 @Composable
-fun BoxScope.ReaderBottomBar(isVisible: Boolean, currentPage: Int, totalPages: Int) {
+fun BoxScope.ReaderBottomBar(
+    isVisible: Boolean,
+    currentPage: Int,
+    totalPages: Int,
+    currentReadingMode: ReadingMode,
+    onToggleReadingMode: () -> Unit
+) {
     val safeTotalPages = totalPages.coerceAtLeast(1)
     val displayPage = (currentPage + 1).coerceIn(1, safeTotalPages)
+
+    // Icon and content description cycle: VERTICAL → LTR → RTL
+    val (modeIcon, modeDescriptionRes) = when (currentReadingMode) {
+        ReadingMode.VERTICAL -> Icons.AutoMirrored.Filled.MenuBook to R.string.reader_mode_vertical
+        ReadingMode.LTR -> Icons.Filled.ImportContacts to R.string.reader_mode_ltr
+        ReadingMode.RTL -> Icons.Filled.AutoStories to R.string.reader_mode_rtl
+    }
 
     AnimatedVisibility(
         visible = isVisible,
@@ -88,7 +105,7 @@ fun BoxScope.ReaderBottomBar(isVisible: Boolean, currentPage: Int, totalPages: I
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -100,9 +117,17 @@ fun BoxScope.ReaderBottomBar(isVisible: Boolean, currentPage: Int, totalPages: I
             Text(
                 text = appString(R.string.reader_pages_label),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 8.dp)
             )
+            IconButton(onClick = onToggleReadingMode) {
+                Icon(
+                    imageVector = modeIcon,
+                    contentDescription = appString(modeDescriptionRes),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }
-

@@ -161,7 +161,20 @@ fun ReaderScreen(
         }
 
         ReaderTopBar(state.chapterTitle, state.isOverlayVisible, onBackClick)
-        ReaderBottomBar(state.isOverlayVisible, state.lastReadPageIndex, state.pages.size)
+        ReaderBottomBar(
+            isVisible = state.isOverlayVisible,
+            currentPage = state.lastReadPageIndex,
+            totalPages = state.pages.size,
+            currentReadingMode = state.currentReadingMode,
+            onToggleReadingMode = {
+                val next = when (state.currentReadingMode) {
+                    ReadingMode.VERTICAL -> ReadingMode.LTR
+                    ReadingMode.LTR -> ReadingMode.RTL
+                    ReadingMode.RTL -> ReadingMode.VERTICAL
+                }
+                viewModel.setReadingMode(next)
+            }
+        )
     }
 }
 

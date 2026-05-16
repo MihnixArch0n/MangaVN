@@ -68,6 +68,9 @@
     <!-- Reader Screen -->
     <string name="reader_page_description">Reader page %1$d</string>
     <string name="reader_pages_label">Pages</string>
+    <string name="reader_mode_vertical">Vertical scroll</string>
+    <string name="reader_mode_ltr">Horizontal (LTR)</string>
+    <string name="reader_mode_rtl">Horizontal (RTL)</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>

@@ -68,6 +68,9 @@
     <!-- Reader -->
     <string name="reader_page_description">Trang %1$d</string>
     <string name="reader_pages_label">Trang</string>
+    <string name="reader_mode_vertical">Cuộn dọc</string>
+    <string name="reader_mode_ltr">Ngang (LTR)</string>
+    <string name="reader_mode_rtl">Ngang (RTL)</string>
 
     <!-- Cài đặt -->
     <string name="settings_title">Cài đặt</string>
