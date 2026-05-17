@@ -106,6 +106,18 @@
     <string name="settings_language_english">English</string>
     <string name="settings_language_vietnamese">Tiếng Việt</string>
 
+    <!-- Thao tác trang truyện -->
+    <string name="reader_tap_to_retry">Chạm để thử lại</string>
+    <string name="reader_loading_failed">Không tải được ảnh</string>
+    <string name="reader_action_quick_save">Lưu nhanh</string>
+    <string name="reader_action_save_as">Lưu vào…</string>
+    <string name="reader_action_share">Chia sẻ</string>
+    <string name="reader_saved_to_pictures">Đã lưu vào Pictures/MyBooksLibrary</string>
+    <string name="reader_saved_to_file">Đã lưu thành công</string>
+    <string name="reader_save_failed">Lưu thất bại: %1$s</string>
+    <string name="reader_sharing">Đang chia sẻ…</string>
+    <string name="reader_share_failed">Chia sẻ thất bại: %1$s</string>
+
     <!-- Lỗi -->
     <string name="error_missing_chapter">Thiếu ID chương</string>
     <string name="error_load_pages">Không tải được trang truyện</string>

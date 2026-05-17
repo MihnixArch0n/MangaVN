@@ -17,13 +17,12 @@ import com.example.mybookslibrary.domain.model.ReadingMode
  * [LayoutDirection] to the composition, which causes [HorizontalPager]
  * to natively reverse its swipe direction.
  *
- * Each page renders the existing [MangaPageItem] composable with
- * [Modifier.fillMaxSize] to fill the pager viewport.
+ * Preloads 2 pages ahead/behind via [outOfBoundsPageCount] for smoother scrolling.
  *
  * @param pages The list of image URLs for each page.
  * @param pagerState The [PagerState] controlling the pager position and animations.
  * @param readingMode The current [ReadingMode], used to determine layout direction.
- *                    Only [ReadingMode.LTR] and [ReadingMode.RTL] are expected.
+ * @param onPageLongPress Callback invoked on long-press, passing the page's image URL.
  * @param modifier Modifier applied to the outer pager container.
  */
 @Composable
@@ -31,6 +30,7 @@ fun HorizontalReaderContent(
     pages: List<String>,
     pagerState: PagerState,
     readingMode: ReadingMode,
+    onPageLongPress: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // RTL mode: flip layout direction so HorizontalPager swipes right-to-left for "next"
@@ -43,11 +43,13 @@ fun HorizontalReaderContent(
         HorizontalPager(
             state = pagerState,
             modifier = modifier,
+            beyondViewportPageCount = 2,
             key = { index -> pages[index] }
         ) { pageIndex ->
             MangaPageItem(
                 imageUrl = pages[pageIndex],
                 index = pageIndex,
+                onLongPress = onPageLongPress,
                 modifier = Modifier.fillMaxSize()
             )
         }

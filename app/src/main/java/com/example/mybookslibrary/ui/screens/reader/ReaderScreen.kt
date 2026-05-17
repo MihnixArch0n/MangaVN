@@ -1,6 +1,10 @@
 package com.example.mybookslibrary.ui.screens.reader
 
+import android.content.Intent
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -21,22 +25,30 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.domain.model.TapZoneEvaluator
+import com.example.mybookslibrary.ui.screens.reader.components.PageAction
+import com.example.mybookslibrary.ui.screens.reader.components.PageActionBottomSheet
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
+import com.example.mybookslibrary.util.storage.ImageSaver
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 private const val TAG = "ReaderScreen"
 
@@ -47,6 +59,46 @@ fun ReaderScreen(
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // --- ImageSaver instance (no DI needed — uses bare OkHttpClient internally) ---
+    val imageSaver = remember { ImageSaver(context) }
+
+    // --- Page Action Bottom Sheet state ---
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var selectedPageUrl by remember { mutableStateOf<String?>(null) }
+
+    // --- SAF launcher for "Save As" ---
+    // Stores the URL temporarily while waiting for SAF result
+    var pendingSaveAsUrl by remember { mutableStateOf<String?>(null) }
+    val saveAsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("image/*")
+    ) { uri ->
+        val url = pendingSaveAsUrl ?: return@rememberLauncherForActivityResult
+        pendingSaveAsUrl = null
+        if (uri == null) return@rememberLauncherForActivityResult
+
+        scope.launch(Dispatchers.IO) {
+            try {
+                imageSaver.saveToUri(url, uri)
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, context.getString(R.string.reader_saved_to_file), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "saveToUri failed", e)
+                launch(Dispatchers.Main) {
+                    Toast.makeText(context, context.getString(R.string.reader_save_failed, e.message ?: ""), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    // --- Long-press handler ---
+    val onPageLongPress: (String) -> Unit = { url ->
+        selectedPageUrl = url
+        showBottomSheet = true
+    }
 
     // --- Vertical mode state ---
     val listState = rememberLazyListState()
@@ -158,13 +210,19 @@ fun ReaderScreen(
             else -> {
                 when (state.currentReadingMode) {
                     ReadingMode.VERTICAL -> {
-                        VerticalReaderContent(state.pages, listState, Modifier.fillMaxSize())
+                        VerticalReaderContent(
+                            pages = state.pages,
+                            listState = listState,
+                            onPageLongPress = onPageLongPress,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                     ReadingMode.LTR, ReadingMode.RTL -> {
                         HorizontalReaderContent(
                             pages = state.pages,
                             pagerState = pagerState,
                             readingMode = state.currentReadingMode,
+                            onPageLongPress = onPageLongPress,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -188,15 +246,74 @@ fun ReaderScreen(
             }
         )
     }
+
+    // ────────────────────────────────────────────────────────────
+    // Page Action Bottom Sheet
+    // ────────────────────────────────────────────────────────────
+    if (showBottomSheet && selectedPageUrl != null) {
+        PageActionBottomSheet(
+            onDismiss = { showBottomSheet = false },
+            onAction = { action ->
+                val url = selectedPageUrl ?: return@PageActionBottomSheet
+                val pageName = "page_${state.lastReadPageIndex + 1}"
+
+                when (action) {
+                    PageAction.QuickSave -> {
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                imageSaver.quickSave(url, pageName)
+                                launch(Dispatchers.Main) {
+                                    Toast.makeText(context, context.getString(R.string.reader_saved_to_pictures), Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "quickSave failed", e)
+                                launch(Dispatchers.Main) {
+                                    Toast.makeText(context, context.getString(R.string.reader_save_failed, e.message ?: ""), Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+
+                    PageAction.SaveAs -> {
+                        pendingSaveAsUrl = url
+                        saveAsLauncher.launch("$pageName.jpg")
+                    }
+
+                    PageAction.Share -> {
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                val intent = imageSaver.shareImage(url, pageName)
+                                launch(Dispatchers.Main) {
+                                    Toast.makeText(context, context.getString(R.string.reader_sharing), Toast.LENGTH_SHORT).show()
+                                    context.startActivity(Intent.createChooser(intent, null))
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "shareImage failed", e)
+                                launch(Dispatchers.Main) {
+                                    Toast.makeText(context, context.getString(R.string.reader_share_failed, e.message ?: ""), Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
 }
 
 @Composable
-private fun VerticalReaderContent(pages: List<String>, listState: LazyListState, modifier: Modifier = Modifier) {
+private fun VerticalReaderContent(
+    pages: List<String>,
+    listState: LazyListState,
+    onPageLongPress: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     LazyColumn(modifier = modifier, state = listState) {
         itemsIndexed(items = pages, key = { _, page -> page }) { index, page ->
             MangaPageItem(
                 imageUrl = page,
                 index = index,
+                onLongPress = onPageLongPress,
                 modifier = Modifier.fillMaxWidth()
             )
         }

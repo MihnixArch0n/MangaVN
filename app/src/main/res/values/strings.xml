@@ -106,6 +106,18 @@
     <string name="settings_language_english">English</string>
     <string name="settings_language_vietnamese">Tiếng Việt</string>
 
+    <!-- Reader Page Actions -->
+    <string name="reader_tap_to_retry">Tap to retry</string>
+    <string name="reader_loading_failed">Failed to load image</string>
+    <string name="reader_action_quick_save">Quick Save</string>
+    <string name="reader_action_save_as">Save As…</string>
+    <string name="reader_action_share">Share</string>
+    <string name="reader_saved_to_pictures">Saved to Pictures/MyBooksLibrary</string>
+    <string name="reader_saved_to_file">Saved successfully</string>
+    <string name="reader_save_failed">Save failed: %1$s</string>
+    <string name="reader_sharing">Sharing…</string>
+    <string name="reader_share_failed">Share failed: %1$s</string>
+
     <!-- Error fallbacks -->
     <string name="error_missing_chapter">Missing chapter ID</string>
     <string name="error_load_pages">Failed to load chapter pages</string>
