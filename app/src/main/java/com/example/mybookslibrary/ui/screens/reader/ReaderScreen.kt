@@ -32,7 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.R
@@ -49,12 +49,18 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 private enum class ReaderToastType {
     SaveFailed,
     ShareFailed
 }
+
+private data class SelectedPageActionTarget(
+    val pageUrl: String,
+    val pageIndex: Int
+)
 
 /**
  * Main reader surface that coordinates page rendering, overlay bars, reading-mode sync,
@@ -74,11 +80,10 @@ fun ReaderScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val savedToFileText = stringResource(R.string.reader_saved_to_file)
-    val savedToPicturesText = stringResource(R.string.reader_saved_to_pictures)
-    val sharingText = stringResource(R.string.reader_sharing)
-    val saveFailedPrefix = stringResource(R.string.reader_save_failed, "")
-    val shareFailedPrefix = stringResource(R.string.reader_share_failed, "")
+    val savedToFileText = appString(R.string.reader_saved_to_file)
+    val savedToPicturesText = appString(R.string.reader_saved_to_pictures)
+    val sharingText = appString(R.string.reader_sharing)
+    val fallbackError = appString(R.string.error_unexpected)
 
     // --- ImageSaver instance (no DI needed — uses bare OkHttpClient internally) ---
     val imageSaver = remember { ImageSaver(context) }
@@ -87,60 +92,63 @@ fun ReaderScreen(
 
     // --- Page Action Bottom Sheet state ---
     var showBottomSheet by remember { mutableStateOf(false) }
-    var selectedPageUrl by remember { mutableStateOf<String?>(null) }
+    var selectedPageTarget by remember { mutableStateOf<SelectedPageActionTarget?>(null) }
     var errorMessageEvent by remember { mutableStateOf<String?>(null) }
     var errorToastType by remember { mutableStateOf(ReaderToastType.SaveFailed) }
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { errorMessageEvent to errorToastType }
-            .filter { (message, _) -> message != null }
-            .collectLatest { (message, type) ->
-                val toastText = when (type) {
-                    ReaderToastType.SaveFailed -> saveFailedPrefix + (message ?: "")
-                    ReaderToastType.ShareFailed -> shareFailedPrefix + (message ?: "")
-                }
-                Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
-                errorMessageEvent = null
+    val saveFailedText = appString(R.string.reader_save_failed, errorMessageEvent ?: fallbackError)
+    val shareFailedText = appString(R.string.reader_share_failed, errorMessageEvent ?: fallbackError)
+
+    LaunchedEffect(errorMessageEvent, errorToastType) {
+        if (errorMessageEvent != null) {
+            val toastText = when (errorToastType) {
+                ReaderToastType.SaveFailed -> saveFailedText
+                ReaderToastType.ShareFailed -> shareFailedText
             }
+            Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
+            errorMessageEvent = null
+        }
     }
 
     // --- SAF launcher for "Save As" ---
     // Stores the URL temporarily while waiting for SAF result
-    var pendingSaveAsUrl by remember { mutableStateOf<String?>(null) }
+    var pendingSaveAsTarget by remember { mutableStateOf<SelectedPageActionTarget?>(null) }
     val saveAsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("image/*")
     ) { uri ->
-        val url = pendingSaveAsUrl ?: return@rememberLauncherForActivityResult
-        pendingSaveAsUrl = null
+        val target = pendingSaveAsTarget ?: return@rememberLauncherForActivityResult
+        pendingSaveAsTarget = null
+        val url = target.pageUrl
+        val displayPage = target.pageIndex + 1
         if (uri == null) {
-            Timber.d("Reader save-as cancelled: url=%s", url)
+            Timber.d("Reader save-as cancelled: page=%d url=%s", displayPage, url)
             return@rememberLauncherForActivityResult
         }
 
-        Timber.d("Reader save-as requested: url=%s uri=%s", url, uri)
+        Timber.d("Reader save-as requested: page=%d url=%s uri=%s", displayPage, url, uri)
 
         scope.launch(Dispatchers.IO) {
             try {
-                Timber.d("Reader save-as start: url=%s uri=%s", url, uri)
+                Timber.d("Reader save-as start: page=%d url=%s uri=%s", displayPage, url, uri)
                 imageSaver.saveToUri(url, uri)
                 launch(Dispatchers.Main) {
                     Toast.makeText(context, savedToFileText, Toast.LENGTH_SHORT).show()
                 }
-                Timber.d("Reader save-as end: url=%s uri=%s", url, uri)
+                Timber.d("Reader save-as end: page=%d url=%s uri=%s", displayPage, url, uri)
             } catch (e: Exception) {
-                Timber.e(e, "Reader save-as failed: url=%s uri=%s", url, uri)
-                launch(Dispatchers.Main) {
+                Timber.e(e, "Reader save-as failed: page=%d url=%s uri=%s", displayPage, url, uri)
+                withContext(Dispatchers.Main) {
                     errorToastType = ReaderToastType.SaveFailed
-                    errorMessageEvent = e.message ?: "Unknown error"
+                    errorMessageEvent = e.message ?: fallbackError
                 }
             }
         }
     }
 
     // --- Long-press handler ---
-    val onPageLongPress: (String) -> Unit = { url ->
-        Timber.d("Reader page long-pressed: page=%d url=%s", state.lastReadPageIndex + 1, url)
-        selectedPageUrl = url
+    val onPageLongPress: (String, Int) -> Unit = { url, pageIndex ->
+        Timber.d("Reader page long-pressed: page=%d url=%s", pageIndex + 1, url)
+        selectedPageTarget = SelectedPageActionTarget(pageUrl = url, pageIndex = pageIndex)
         showBottomSheet = true
     }
 
@@ -319,58 +327,70 @@ fun ReaderScreen(
     // ────────────────────────────────────────────────────────────
     // Page Action Bottom Sheet
     // ────────────────────────────────────────────────────────────
-    if (showBottomSheet && selectedPageUrl != null) {
+    if (showBottomSheet && selectedPageTarget != null) {
         PageActionBottomSheet(
             onDismiss = {
                 showBottomSheet = false
-                selectedPageUrl = null
+                selectedPageTarget = null
                 Timber.d("Reader page action sheet dismissed")
             },
             onAction = { action ->
-                val url = selectedPageUrl ?: return@PageActionBottomSheet
-                val pageName = "page_${state.lastReadPageIndex + 1}"
+                val target = selectedPageTarget ?: return@PageActionBottomSheet
+                val pageNumber = target.pageIndex + 1
+                val chapterSlug = state.chapterTitle
+                    .lowercase()
+                    .replace(Regex("[^a-z0-9]+"), "_")
+                    .trim('_')
+                    .ifBlank { "chapter" }
+                val saveAsExtension = target.pageUrl
+                    .toUri()
+                    .lastPathSegment
+                    ?.substringAfterLast('.', "jpg")
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "jpg"
+                val pageName = "${chapterSlug}_p${pageNumber}_${target.pageUrl.hashCode().toUInt().toString(16)}"
 
                 when (action) {
                     PageAction.QuickSave -> {
                         scope.launch(Dispatchers.IO) {
                             try {
-                                Timber.d("Reader quick-save start: page=%d url=%s", state.lastReadPageIndex + 1, url)
-                                imageSaver.quickSave(url, pageName)
+                                Timber.d("Reader quick-save start: page=%d url=%s", pageNumber, target.pageUrl)
+                                imageSaver.quickSave(target.pageUrl, pageName)
                                 launch(Dispatchers.Main) {
                                     Toast.makeText(context, savedToPicturesText, Toast.LENGTH_SHORT).show()
                                 }
-                                Timber.d("Reader quick-save end: page=%d url=%s", state.lastReadPageIndex + 1, url)
+                                Timber.d("Reader quick-save end: page=%d url=%s", pageNumber, target.pageUrl)
                             } catch (e: Exception) {
-                                Timber.e(e, "Reader quick-save failed: page=%d url=%s", state.lastReadPageIndex + 1, url)
-                                launch(Dispatchers.Main) {
+                                Timber.e(e, "Reader quick-save failed: page=%d url=%s", pageNumber, target.pageUrl)
+                                withContext(Dispatchers.Main) {
                                     errorToastType = ReaderToastType.SaveFailed
-                                    errorMessageEvent = e.message ?: "Unknown error"
+                                    errorMessageEvent = e.message ?: fallbackError
                                 }
                             }
                         }
                     }
 
                     PageAction.SaveAs -> {
-                        Timber.d("Reader save-as selected: page=%d url=%s", state.lastReadPageIndex + 1, url)
-                        pendingSaveAsUrl = url
-                        saveAsLauncher.launch("$pageName.jpg")
+                        Timber.d("Reader save-as selected: page=%d url=%s", pageNumber, target.pageUrl)
+                        pendingSaveAsTarget = target
+                        saveAsLauncher.launch("$pageName.$saveAsExtension")
                     }
 
                     PageAction.Share -> {
                         scope.launch(Dispatchers.IO) {
                             try {
-                                Timber.d("Reader share start: page=%d url=%s", state.lastReadPageIndex + 1, url)
-                                val intent = imageSaver.shareImage(url, pageName)
-                                launch(Dispatchers.Main) {
+                                Timber.d("Reader share start: page=%d url=%s", pageNumber, target.pageUrl)
+                                val intent = imageSaver.shareImage(target.pageUrl, pageName)
+                                withContext(Dispatchers.Main) {
                                     Toast.makeText(context, sharingText, Toast.LENGTH_SHORT).show()
                                     context.startActivity(Intent.createChooser(intent, null))
                                 }
-                                Timber.d("Reader share end: page=%d url=%s", state.lastReadPageIndex + 1, url)
+                                Timber.d("Reader share end: page=%d url=%s", pageNumber, target.pageUrl)
                             } catch (e: Exception) {
-                                Timber.e(e, "Reader share failed: page=%d url=%s", state.lastReadPageIndex + 1, url)
-                                launch(Dispatchers.Main) {
+                                Timber.e(e, "Reader share failed: page=%d url=%s", pageNumber, target.pageUrl)
+                                withContext(Dispatchers.Main) {
                                     errorToastType = ReaderToastType.ShareFailed
-                                    errorMessageEvent = e.message ?: "Unknown error"
+                                    errorMessageEvent = e.message ?: fallbackError
                                 }
                             }
                         }
@@ -385,7 +405,7 @@ fun ReaderScreen(
 private fun VerticalReaderContent(
     pages: List<String>,
     listState: LazyListState,
-    onPageLongPress: (String) -> Unit,
+    onPageLongPress: (String, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier, state = listState) {

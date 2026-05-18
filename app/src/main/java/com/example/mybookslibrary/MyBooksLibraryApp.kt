@@ -1,6 +1,7 @@
 package com.example.mybookslibrary
 
 import android.app.Application
+import android.content.pm.ApplicationInfo
 import android.util.Log
 import coil3.SingletonImageLoader
 import dagger.hilt.EntryPoint
@@ -14,12 +15,16 @@ import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import timber.log.Timber
 
 @HiltAndroidApp
 class MyBooksLibraryApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        if ((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            Timber.plant(Timber.DebugTree())
+        }
 
         SingletonImageLoader.setSafe {
             EntryPointAccessors.fromApplication(
@@ -77,4 +82,3 @@ class MyBooksLibraryApp : Application() {
 interface ImageLoaderEntryPoint {
     fun imageLoader(): coil3.ImageLoader
 }
-

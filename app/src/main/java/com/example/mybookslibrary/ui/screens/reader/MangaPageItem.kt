@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,7 +48,7 @@ import timber.log.Timber
  * @param imageUrl Page image URL loaded by Coil.
  * @param index Zero-based page index used for content description and logs.
  * @param modifier Modifier applied to the outer container.
- * @param onLongPress Optional callback invoked with [imageUrl] when the user
+ * @param onLongPress Optional callback invoked with [imageUrl] and [index] when the user
  * long-presses the page; if `null`, the gesture is ignored.
  */
 @Composable
@@ -56,7 +56,7 @@ fun MangaPageItem(
     imageUrl: String,
     index: Int,
     modifier: Modifier = Modifier,
-    onLongPress: ((String) -> Unit)? = null
+    onLongPress: ((String, Int) -> Unit)? = null
 ) {
     var aspectRatio by remember(imageUrl) { mutableStateOf<Float?>(null) }
     // Increment to force Coil to re-fetch when the user taps "retry"
@@ -79,7 +79,7 @@ fun MangaPageItem(
                     val longPress = awaitLongPressOrCancellation(down.id)
                     if (longPress != null) {
                         Timber.d("Long press detected for page=%d url=%s", index + 1, imageUrl)
-                        onLongPress?.invoke(imageUrl)
+                        onLongPress?.invoke(imageUrl, index)
                     }
                 }
             }
@@ -114,14 +114,7 @@ fun MangaPageItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f))
-                    .pointerInput(Unit) {
-                        detectTapGestures(onTap = {
-                            Timber.d("Retry tapped for page=%d url=%s", index + 1, imageUrl)
-                            retryHash++
-                            isError = false
-                        })
-                    },
+                    .background(Color.Black.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -138,11 +131,19 @@ fun MangaPageItem(
                         color = Color.White.copy(alpha = 0.6f)
                     )
                     Spacer(Modifier.height(4.dp))
-                    Text(
+                    Button(
+                        onClick = {
+                            Timber.d("Retry tapped for page=%d url=%s", index + 1, imageUrl)
+                            retryHash++
+                            isError = false
+                        }
+                    ) {
+                        Text(
                         text = appString(R.string.reader_tap_to_retry),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White
-                    )
+                        )
+                    }
                 }
             }
         }

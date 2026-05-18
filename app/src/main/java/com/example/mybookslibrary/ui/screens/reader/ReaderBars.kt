@@ -111,12 +111,17 @@ fun BoxScope.ReaderBottomBar(
 ) {
     val safeTotalPages = totalPages.coerceAtLeast(1)
     val displayPage = (currentPage + 1).coerceIn(1, safeTotalPages)
+    val nextReadingModeRes = when (currentReadingMode) {
+        ReadingMode.VERTICAL -> R.string.reader_mode_ltr
+        ReadingMode.LTR -> R.string.reader_mode_rtl
+        ReadingMode.RTL -> R.string.reader_mode_vertical
+    }
 
     // Icon and content description cycle: VERTICAL → LTR → RTL
-    val (modeIcon, modeDescriptionRes) = when (currentReadingMode) {
-        ReadingMode.VERTICAL -> Icons.AutoMirrored.Filled.MenuBook to R.string.reader_mode_vertical
-        ReadingMode.LTR -> Icons.Filled.ImportContacts to R.string.reader_mode_ltr
-        ReadingMode.RTL -> Icons.Filled.AutoStories to R.string.reader_mode_rtl
+    val modeIcon = when (currentReadingMode) {
+        ReadingMode.VERTICAL -> Icons.AutoMirrored.Filled.MenuBook
+        ReadingMode.LTR -> Icons.Filled.ImportContacts
+        ReadingMode.RTL -> Icons.Filled.AutoStories
     }
 
     AnimatedVisibility(
@@ -151,7 +156,10 @@ fun BoxScope.ReaderBottomBar(
             }) {
                 Icon(
                     imageVector = modeIcon,
-                    contentDescription = appString(modeDescriptionRes),
+                    contentDescription = appString(
+                        R.string.reader_switch_mode_action,
+                        appString(nextReadingModeRes)
+                    ),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.size(24.dp)
                 )

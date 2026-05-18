@@ -7,19 +7,15 @@ import android.net.Uri
 import android.os.Environment
 import androidx.core.content.FileProvider
 import com.example.mybookslibrary.test.MainDispatcherRule
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkConstructor
-import io.mockk.mockkStatic
-import io.mockk.unmockkAll
+import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import okhttp3.Call
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
@@ -72,8 +68,7 @@ class ImageSaverTest {
     fun quickSave_happyPath_savesFile() = runTest {
         val bytes = pngBytes()
         val picturesRoot = createTempDirectoryFile()
-        mockkStatic(Environment::class)
-        every { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) } returns picturesRoot
+        every { context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) } returns picturesRoot
         stubOkHttpSuccess(bytes)
 
         val uri = ImageSaver(context).quickSave("https://example.com/image", "page_01")
@@ -84,24 +79,40 @@ class ImageSaverTest {
     }
 
     @Test
-    fun quickSave_networkError_throwsIOException() = runTest {
+    fun quickSave_networkError_throwsImageSaveException() = runTest {
         stubOkHttpError(IOException("network"))
 
-        assertThrows(IOException::class.java) {
+        assertThrows(ImageSaveException::class.java) {
             ImageSaver(context).quickSave("https://example.com/image", "page_01")
         }
     }
 
     @Test
-    fun quickSave_storageError_throwsException() = runTest {
+    fun quickSave_storageError_throwsImageSaveException() = runTest {
         val bytes = pngBytes()
-        mockkStatic(Environment::class)
-        every { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) } throws RuntimeException("storage")
+        every { context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) } throws RuntimeException("storage")
         stubOkHttpSuccess(bytes)
 
-        assertThrows(RuntimeException::class.java) {
+        assertThrows(ImageSaveException::class.java) {
             ImageSaver(context).quickSave("https://example.com/image", "page_01")
         }
+    }
+
+    @Test
+    @Config(sdk = [29])
+    fun quickSave_api29_usesMediaStorePendingFlow() = runTest {
+        val bytes = pngBytes()
+        val inserted = Uri.parse("content://media/external_primary/images/media/42")
+        val output = ByteArrayOutputStream()
+        every { contentResolver.insert(any(), any()) } returns inserted
+        every { contentResolver.openOutputStream(inserted) } returns output
+        every { contentResolver.update(inserted, any(), null, null) } returns 1
+        stubOkHttpSuccess(bytes)
+
+        val uri = ImageSaver(context).quickSave("https://example.com/image", "page_01")
+
+        assertEquals(inserted, uri)
+        assertArrayEquals(bytes, output.toByteArray())
     }
 
     @Test
@@ -118,11 +129,11 @@ class ImageSaverTest {
     }
 
     @Test
-    fun saveToUri_networkError_throwsIOException() = runTest {
+    fun saveToUri_networkError_throwsImageSaveException() = runTest {
         val uri = Uri.parse("content://test/1")
         stubOkHttpError(IOException("network"))
 
-        assertThrows(IOException::class.java) {
+        assertThrows(ImageSaveException::class.java) {
             ImageSaver(context).saveToUri("https://example.com/image", uri)
         }
     }
@@ -160,18 +171,18 @@ class ImageSaverTest {
     }
 
     @Test
-    fun shareImage_networkError_throwsIOException() = runTest {
+    fun shareImage_networkError_throwsImageSaveException() = runTest {
         val cacheDir = createTempDirectoryFile()
         every { context.cacheDir } returns cacheDir
         stubOkHttpError(IOException("network"))
 
-        assertThrows(IOException::class.java) {
+        assertThrows(ImageSaveException::class.java) {
             ImageSaver(context).shareImage("https://example.com/image", "page_01")
         }
     }
 
     @Test
-    fun shareImage_storageError_throwsException() = runTest {
+    fun shareImage_storageError_throwsImageSaveException() = runTest {
         val bytes = pngBytes()
         val cacheDir = createTempDirectoryFile()
         mockkStatic(FileProvider::class)
@@ -180,22 +191,81 @@ class ImageSaverTest {
         every { FileProvider.getUriForFile(context, "com.example.mybookslibrary.provider", any()) } throws RuntimeException("provider")
         stubOkHttpSuccess(bytes)
 
-        assertThrows(RuntimeException::class.java) {
+        assertThrows(ImageSaveException::class.java) {
             ImageSaver(context).shareImage("https://example.com/image", "page_01")
         }
     }
 
-    private fun stubOkHttpSuccess(bytes: ByteArray) {
-        val request = Request.Builder().url("https://example.com/image").build()
-        val response = Response.Builder()
-            .request(request)
-            .protocol(Protocol.HTTP_1_1)
-            .code(200)
-            .message("OK")
-            .body(bytes.toResponseBody("image/png".toMediaType()))
-            .build()
+    @Test
+    fun quickSave_and_shareImage_detectJpegFormat() = runTest {
+        assertQuickSaveAndShareFormat(bytes = jpegBytes(), expectedExt = "jpg", expectedMime = "image/jpeg")
+    }
+
+    @Test
+    fun quickSave_and_shareImage_detectWebpFormat() = runTest {
+        assertQuickSaveAndShareFormat(bytes = webpBytes(), expectedExt = "webp", expectedMime = "image/webp")
+    }
+
+    @Test
+    fun quickSave_and_shareImage_detectGifFormat() = runTest {
+        assertQuickSaveAndShareFormat(bytes = gifBytes(), expectedExt = "gif", expectedMime = "image/gif")
+    }
+
+    @Test
+    fun quickSave_rejectsEmptyResponseBody() = runTest {
+        every { context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) } returns createTempDirectoryFile()
+        stubOkHttpSuccess(ByteArray(0), "text/html")
+
+        assertThrows(ImageSaveException::class.java) {
+            ImageSaver(context).quickSave("https://example.com/image", "page_01")
+        }
+    }
+
+    @Test
+    fun shareImage_rejectsUnsupportedImageBytes() = runTest {
+        val cacheDir = createTempDirectoryFile()
+        every { context.cacheDir } returns cacheDir
+        stubOkHttpSuccess("not an image".toByteArray(), "text/html")
+
+        assertThrows(ImageSaveException::class.java) {
+            ImageSaver(context).shareImage("https://example.com/image", "page_01")
+        }
+    }
+
+    private fun assertQuickSaveAndShareFormat(bytes: ByteArray, expectedExt: String, expectedMime: String) {
+        val picturesRoot = createTempDirectoryFile()
+        val cacheDir = createTempDirectoryFile()
+        val expectedUri = Uri.parse("content://provider/shared/any.$expectedExt")
+        val capturedFile = slot<File>()
+        every { context.getExternalFilesDir(Environment.DIRECTORY_PICTURES) } returns picturesRoot
+        every { context.cacheDir } returns cacheDir
+        every { context.packageName } returns "com.example.mybookslibrary"
+        mockkStatic(FileProvider::class)
+        every {
+            FileProvider.getUriForFile(context, "com.example.mybookslibrary.provider", capture(capturedFile))
+        } returns expectedUri
+        stubOkHttpSuccess(bytes, expectedMime)
+
+        val quickSaveUri = ImageSaver(context).quickSave("https://example.com/image", "page_01")
+        val shareIntent = ImageSaver(context).shareImage("https://example.com/image", "page_01")
+
+        assertTrue(quickSaveUri.toString().endsWith(".$expectedExt"))
+        assertEquals(expectedMime, shareIntent.type)
+        assertTrue(capturedFile.captured.name.endsWith(".$expectedExt"))
+    }
+
+    private fun stubOkHttpSuccess(bytes: ByteArray, mimeType: String = "image/png") {
         every { okHttpClient.newCall(any()) } returns call
-        every { call.execute() } returns response
+        every { call.execute() } answers {
+            val request = Request.Builder().url("https://example.com/image").build()
+            Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(200)
+                .message("OK")
+                .body(bytes.toResponseBody(mimeType.toMediaType()))
+                .build()
+        }
     }
 
     private fun stubOkHttpError(error: IOException) {
@@ -211,8 +281,29 @@ class ImageSaverTest {
         )
     }
 
+    private fun jpegBytes(): ByteArray {
+        return byteArrayOf(
+            0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0xE0.toByte(),
+            0x00, 0x10, 0x4A, 0x46
+        )
+    }
+
+    private fun webpBytes(): ByteArray {
+        return byteArrayOf(
+            0x52, 0x49, 0x46, 0x46,
+            0x2A, 0x00, 0x00, 0x00,
+            0x57, 0x45, 0x42, 0x50
+        )
+    }
+
+    private fun gifBytes(): ByteArray {
+        return byteArrayOf(
+            0x47, 0x49, 0x46, 0x38,
+            0x39, 0x61, 0x00, 0x00
+        )
+    }
+
     private fun createTempDirectoryFile(): File {
         return Files.createTempDirectory("imagesaver_test").toFile()
     }
 }
-

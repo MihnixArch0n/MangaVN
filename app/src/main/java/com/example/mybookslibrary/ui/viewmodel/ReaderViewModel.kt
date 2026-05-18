@@ -110,20 +110,22 @@ class ReaderViewModel @Inject constructor(
      */
     fun navigateToPage(action: ReaderTapAction) {
         val current = _state.value
+        if (action == ReaderTapAction.TOGGLE_OVERLAY) {
+            toggleOverlay()
+            return
+        }
         if (current.pages.isEmpty()) return
 
         val targetIndex = when (action) {
             ReaderTapAction.NEXT_PAGE -> (current.lastReadPageIndex + 1).coerceAtMost(current.pages.lastIndex)
             ReaderTapAction.PREVIOUS_PAGE -> (current.lastReadPageIndex - 1).coerceAtLeast(0)
-            ReaderTapAction.TOGGLE_OVERLAY -> {
-                toggleOverlay()
-                return
-            }
             ReaderTapAction.NONE -> return
+            ReaderTapAction.TOGGLE_OVERLAY -> return
         }
 
         if (targetIndex == current.lastReadPageIndex) return
         Log.d(TAG, "navigateToPage: action=$action, from=${current.lastReadPageIndex} to=$targetIndex")
+        _state.update { it.copy(lastReadPageIndex = targetIndex) }
         _pageNavigationEvent.tryEmit(targetIndex)
     }
 
