@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,8 +29,11 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.R
 import androidx.compose.runtime.Composable
@@ -84,6 +88,44 @@ fun BoxScope.ReaderTopBar(chapterTitle: String, isVisible: Boolean, onBackClick:
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(start = 8.dp)
+            )
+        }
+    }
+}
+
+@Preview(name = "Reader Top Bar", showBackground = true)
+@Composable
+private fun ReaderTopBarPreview() {
+    MyBooksLibraryTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            ReaderTopBar(
+                chapterTitle = "Chapter 12: Lost Pages",
+                isVisible = true,
+                onBackClick = { }
+            )
+        }
+    }
+}
+
+@Preview(name = "Reader Bottom Bar", showBackground = true)
+@Composable
+private fun ReaderBottomBarPreview() {
+    MyBooksLibraryTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            ReaderBottomBar(
+                isVisible = true,
+                currentPage = 1,
+                totalPages = 18,
+                currentReadingMode = ReadingMode.LTR,
+                onToggleReadingMode = { }
             )
         }
     }

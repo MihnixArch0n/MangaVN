@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,6 +44,7 @@ import com.example.mybookslibrary.ui.screens.reader.components.PageActionBottomS
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.util.findActivePageIndex
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
+import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.util.storage.ImageSaver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -426,3 +428,88 @@ private fun VerticalReaderContent(
 }
 
 // Reader content and bar components moved to MangaPageItem.kt and ReaderBars.kt for modularity.
+
+private val PreviewReaderPages = listOf(
+    "https://example.com/reader/page-1.jpg",
+    "https://example.com/reader/page-2.jpg",
+    "https://example.com/reader/page-3.jpg"
+)
+
+@Preview(name = "Reader - Horizontal", showBackground = true)
+@Composable
+private fun ReaderHorizontalPreview() {
+    MyBooksLibraryTheme {
+        ReaderPreviewLayout(
+            chapterTitle = "Chapter 12: Lost Pages",
+            pages = PreviewReaderPages,
+            currentPage = 1,
+            readingMode = ReadingMode.LTR
+        )
+    }
+}
+
+@Preview(name = "Reader - Vertical", showBackground = true)
+@Composable
+private fun ReaderVerticalPreview() {
+    MyBooksLibraryTheme {
+        ReaderPreviewLayout(
+            chapterTitle = "Chapter 12: Lost Pages",
+            pages = PreviewReaderPages,
+            currentPage = 1,
+            readingMode = ReadingMode.VERTICAL
+        )
+    }
+}
+
+@Composable
+private fun ReaderPreviewLayout(
+    chapterTitle: String,
+    pages: List<String>,
+    currentPage: Int,
+    readingMode: ReadingMode
+) {
+    val listState = rememberLazyListState()
+    val pagerState = rememberPagerState(
+        initialPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0)),
+        pageCount = { pages.size }
+    )
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        when (readingMode) {
+            ReadingMode.VERTICAL -> {
+                VerticalReaderContent(
+                    pages = pages,
+                    listState = listState,
+                    onPageLongPress = { _, _ -> },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            ReadingMode.LTR, ReadingMode.RTL -> {
+                HorizontalReaderContent(
+                    pages = pages,
+                    pagerState = pagerState,
+                    readingMode = readingMode,
+                    onPageLongPress = { _, _ -> },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        ReaderTopBar(
+            chapterTitle = chapterTitle,
+            isVisible = true,
+            onBackClick = { }
+        )
+        ReaderBottomBar(
+            isVisible = true,
+            currentPage = currentPage,
+            totalPages = pages.size,
+            currentReadingMode = readingMode,
+            onToggleReadingMode = { }
+        )
+    }
+}
