@@ -14,6 +14,9 @@ abstract class ChapterDao {
     @Query("SELECT * FROM chapter_progress WHERE manga_id = :mangaId ORDER BY updated_at DESC")
     abstract fun getChapterProgressByManga(mangaId: String): Flow<List<ChapterProgressEntity>>
 
+    @Query("SELECT chapter_id FROM chapter_progress WHERE is_downloaded = 1")
+    abstract suspend fun getDownloadedChapterIds(): List<String>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun upsertChapterProgress(progress: ChapterProgressEntity)
 
@@ -29,4 +32,3 @@ abstract class ChapterDao {
         deleteLibraryItemByMangaId(mangaId)
     }
 }
-

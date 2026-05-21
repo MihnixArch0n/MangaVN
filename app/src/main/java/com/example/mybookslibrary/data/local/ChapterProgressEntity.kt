@@ -43,6 +43,6 @@ data class ChapterProgressEntity(
     val status: ChapterStatus = ChapterStatus.UNREAD,
     @ColumnInfo(name = "last_read_page") val last_read_page: Int = 0,
     @ColumnInfo(name = "total_pages") val total_pages: Int = 0,
-    @ColumnInfo(name = "updated_at") val updated_at: Long
+    @ColumnInfo(name = "updated_at") val updated_at: Long,
+    @ColumnInfo(name = "is_downloaded") val is_downloaded: Boolean = false
 )
-

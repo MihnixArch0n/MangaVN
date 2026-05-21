@@ -15,7 +15,7 @@ import com.example.mybookslibrary.data.local.dao.UserDao
         LibraryItemEntity::class,
         ChapterProgressEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(LibraryStatusConverters::class)
@@ -51,4 +51,3 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
-
