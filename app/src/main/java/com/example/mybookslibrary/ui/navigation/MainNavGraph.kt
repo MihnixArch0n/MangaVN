@@ -149,6 +149,9 @@ fun MainNavHost() {
             dest.route?.startsWith(MangaDetailDestination.route) == true ||
             dest.route?.startsWith(MangaReviewDestination.route) == true
     } ?: true
+    val isReaderDestination = currentDestination?.hierarchy?.any { dest ->
+        dest.route?.startsWith(ReaderDestination.route) == true
+    } == true
 
     Scaffold(
         bottomBar = {
@@ -172,7 +175,10 @@ fun MainNavHost() {
                 NavHost(
                     navController = navController,
                     startDestination = BottomNavDestination.Discover.route,
-                    modifier = Modifier.padding(top = innerPadding.calculateTopPadding(), bottom = 0.dp),
+                    modifier = Modifier.padding(
+                        top = if (isReaderDestination) 0.dp else innerPadding.calculateTopPadding(),
+                        bottom = 0.dp
+                    ),
                     enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
                     exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
                     popEnterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },

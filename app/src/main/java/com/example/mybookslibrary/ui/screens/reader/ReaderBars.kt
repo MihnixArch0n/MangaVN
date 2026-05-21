@@ -59,8 +59,8 @@ fun BoxScope.ReaderTopBar(chapterTitle: String, isVisible: Boolean, onBackClick:
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 .statusBarsPadding()
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -175,8 +175,8 @@ fun BoxScope.ReaderBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 .navigationBarsPadding()
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

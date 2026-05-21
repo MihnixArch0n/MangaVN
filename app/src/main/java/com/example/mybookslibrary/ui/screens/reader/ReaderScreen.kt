@@ -1,7 +1,13 @@
 package com.example.mybookslibrary.ui.screens.reader
 
 import android.content.Intent
+import android.content.Context
+import android.content.ContextWrapper
+import android.graphics.Color as AndroidColor
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -30,6 +36,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -87,7 +94,9 @@ fun ReaderScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
     val scope = rememberCoroutineScope()
+    val backgroundIsLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
 
     val savedToFileText = appString(R.string.reader_saved_to_file)
     val savedToPicturesText = appString(R.string.reader_saved_to_pictures)
@@ -115,6 +124,23 @@ fun ReaderScreen(
             }
             Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
             errorMessageEvent = null
+        }
+    }
+
+    DisposableEffect(activity, backgroundIsLight) {
+        val lightStyle = SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
+        val darkStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
+
+        activity?.enableEdgeToEdge(
+            statusBarStyle = darkStyle,
+            navigationBarStyle = darkStyle
+        )
+
+        onDispose {
+            activity?.enableEdgeToEdge(
+                statusBarStyle = if (backgroundIsLight) lightStyle else darkStyle,
+                navigationBarStyle = if (backgroundIsLight) lightStyle else darkStyle
+            )
         }
     }
 
@@ -446,6 +472,12 @@ private fun ReaderHorizontalPreview() {
             readingMode = ReadingMode.LTR
         )
     }
+}
+
+private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 @Preview(name = "Reader - Vertical", showBackground = true)
