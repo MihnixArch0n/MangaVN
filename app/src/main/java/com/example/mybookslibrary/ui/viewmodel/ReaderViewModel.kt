@@ -48,14 +48,16 @@ class ReaderViewModel @Inject constructor(
     // Đọc nav args từ SavedStateHandle (key phải khớp với ReaderDestination)
     private val mangaId: String = savedStateHandle.get<String>(MANGA_ID_ARG).orEmpty()
     private val chapterId: String = savedStateHandle.get<String>(CHAPTER_ID_ARG).orEmpty()
+    private val chapterTitleArg: String = savedStateHandle.get<String>(CHAPTER_TITLE_ARG).orEmpty()
+    private val startPageIndexArg: Int = savedStateHandle.get<Int>(START_PAGE_INDEX_ARG) ?: 0
     // Tránh gọi Room update trùng lặp khi page index không thay đổi
     private var lastSyncedPageIndex: Int? = null
     private var pendingPageIndex: Int? = null
 
     private val _state = MutableStateFlow(
         ReaderState(
-            chapterTitle = savedStateHandle.get<String>(CHAPTER_TITLE_ARG).orEmpty(),
-            lastReadPageIndex = savedStateHandle.get<Int>(START_PAGE_INDEX_ARG) ?: 0
+            chapterTitle = chapterTitleArg,
+            lastReadPageIndex = startPageIndexArg
         )
     )
     val state: StateFlow<ReaderState> = _state.asStateFlow()
@@ -65,25 +67,42 @@ class ReaderViewModel @Inject constructor(
     val pageNavigationEvent: SharedFlow<Int> = _pageNavigationEvent.asSharedFlow()
 
     init {
+        Timber.d(
+            "ReaderViewModel init: mangaId=%s chapterId=%s chapterTitle=%s startPageIndex=%d",
+            mangaId,
+            chapterId,
+            chapterTitleArg,
+            startPageIndexArg
+        )
         loadChapterPages()
     }
 
     // Gọi At-Home API để lấy URL ảnh từng trang của chapter
     private fun loadChapterPages() {
         if (chapterId.isEmpty()) {
+            Timber.w("loadChapterPages aborted: missing chapterId")
             _state.update { it.copy(error = str(R.string.error_missing_chapter)) }
             return
         }
 
         viewModelScope.launch(ioDispatcher) {
+            Timber.d("loadChapterPages start: chapterId=%s", chapterId)
             _state.update { it.copy(isLoading = true, error = null) }
             try {
                 mangaRepository.getChapterPages(chapterId).onSuccess { urls ->
+                    Timber.d("loadChapterPages success: chapterId=%s pages=%d", chapterId, urls.size)
                     _state.update { it.copy(pages = urls, isLoading = false, error = null) }
                 }.onFailure { throwable ->
+                    Timber.w(
+                        throwable,
+                        "loadChapterPages failed: chapterId=%s error=%s",
+                        chapterId,
+                        throwable.message ?: "<no-message>"
+                    )
                     _state.update { it.copy(isLoading = false, error = throwable.message ?: str(R.string.error_load_pages)) }
                 }
             } catch (t: Throwable) {
+                Timber.e(t, "loadChapterPages crashed: chapterId=%s", chapterId)
                 _state.update { it.copy(isLoading = false, error = t.message ?: str(R.string.error_unexpected)) }
             }
         }

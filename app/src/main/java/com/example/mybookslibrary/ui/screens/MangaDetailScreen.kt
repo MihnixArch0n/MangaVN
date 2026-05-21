@@ -66,6 +66,7 @@ import com.example.mybookslibrary.domain.model.ChapterReadingStatus
 import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
 import com.example.mybookslibrary.ui.viewmodel.MangaDetailViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import timber.log.Timber
 
 private object DetailDimensions {
     val BackdropHeight = 280.dp
@@ -193,12 +194,22 @@ fun MangaDetailScreen(
                     Button(
                         onClick = {
                             if (firstChapter != null) {
+                                val startPageIndex = firstChapter.resumePageIndex()
+                                Timber.d(
+                                    "MangaDetail read-now: mangaId=%s chapterId=%s status=%s lastReadPage=%d startPageIndex=%d totalPages=%d",
+                                    mangaId,
+                                    firstChapter.chapterId,
+                                    firstChapter.status,
+                                    firstChapter.lastReadPage,
+                                    startPageIndex,
+                                    firstChapter.totalPages
+                                )
                                 viewModel.ensureInLibrary(displayTitle, displayCoverArt)
                                 onReadChapter(
                                     mangaId,
                                     firstChapter.chapterId,
                                     firstChapterTitle,
-                                    firstChapter.resumePageIndex()
+                                    startPageIndex
                                 )
                             }
                         },
@@ -423,10 +434,20 @@ fun MangaDetailScreen(
                                     chapter = chapter,
                                     chapterTitle = chTitle,
                                     onClick = {
+                                        val startPageIndex = chapter.resumePageIndex()
+                                        Timber.d(
+                                            "MangaDetail chapter click: mangaId=%s chapterId=%s status=%s lastReadPage=%d startPageIndex=%d totalPages=%d",
+                                            mangaId,
+                                            chapter.chapterId,
+                                            chapter.status,
+                                            chapter.lastReadPage,
+                                            startPageIndex,
+                                            chapter.totalPages
+                                        )
                                         viewModel.ensureInLibrary(displayTitle, displayCoverArt)
                                         // Detail progress flows to ReaderDestination.startPageIndex,
                                         // then into ReaderState.lastReadPageIndex via SavedStateHandle.
-                                        onReadChapter(mangaId, chapter.chapterId, chTitle, chapter.resumePageIndex())
+                                        onReadChapter(mangaId, chapter.chapterId, chTitle, startPageIndex)
                                     },
                                     onMarkCompleted = { viewModel.markChapterCompleted(chapter.chapterId, chapter.totalPages) },
                                     onMarkUnread = { viewModel.markChapterUnread(chapter.chapterId, chapter.totalPages) }

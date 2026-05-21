@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import timber.log.Timber
 
 class GetChapterListWithProgressUseCase @Inject constructor(
     private val mangaRepository: MangaRepository,
@@ -23,9 +24,19 @@ class GetChapterListWithProgressUseCase @Inject constructor(
      */
     operator fun invoke(mangaId: String): Flow<List<ChapterWithProgressModel>> = flow {
         val remoteChapters = mangaRepository.getMangaFeed(mangaId).getOrThrow()
+        Timber.d(
+            "GetChapterListWithProgressUseCase start: mangaId=%s remoteChapters=%d",
+            mangaId,
+            remoteChapters.size
+        )
 
         emitAll(
             chapterDao.getChapterProgressByManga(mangaId).map { progressList ->
+                Timber.d(
+                    "GetChapterListWithProgressUseCase progress snapshot: mangaId=%s progressRows=%d",
+                    mangaId,
+                    progressList.size
+                )
                 val progressMap = progressList.associateBy { it.chapter_id }
 
                 remoteChapters.map { chapter ->
@@ -35,6 +46,15 @@ class GetChapterListWithProgressUseCase @Inject constructor(
                         chapter.pages > 0 -> chapter.pages
                         else -> 0
                     }
+                    val mappedStatus = progress?.status.toDomainStatus()
+                    Timber.d(
+                        "GetChapterListWithProgressUseCase mapped: chapterId=%s status=%s lastReadPage=%d totalPages=%d progressFound=%s",
+                        chapter.id,
+                        mappedStatus,
+                        progress?.last_read_page ?: 0,
+                        totalPages,
+                        progress != null
+                    )
 
                     ChapterWithProgressModel(
                         chapterId = chapter.id,
@@ -42,7 +62,7 @@ class GetChapterListWithProgressUseCase @Inject constructor(
                         volume = chapter.volume,
                         chapterNumber = chapter.chapterNumber,
                         title = chapter.title,
-                        status = progress?.status.toDomainStatus(),
+                        status = mappedStatus,
                         lastReadPage = progress?.last_read_page ?: 0,
                         totalPages = totalPages
                     )
