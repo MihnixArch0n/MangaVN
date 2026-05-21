@@ -30,10 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
+import coil3.decode.DataSource
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
 import timber.log.Timber
 
@@ -98,6 +101,15 @@ fun MangaPageItem(
                         if (w > 0f && h > 0f) {
                             aspectRatio = w / h
                         }
+                        val dataSource = state.result.dataSource
+                        val origin = if (dataSource == DataSource.NETWORK) "internet" else "cache"
+                        Timber.d(
+                            "Loaded page=%d url=%s origin=%s source=%s",
+                            index + 1,
+                            imageUrl,
+                            origin,
+                            dataSource
+                        )
                     }
                     is AsyncImagePainter.State.Error -> {
                         isError = true
@@ -146,6 +158,28 @@ fun MangaPageItem(
                     }
                 }
             }
+        }
+    }
+}
+
+private const val PreviewPageUrl = "https://example.com/preview-page.jpg"
+
+@Preview(name = "Manga Page Item", showBackground = true)
+@Composable
+private fun MangaPageItemPreview() {
+    MyBooksLibraryTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(520.dp)
+                .background(Color.Black)
+        ) {
+            MangaPageItem(
+                imageUrl = PreviewPageUrl,
+                index = 0,
+                onLongPress = { _, _ -> },
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }

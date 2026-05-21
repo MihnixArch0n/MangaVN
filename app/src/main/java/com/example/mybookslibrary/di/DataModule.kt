@@ -38,9 +38,10 @@ object DataModule {
     @Singleton
     fun provideLibraryRepository(
         libraryDao: LibraryDao,
-        chapterDao: ChapterDao
+        chapterDao: ChapterDao,
+        database: AppDatabase
     ): LibraryRepository {
-        return LibraryRepository(libraryDao, chapterDao)
+        return LibraryRepository(libraryDao, chapterDao, database)
     }
 
     @Provides
@@ -58,6 +59,3 @@ object DataModule {
     ): MangaRepository = MangaRepository(api, preferencesDataStore)
 
 }
-
-
-

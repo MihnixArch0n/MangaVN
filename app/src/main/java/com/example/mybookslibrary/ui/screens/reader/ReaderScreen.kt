@@ -1,7 +1,13 @@
 package com.example.mybookslibrary.ui.screens.reader
 
 import android.content.Intent
+import android.content.Context
+import android.content.ContextWrapper
+import android.graphics.Color as AndroidColor
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -30,8 +36,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -41,13 +49,18 @@ import com.example.mybookslibrary.domain.model.TapZoneEvaluator
 import com.example.mybookslibrary.ui.screens.reader.components.PageAction
 import com.example.mybookslibrary.ui.screens.reader.components.PageActionBottomSheet
 import com.example.mybookslibrary.ui.util.appString
+import com.example.mybookslibrary.ui.util.findActivePageIndex
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
+import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.util.storage.ImageSaver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -64,13 +77,16 @@ private data class SelectedPageActionTarget(
 
 /**
  * Main reader surface that coordinates page rendering, overlay bars, reading-mode sync,
- * and page-level actions such as quick save, save-as, and share.
+ * progress tracking, and page-level actions such as quick save, save-as, and share.
  *
- * @param onBackClick Invoked when the reader top bar back button is tapped.
- * @param modifier Modifier applied to the root reader container.
- * @param viewModel Reader state owner that provides pages, progress, mode, and navigation events.
+ * Logging notes:
+ * - vertical page changes are logged after the active-item calculation,
+ * - flushes on dispose are logged with the final page index,
+ * - mode sync and page navigation events keep their existing debug traces.
  */
+@Suppress("ASSIGNED_VALUE_IS_NEVER_READ")
 @Composable
+@OptIn(FlowPreview::class)
 fun ReaderScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -78,7 +94,9 @@ fun ReaderScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
     val scope = rememberCoroutineScope()
+    val backgroundIsLight = MaterialTheme.colorScheme.background.luminance() > 0.5f
 
     val savedToFileText = appString(R.string.reader_saved_to_file)
     val savedToPicturesText = appString(R.string.reader_saved_to_pictures)
@@ -91,7 +109,6 @@ fun ReaderScreen(
     Timber.d("ReaderScreen composed: chapter=%s mode=%s pages=%d", state.chapterTitle, state.currentReadingMode, state.pages.size)
 
     // --- Page Action Bottom Sheet state ---
-    var showBottomSheet by remember { mutableStateOf(false) }
     var selectedPageTarget by remember { mutableStateOf<SelectedPageActionTarget?>(null) }
     var errorMessageEvent by remember { mutableStateOf<String?>(null) }
     var errorToastType by remember { mutableStateOf(ReaderToastType.SaveFailed) }
@@ -107,6 +124,23 @@ fun ReaderScreen(
             }
             Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
             errorMessageEvent = null
+        }
+    }
+
+    DisposableEffect(activity, backgroundIsLight) {
+        val lightStyle = SystemBarStyle.light(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT)
+        val darkStyle = SystemBarStyle.dark(AndroidColor.TRANSPARENT)
+
+        activity?.enableEdgeToEdge(
+            statusBarStyle = darkStyle,
+            navigationBarStyle = darkStyle
+        )
+
+        onDispose {
+            activity?.enableEdgeToEdge(
+                statusBarStyle = if (backgroundIsLight) lightStyle else darkStyle,
+                navigationBarStyle = if (backgroundIsLight) lightStyle else darkStyle
+            )
         }
     }
 
@@ -149,12 +183,13 @@ fun ReaderScreen(
     val onPageLongPress: (String, Int) -> Unit = { url, pageIndex ->
         Timber.d("Reader page long-pressed: page=%d url=%s", pageIndex + 1, url)
         selectedPageTarget = SelectedPageActionTarget(pageUrl = url, pageIndex = pageIndex)
-        showBottomSheet = true
     }
 
     // --- Vertical mode state ---
+    // Keep the latest active page so we can flush it immediately on dispose.
     val listState = rememberLazyListState()
     val hasRestoredInitialPage = remember { mutableStateOf(false) }
+    val latestActivePageIndex = remember { mutableStateOf<Int?>(null) }
 
     // --- Horizontal mode state ---
     val pagerState = rememberPagerState(
@@ -168,18 +203,17 @@ fun ReaderScreen(
     LaunchedEffect(listState, state.pages.size, state.currentReadingMode) {
         if (state.currentReadingMode != ReadingMode.VERTICAL) return@LaunchedEffect
         if (state.pages.isEmpty()) return@LaunchedEffect
-        snapshotFlow {
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-            val totalItemsCount = listState.layoutInfo.totalItemsCount
-            lastVisible to totalItemsCount
-        }
+        snapshotFlow { listState.layoutInfo.findActivePageIndex() }
+            .filter { it >= 0 }
+            .onEach { index ->
+                latestActivePageIndex.value = index
+                Timber.d("Reader vertical active-page candidate: page=%d", index)
+            }
             .distinctUntilChanged()
-            .filter { (_, totalItemsCount) -> totalItemsCount > 0 }
-            .filter { (lastVisible, _) -> lastVisible >= 0 }
-            .distinctUntilChanged()
-            .map { (lastVisible, totalItemsCount) ->
-                val visiblePage = lastVisible.coerceIn(0, state.pages.lastIndex)
-                Timber.d("Reader vertical page visible: visible=%d total=%d mode=%s", visiblePage, totalItemsCount, state.currentReadingMode)
+            .debounce(300)
+            .map { index ->
+                val visiblePage = index.coerceIn(0, state.pages.lastIndex)
+                Timber.d("Reader vertical page active: page=%d mode=%s", visiblePage, state.currentReadingMode)
                 visiblePage
             }
             .collect(viewModel::onVisiblePageChanged)
@@ -237,8 +271,8 @@ fun ReaderScreen(
     // Sync progress to Room when leaving
     DisposableEffect(Unit) {
         onDispose {
-            Timber.d("Reader progress sync start")
-            viewModel.syncProgressToRoom()
+            Timber.d("Reader progress sync start: finalPage=%s", latestActivePageIndex.value?.toString() ?: "<none>")
+            viewModel.flushProgress(latestActivePageIndex.value)
             Timber.d("Reader progress sync end")
         }
     }
@@ -327,10 +361,9 @@ fun ReaderScreen(
     // ────────────────────────────────────────────────────────────
     // Page Action Bottom Sheet
     // ────────────────────────────────────────────────────────────
-    if (showBottomSheet && selectedPageTarget != null) {
+    if (selectedPageTarget != null) {
         PageActionBottomSheet(
             onDismiss = {
-                showBottomSheet = false
                 selectedPageTarget = null
                 Timber.d("Reader page action sheet dismissed")
             },
@@ -421,3 +454,94 @@ private fun VerticalReaderContent(
 }
 
 // Reader content and bar components moved to MangaPageItem.kt and ReaderBars.kt for modularity.
+
+private val PreviewReaderPages = listOf(
+    "https://example.com/reader/page-1.jpg",
+    "https://example.com/reader/page-2.jpg",
+    "https://example.com/reader/page-3.jpg"
+)
+
+@Preview(name = "Reader - Horizontal", showBackground = true)
+@Composable
+private fun ReaderHorizontalPreview() {
+    MyBooksLibraryTheme {
+        ReaderPreviewLayout(
+            chapterTitle = "Chapter 12: Lost Pages",
+            pages = PreviewReaderPages,
+            currentPage = 1,
+            readingMode = ReadingMode.LTR
+        )
+    }
+}
+
+private tailrec fun Context.findActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+@Preview(name = "Reader - Vertical", showBackground = true)
+@Composable
+private fun ReaderVerticalPreview() {
+    MyBooksLibraryTheme {
+        ReaderPreviewLayout(
+            chapterTitle = "Chapter 12: Lost Pages",
+            pages = PreviewReaderPages,
+            currentPage = 1,
+            readingMode = ReadingMode.VERTICAL
+        )
+    }
+}
+
+@Composable
+private fun ReaderPreviewLayout(
+    chapterTitle: String,
+    pages: List<String>,
+    currentPage: Int,
+    readingMode: ReadingMode
+) {
+    val listState = rememberLazyListState()
+    val pagerState = rememberPagerState(
+        initialPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0)),
+        pageCount = { pages.size }
+    )
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        when (readingMode) {
+            ReadingMode.VERTICAL -> {
+                VerticalReaderContent(
+                    pages = pages,
+                    listState = listState,
+                    onPageLongPress = { _, _ -> },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            ReadingMode.LTR, ReadingMode.RTL -> {
+                HorizontalReaderContent(
+                    pages = pages,
+                    pagerState = pagerState,
+                    readingMode = readingMode,
+                    onPageLongPress = { _, _ -> },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        ReaderTopBar(
+            chapterTitle = chapterTitle,
+            isVisible = true,
+            onBackClick = { }
+        )
+        ReaderBottomBar(
+            isVisible = true,
+            currentPage = currentPage,
+            totalPages = pages.size,
+            currentReadingMode = readingMode,
+            onToggleReadingMode = { }
+        )
+    }
+}

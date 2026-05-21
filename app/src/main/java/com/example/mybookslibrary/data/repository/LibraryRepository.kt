@@ -7,11 +7,15 @@ import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 import kotlinx.coroutines.flow.Flow
+import androidx.room.withTransaction
+import com.example.mybookslibrary.data.local.AppDatabase
+import timber.log.Timber
 
 // Repository quản lý thư viện cá nhân (Room DB)
 class LibraryRepository(
     private val libraryDao: LibraryDao,
-    private val chapterDao: ChapterDao
+    private val chapterDao: ChapterDao,
+    private val database: AppDatabase
 ) {
     // Theo dõi realtime danh sách manga trong thư viện (dùng cho LibraryScreen)
     fun observeLibraryItems(): Flow<List<LibraryItemEntity>> = libraryDao.observeAll()
@@ -58,7 +62,13 @@ class LibraryRepository(
         libraryDao.upsert(items)
     }
 
-    // Cập nhật tiến độ đọc (chapter + page) — gọi từ ReaderViewModel mỗi khi chuyển trang
+    /**
+     * Persists the chapter/page reading progress in a single Room transaction.
+     *
+     * - Updates the library row with the latest chapter and page index.
+     * - Updates the chapter progress row with READING/COMPLETED state.
+     * - Marks the chapter as completed only when the last page is reached exactly.
+     */
     suspend fun updateReadingProgress(
         mangaId: String,
         chapterId: String,
@@ -68,28 +78,41 @@ class LibraryRepository(
         val now = System.currentTimeMillis()
         val boundedTotalPages = totalPages.coerceAtLeast(0)
         val boundedPageIndex = pageIndex.coerceAtLeast(0)
-        val isCompleted = boundedTotalPages > 0 && boundedPageIndex >= (boundedTotalPages - 1)
+        val isCompleted = boundedTotalPages > 0 && boundedPageIndex == (boundedTotalPages - 1)
 
-        libraryDao.getByMangaId(mangaId)?.let { current ->
-            libraryDao.upsert(
-                current.copy(
-                    last_read_chapter_id = chapterId,
-                    last_read_page_index = boundedPageIndex,
+        Timber.d(
+            "updateReadingProgress: mangaId=%s chapterId=%s pageIndex=%d totalPages=%d completed=%s",
+            mangaId,
+            chapterId,
+            boundedPageIndex,
+            boundedTotalPages,
+            isCompleted
+        )
+
+        database.withTransaction {
+            libraryDao.getByMangaId(mangaId)?.let { current ->
+                libraryDao.upsert(
+                    current.copy(
+                        last_read_chapter_id = chapterId,
+                        last_read_page_index = boundedPageIndex,
+                        updated_at = now
+                    )
+                )
+            }
+
+            chapterDao.upsertChapterProgress(
+                ChapterProgressEntity(
+                    chapter_id = chapterId,
+                    manga_id = mangaId,
+                    status = if (isCompleted) ChapterStatus.COMPLETED else ChapterStatus.READING,
+                    last_read_page = boundedPageIndex,
+                    total_pages = boundedTotalPages,
                     updated_at = now
                 )
             )
         }
 
-        chapterDao.upsertChapterProgress(
-            ChapterProgressEntity(
-                chapter_id = chapterId,
-                manga_id = mangaId,
-                status = if (isCompleted) ChapterStatus.COMPLETED else ChapterStatus.READING,
-                last_read_page = if (isCompleted) boundedTotalPages else boundedPageIndex,
-                total_pages = boundedTotalPages,
-                updated_at = now
-            )
-        )
+        Timber.d("updateReadingProgress: finished mangaId=%s chapterId=%s", mangaId, chapterId)
     }
 
     suspend fun markChapterCompleted(

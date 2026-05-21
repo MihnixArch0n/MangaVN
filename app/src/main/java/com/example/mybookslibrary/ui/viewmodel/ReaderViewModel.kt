@@ -1,7 +1,6 @@
 package com.example.mybookslibrary.ui.viewmodel
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class ReaderState(
@@ -50,6 +50,7 @@ class ReaderViewModel @Inject constructor(
     private val chapterId: String = savedStateHandle.get<String>(CHAPTER_ID_ARG).orEmpty()
     // Tránh gọi Room update trùng lặp khi page index không thay đổi
     private var lastSyncedPageIndex: Int? = null
+    private var pendingPageIndex: Int? = null
 
     private val _state = MutableStateFlow(
         ReaderState(
@@ -99,8 +100,8 @@ class ReaderViewModel @Inject constructor(
     fun setReadingMode(mode: ReadingMode) {
         val oldMode = _state.value.currentReadingMode
         if (oldMode == mode) return
-        Log.d(TAG, "ReadingMode changed: $oldMode -> $mode")
-        _state.update { it.copy(isOverlayVisible = false, currentReadingMode = mode) }
+        Timber.d("ReadingMode changed: %s -> %s", oldMode, mode)
+        _state.update { it.copy(currentReadingMode = mode) }
     }
 
     /**
@@ -124,29 +125,65 @@ class ReaderViewModel @Inject constructor(
         }
 
         if (targetIndex == current.lastReadPageIndex) return
-        Log.d(TAG, "navigateToPage: action=$action, from=${current.lastReadPageIndex} to=$targetIndex")
+        Timber.d("navigateToPage: action=%s from=%d to=%d", action, current.lastReadPageIndex, targetIndex)
         _state.update { it.copy(lastReadPageIndex = targetIndex) }
         _pageNavigationEvent.tryEmit(targetIndex)
     }
 
-    // Cập nhật page index hiện tại và đồng bộ tiến độ vào Room trên mỗi lần chuyển trang
+    /**
+     * Receives the active page index from the UI layer.
+     *
+     * The UI already debounces noisy scroll updates, so this method only keeps the
+     * latest index and persists it when it actually changes.
+     */
     fun onVisiblePageChanged(index: Int) {
         val pages = _state.value.pages
         if (pages.isEmpty()) return
         val boundedIndex = index.coerceIn(0, pages.lastIndex)
+        pendingPageIndex = boundedIndex
+        Timber.d("onVisiblePageChanged: index=%d bounded=%d total=%d", index, boundedIndex, pages.size)
         if (boundedIndex == _state.value.lastReadPageIndex) return
         _state.update { it.copy(lastReadPageIndex = boundedIndex) }
-        syncProgressToRoom()
+        syncProgressToRoom(pageIndexOverride = boundedIndex, force = false)
+    }
+
+    /**
+     * Flushes the latest known page index immediately.
+     *
+     * This is used when the screen leaves before the debounce window finishes, so the
+     * last visible page is not lost.
+     */
+    fun flushProgress(index: Int?) {
+        val pages = _state.value.pages
+        if (pages.isEmpty()) return
+        val target = (index ?: pendingPageIndex ?: _state.value.lastReadPageIndex)
+            .coerceIn(0, pages.lastIndex)
+        Timber.d("flushProgress: requested=%s pending=%s target=%d", index?.toString() ?: "<none>", pendingPageIndex?.toString() ?: "<none>", target)
+        if (target != _state.value.lastReadPageIndex) {
+            _state.update { it.copy(lastReadPageIndex = target) }
+        }
+        syncProgressToRoom(pageIndexOverride = target, force = true)
     }
 
     // Lưu tiến độ đọc vào Room DB (chỉ cập nhật nếu manga đã có trong library)
-    fun syncProgressToRoom() {
-        val pageIndex = _state.value.lastReadPageIndex
+    private fun syncProgressToRoom(pageIndexOverride: Int? = null, force: Boolean = false) {
+        val pageIndex = pageIndexOverride ?: _state.value.lastReadPageIndex
         val totalPages = _state.value.pages.size
-        if (lastSyncedPageIndex == pageIndex) return
+        if (!force && lastSyncedPageIndex == pageIndex) {
+            Timber.d("syncProgressToRoom skipped: pageIndex=%d force=%s", pageIndex, force)
+            return
+        }
 
         viewModelScope.launch(ioDispatcher) {
             try {
+                Timber.d(
+                    "syncProgressToRoom start: mangaId=%s chapterId=%s pageIndex=%d totalPages=%d force=%s",
+                    mangaId,
+                    chapterId,
+                    pageIndex,
+                    totalPages,
+                    force
+                )
                 libraryRepository.updateReadingProgress(
                     mangaId = mangaId,
                     chapterId = chapterId,
@@ -154,14 +191,14 @@ class ReaderViewModel @Inject constructor(
                     totalPages = totalPages
                 )
                 lastSyncedPageIndex = pageIndex
+                Timber.d("syncProgressToRoom end: pageIndex=%d", pageIndex)
             } catch (t: Throwable) {
-                Log.e(TAG, "syncProgressToRoom error", t)
+                Timber.e(t, "syncProgressToRoom error")
             }
         }
     }
 
     companion object {
-        private const val TAG = "ReaderViewModel"
         private const val MANGA_ID_ARG = "mangaId"
         private const val CHAPTER_ID_ARG = "chapterId"
         private const val CHAPTER_TITLE_ARG = "chapterTitle"
