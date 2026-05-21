@@ -22,6 +22,7 @@ datastore = "1.2.1"
 # Hilt (DI)
 hilt = "2.59.2"
 hiltNavigationCompose = "1.3.0"
+work = "2.11.2"
 
 # Network & Imaging
 retrofit = "3.0.0"
@@ -66,6 +67,9 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltNavigationCompose" }
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hiltNavigationCompose" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 
 # Network & Image Loading
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
