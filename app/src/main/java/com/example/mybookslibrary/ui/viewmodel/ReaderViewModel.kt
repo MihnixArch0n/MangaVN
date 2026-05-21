@@ -101,7 +101,7 @@ class ReaderViewModel @Inject constructor(
         val oldMode = _state.value.currentReadingMode
         if (oldMode == mode) return
         Timber.d("ReadingMode changed: %s -> %s", oldMode, mode)
-        _state.update { it.copy(isOverlayVisible = false, currentReadingMode = mode) }
+        _state.update { it.copy(currentReadingMode = mode) }
     }
 
     /**
