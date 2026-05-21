@@ -16,6 +16,28 @@ interface LibraryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: LibraryItemEntity)
 
+    /**
+     * Updates only the resume-reading columns for an existing library item.
+     *
+     * Do not use the REPLACE upsert path for this write: SQLite implements REPLACE
+     * as delete-then-insert, which can cascade-delete chapter_progress rows.
+     */
+    @Query(
+        """
+        UPDATE library_items
+        SET last_read_chapter_id = :chapterId,
+            last_read_page_index = :pageIndex,
+            updated_at = :updatedAt
+        WHERE manga_id = :mangaId
+        """
+    )
+    suspend fun updateReadingProgress(
+        mangaId: String,
+        chapterId: String,
+        pageIndex: Int,
+        updatedAt: Long
+    ): Int
+
     @Query("DELETE FROM library_items WHERE manga_id = :mangaId")
     suspend fun deleteByMangaId(mangaId: String)
 

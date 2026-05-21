@@ -15,6 +15,12 @@ class GetChapterListWithProgressUseCase @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val chapterDao: ChapterDao
 ) {
+    /**
+     * Combines the remote chapter feed with locally persisted progress.
+     *
+     * Progress is keyed by chapter_id so each chapter keeps its own status and
+     * last-read page independently when another chapter is opened.
+     */
     operator fun invoke(mangaId: String): Flow<List<ChapterWithProgressModel>> = flow {
         val remoteChapters = mangaRepository.getMangaFeed(mangaId).getOrThrow()
 
@@ -52,4 +58,3 @@ private fun ChapterStatus?.toDomainStatus(): ChapterReadingStatus = when (this) 
     null,
     ChapterStatus.UNREAD -> ChapterReadingStatus.UNREAD
 }
-

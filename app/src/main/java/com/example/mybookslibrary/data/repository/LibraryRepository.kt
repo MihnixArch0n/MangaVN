@@ -65,7 +65,8 @@ class LibraryRepository(
     /**
      * Persists the chapter/page reading progress in a single Room transaction.
      *
-     * - Updates the library row with the latest chapter and page index.
+     * - Updates the library row with the latest chapter and page index without REPLACE,
+     *   because REPLACE can cascade-delete chapter progress rows through the FK.
      * - Updates the chapter progress row with READING/COMPLETED state.
      * - Marks the chapter as completed only when the last page is reached exactly.
      */
@@ -90,15 +91,12 @@ class LibraryRepository(
         )
 
         database.withTransaction {
-            libraryDao.getByMangaId(mangaId)?.let { current ->
-                libraryDao.upsert(
-                    current.copy(
-                        last_read_chapter_id = chapterId,
-                        last_read_page_index = boundedPageIndex,
-                        updated_at = now
-                    )
-                )
-            }
+            libraryDao.updateReadingProgress(
+                mangaId = mangaId,
+                chapterId = chapterId,
+                pageIndex = boundedPageIndex,
+                updatedAt = now
+            )
 
             chapterDao.upsertChapterProgress(
                 ChapterProgressEntity(
