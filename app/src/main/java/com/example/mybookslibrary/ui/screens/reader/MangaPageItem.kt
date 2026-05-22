@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.ui.screens.reader
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -79,11 +80,22 @@ fun MangaPageItem(
     var pageWidthPx by remember(imageUrl) { mutableIntStateOf(0) }
     val zoomableState = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f))
     val zoomableImageState = rememberZoomableImageState(zoomableState)
+    val retryPageLoad = remember(imageUrl, index) {
+        {
+            Timber.d("Retry tapped for page=%d url=%s", index + 1, imageUrl)
+            retryHash++
+            isError = false
+        }
+    }
     val imageRequest = remember(context, imageUrl, retryHash) {
         ImageRequest.Builder(context)
             // Append retryHash so Coil treats it as a new request on retry
             .data("$imageUrl#retry=$retryHash")
             .listener(
+                onStart = {
+                    isError = false
+                    Timber.d("Loading page=%d url=%s retry=%d", index + 1, imageUrl, retryHash)
+                },
                 onSuccess = { _, result ->
                     val image = result.image
                     val w = image.width
@@ -163,7 +175,8 @@ fun MangaPageItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.7f)),
+                    .background(Color.Black.copy(alpha = 0.7f))
+                    .clickable(onClick = retryPageLoad),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -181,11 +194,7 @@ fun MangaPageItem(
                     )
                     Spacer(Modifier.height(4.dp))
                     Button(
-                        onClick = {
-                            Timber.d("Retry tapped for page=%d url=%s", index + 1, imageUrl)
-                            retryHash++
-                            isError = false
-                        }
+                        onClick = retryPageLoad
                     ) {
                         Text(
                         text = appString(R.string.reader_tap_to_retry),
