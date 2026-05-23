@@ -61,6 +61,8 @@ import com.example.mybookslibrary.ui.screens.SettingScreen
 import com.example.mybookslibrary.ui.screens.reader.ReaderScreen
 import com.example.mybookslibrary.ui.screens.MangaReviewScreen
 import com.example.mybookslibrary.ui.screens.detail.MangaDetailScreen
+import com.example.mybookslibrary.ui.screens.auth.LoginScreen
+import com.example.mybookslibrary.ui.screens.auth.RegisterScreen
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
@@ -83,6 +85,11 @@ private val bottomDestinations = listOf(
     BottomNavDestination.Library,
     BottomNavDestination.Setting
 )
+
+object AuthDestination {
+    const val Login = "login"
+    const val Register = "register"
+}
 
 object ReaderDestination {
     const val route = "reader"
@@ -139,13 +146,16 @@ object MangaReviewDestination {
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun MainNavHost() {
+fun MainNavHost(loggedInUserId: String?) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
+
     val currentDestination = navBackStackEntry?.destination
 
     val showBottomBar = currentDestination?.hierarchy?.none { dest ->
-        dest.route?.startsWith(ReaderDestination.route) == true ||
+        dest.route == AuthDestination.Login ||
+            dest.route == AuthDestination.Register ||
+            dest.route?.startsWith(ReaderDestination.route) == true ||
             dest.route?.startsWith(MangaDetailDestination.route) == true ||
             dest.route?.startsWith(MangaReviewDestination.route) == true
     } ?: true
@@ -174,7 +184,7 @@ fun MainNavHost() {
             CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout) {
                 NavHost(
                     navController = navController,
-                    startDestination = BottomNavDestination.Discover.route,
+                    startDestination = if (loggedInUserId == null) AuthDestination.Login else BottomNavDestination.Discover.route,
                     modifier = Modifier.padding(
                         top = if (isReaderDestination) 0.dp else innerPadding.calculateTopPadding(),
                         bottom = 0.dp
@@ -184,6 +194,28 @@ fun MainNavHost() {
                     popEnterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
                     popExitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) }
                 ) {
+            composable(AuthDestination.Login) {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate(BottomNavDestination.Discover.route) {
+                            popUpTo(AuthDestination.Login) { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(AuthDestination.Register)
+                    }
+                )
+            }
+            composable(AuthDestination.Register) {
+                RegisterScreen(
+                    onRegisterSuccess = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
             composable(
                 route = BottomNavDestination.Discover.route,
                 enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + scaleIn(initialScale = 0.95f, animationSpec = tween(300, easing = FastOutSlowInEasing)) },

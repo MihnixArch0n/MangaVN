@@ -7,6 +7,7 @@ import com.example.mybookslibrary.data.local.userPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.DownloadQueueDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
+import com.example.mybookslibrary.data.local.dao.UserDao
 import com.example.mybookslibrary.data.remote.MangaDexApi
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
@@ -37,6 +38,10 @@ object DataModule {
 
     @Provides
     fun provideDownloadQueueDao(database: AppDatabase): DownloadQueueDao = database.downloadQueueDao()
+
+    @Provides
+    fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
+
 
     @Provides
     @Singleton

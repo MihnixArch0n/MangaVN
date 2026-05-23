@@ -23,6 +23,8 @@ class UserPreferencesDataStore(private val dataStore: DataStore<Preferences>) {
         private val LANGUAGE = stringPreferencesKey("language")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
+        private val LOGGED_IN_USER_ID = stringPreferencesKey("logged_in_user_id")
+
         private const val DEFAULT_QUALITY = "data"
         private const val DEFAULT_LANGUAGE = "en"
         private const val DEFAULT_THEME = "system"
@@ -66,6 +68,21 @@ class UserPreferencesDataStore(private val dataStore: DataStore<Preferences>) {
     suspend fun setDownloadOnlyOnWifi(enabled: Boolean) {
         dataStore.edit { it[DOWNLOAD_ONLY_ON_WIFI] = enabled }
     }
+
+    fun observeLoggedInUserId(): Flow<String?> = dataStore.data.map { it[LOGGED_IN_USER_ID] }
+
+    suspend fun getLoggedInUserId(): String? = dataStore.data.first()[LOGGED_IN_USER_ID]
+
+    suspend fun setLoggedInUserId(id: String?) {
+        dataStore.edit {
+            if (id == null) {
+                it.remove(LOGGED_IN_USER_ID)
+            } else {
+                it[LOGGED_IN_USER_ID] = id
+            }
+        }
+    }
+
 
     suspend fun clearAll() {
         dataStore.edit { it.clear() }

@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
                 .collectAsStateWithLifecycle(initialValue = "en")
             val themeMode by preferencesDataStore.observeThemeMode()
                 .collectAsStateWithLifecycle(initialValue = "system")
+            val loggedInUserId by preferencesDataStore.observeLoggedInUserId()
+                .collectAsStateWithLifecycle(initialValue = null)
+
 
             val darkTheme = when (themeMode) {
                 "dark" -> true
@@ -53,7 +56,7 @@ class MainActivity : ComponentActivity() {
             // LocalAppLocale thay đổi → toàn bộ appString() recompose → chuyển ngôn ngữ mượt mà
             CompositionLocalProvider(LocalAppLocale provides language) {
                 MyBooksLibraryTheme(darkTheme = darkTheme) {
-                    MainNavHost()
+                    MainNavHost(loggedInUserId)
                 }
             }
         }

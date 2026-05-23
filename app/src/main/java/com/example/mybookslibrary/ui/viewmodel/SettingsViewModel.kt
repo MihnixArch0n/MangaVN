@@ -98,6 +98,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch(ioDispatcher) {
             // Chỉ reset quality về mặc định, giữ nguyên language + theme
             preferencesDataStore.setReaderQuality("data")
+            preferencesDataStore.setLoggedInUserId(null)
             libraryRepository.clearAll()
             _uiState.update { it.copy(signedOut = true, quality = "data") }
         }
