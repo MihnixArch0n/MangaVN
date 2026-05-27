@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.telephoto.zoomable.image.coil3)
     implementation(libs.timber)
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)

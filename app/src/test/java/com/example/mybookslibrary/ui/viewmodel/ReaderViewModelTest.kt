@@ -5,12 +5,16 @@ import com.example.mybookslibrary.data.download.DownloadedChapterCache
 import com.example.mybookslibrary.data.download.OfflineDownloadStorage
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
+import com.example.mybookslibrary.domain.model.ReaderTapAction
 import com.example.mybookslibrary.test.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -44,6 +48,71 @@ class ReaderViewModelTest {
             advanceUntilIdle()
 
             assertEquals(0, viewModel.state.value.lastReadPageIndex)
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun navigateToPage_withToggleOverlay_togglesOverlayVisibility() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            val viewModel = createViewModel(startPageIndex = 0)
+            advanceUntilIdle()
+
+            viewModel.navigateToPage(ReaderTapAction.TOGGLE_OVERLAY)
+
+            assertEquals(true, viewModel.state.value.isOverlayVisible)
+
+            viewModel.navigateToPage(ReaderTapAction.TOGGLE_OVERLAY)
+
+            assertEquals(false, viewModel.state.value.isOverlayVisible)
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun navigateToPage_withNextPage_updatesCurrentPageAndEmitsNavigationEvent() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            val viewModel = createViewModel(startPageIndex = 2)
+            advanceUntilIdle()
+            val navigationEvent = async { viewModel.pageNavigationEvent.first() }
+            runCurrent()
+
+            viewModel.navigateToPage(ReaderTapAction.NEXT_PAGE)
+
+            assertEquals(3, viewModel.state.value.lastReadPageIndex)
+            assertEquals(3, navigationEvent.await())
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun navigateToPage_withPreviousPage_updatesCurrentPageAndEmitsNavigationEvent() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            val viewModel = createViewModel(startPageIndex = 2)
+            advanceUntilIdle()
+            val navigationEvent = async { viewModel.pageNavigationEvent.first() }
+            runCurrent()
+
+            viewModel.navigateToPage(ReaderTapAction.PREVIOUS_PAGE)
+
+            assertEquals(1, viewModel.state.value.lastReadPageIndex)
+            assertEquals(1, navigationEvent.await())
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun navigateToPage_atPageBoundary_doesNotMovePastAvailablePages() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            val firstPageViewModel = createViewModel(startPageIndex = 0)
+            advanceUntilIdle()
+
+            firstPageViewModel.navigateToPage(ReaderTapAction.PREVIOUS_PAGE)
+
+            assertEquals(0, firstPageViewModel.state.value.lastReadPageIndex)
+
+            val lastPageViewModel = createViewModel(startPageIndex = 7)
+            advanceUntilIdle()
+
+            lastPageViewModel.navigateToPage(ReaderTapAction.NEXT_PAGE)
+
+            assertEquals(7, lastPageViewModel.state.value.lastReadPageIndex)
         }
 
     private fun createViewModel(startPageIndex: Int?): ReaderViewModel {
