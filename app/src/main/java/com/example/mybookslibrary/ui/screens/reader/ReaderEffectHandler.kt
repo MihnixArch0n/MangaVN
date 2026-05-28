@@ -22,6 +22,7 @@ import com.example.mybookslibrary.ui.viewmodel.ReaderPageActionTarget
 import com.example.mybookslibrary.ui.viewmodel.ReaderUiEffect
 import com.example.mybookslibrary.util.storage.ImageSaver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -98,17 +99,21 @@ internal fun ReaderEffectHandler(
     }
 
     LaunchedEffect(effects, pagerState, currentReadingMode) {
+        var navigationJob: Job? = null
         effects.collect { effect ->
             when (effect) {
                 is ReaderUiEffect.NavigateToPage -> {
                     if (currentReadingMode != ReadingMode.VERTICAL) {
-                        Timber.d(
-                            "Reader page navigation start: targetPage=%d mode=%s",
-                            effect.pageIndex,
-                            currentReadingMode
-                        )
-                        pagerState.animateScrollToPage(effect.pageIndex)
-                        Timber.d("Reader page navigation end: targetPage=%d", effect.pageIndex)
+                        navigationJob?.cancel()
+                        navigationJob = launch {
+                            Timber.d(
+                                "Reader page navigation start: targetPage=%d mode=%s",
+                                effect.pageIndex,
+                                currentReadingMode
+                            )
+                            pagerState.animateScrollToPage(effect.pageIndex)
+                            Timber.d("Reader page navigation end: targetPage=%d", effect.pageIndex)
+                        }
                     }
                 }
                 is ReaderUiEffect.QuickSavePage -> {
