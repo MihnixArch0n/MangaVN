@@ -15,6 +15,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
 // Hilt module cung cấp Room DB, DAO, Repository và DataStore cho toàn app
@@ -59,7 +60,8 @@ object DataModule {
     @Singleton
     fun provideMangaRepository(
         api: MangaDexApi,
-        preferencesDataStore: UserPreferencesDataStore
-    ): MangaRepository = MangaRepository(api, preferencesDataStore)
+        preferencesDataStore: UserPreferencesDataStore,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher
+    ): MangaRepository = MangaRepository(api, preferencesDataStore, ioDispatcher)
 
 }

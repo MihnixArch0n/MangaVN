@@ -1,19 +1,26 @@
 package com.example.mybookslibrary.data.repository
 
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.data.remote.models.AtHomeReportRequest
 import com.example.mybookslibrary.data.remote.MangaDexApi
 import com.example.mybookslibrary.data.remote.models.MangaDexConstants
+import com.example.mybookslibrary.di.IoDispatcher
 import com.example.mybookslibrary.data.remote.models.toDomainModel
 import com.example.mybookslibrary.data.remote.models.toDomainModel as chapterToDomainModel
 import com.example.mybookslibrary.domain.model.ChapterModel
 import com.example.mybookslibrary.domain.model.MangaModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.io.IOException
 
 class MangaRepository(
     private val api: MangaDexApi,
-    private val preferencesDataStore: UserPreferencesDataStore
+    private val preferencesDataStore: UserPreferencesDataStore,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
     companion object {
         private const val FEED_PAGE_LIMIT = 500
@@ -88,15 +95,53 @@ class MangaRepository(
     }
 
     suspend fun getChapterPages(chapterId: String): Result<List<String>> = runCatching {
+        getChapterDelivery(chapterId).getOrThrow().pageUrls()
+    }
+
+    suspend fun getChapterDelivery(chapterId: String): Result<ChapterDelivery> = runCatching {
         val quality = preferencesDataStore.getReaderQuality()
         val atHomeResponse = api.getAtHomeServer(chapterId)
-        val baseUrl = atHomeResponse.baseUrl
-        val hash = atHomeResponse.chapter.hash
         val filenames = when {
             quality == MangaDexConstants.QUALITY_DATA_SAVER && atHomeResponse.chapter.dataSaver.isNotEmpty() ->
                 atHomeResponse.chapter.dataSaver
             else -> atHomeResponse.chapter.data
         }
-        filenames.map { filename -> "$baseUrl/$quality/$hash/$filename" }
+
+        ChapterDelivery(
+            baseUrl = atHomeResponse.baseUrl,
+            quality = quality,
+            hash = atHomeResponse.chapter.hash,
+            filenames = filenames
+        )
     }
+
+    suspend fun sendAtHomeReport(request: AtHomeReportRequest) {
+        withContext(ioDispatcher) {
+            try {
+                Timber.d("sendAtHomeReport start: payload=%s", request)
+                val response = api.sendAtHomeReport(request)
+                Timber.d(
+                    "sendAtHomeReport end: url=%s success=%s http=%d",
+                    request.url,
+                    request.success,
+                    response.code()
+                )
+            } catch (cancellationException: CancellationException) {
+                throw cancellationException
+            } catch (t: Throwable) {
+                Timber.e(t, "sendAtHomeReport failed silently: url=%s", request.url)
+            }
+        }
+    }
+}
+
+data class ChapterDelivery(
+    val baseUrl: String,
+    val quality: String,
+    val hash: String,
+    val filenames: List<String>
+) {
+    fun pageUrl(pageIndex: Int): String = "$baseUrl/$quality/$hash/${filenames[pageIndex]}"
+
+    fun pageUrls(): List<String> = filenames.indices.map(::pageUrl)
 }

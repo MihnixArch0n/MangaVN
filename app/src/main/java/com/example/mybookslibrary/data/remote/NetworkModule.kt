@@ -2,11 +2,14 @@ package com.example.mybookslibrary.data.remote
 
 import android.content.Context
 import android.util.Log
+import com.example.mybookslibrary.data.repository.MangaRepository
+import com.example.mybookslibrary.di.ApplicationScope
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -47,7 +50,8 @@ object NetworkModule {
     @Singleton
     @Named("ImageOkHttpClient")
     fun provideImageOkHttpClient(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        atHomeReportInterceptor: AtHomeReportInterceptor
     ): OkHttpClient {
         val cacheDir = context.cacheDir
         Timber.d(
@@ -57,8 +61,19 @@ object NetworkModule {
         )
         return OkHttpClient.Builder()
             .cache(Cache(cacheDir, IMAGE_HTTP_CACHE_SIZE_BYTES))
+            .addInterceptor(atHomeReportInterceptor)
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideAtHomeReportInterceptor(
+        mangaRepository: MangaRepository,
+        @ApplicationScope applicationScope: CoroutineScope
+    ): AtHomeReportInterceptor = AtHomeReportInterceptor(
+        mangaRepository = mangaRepository,
+        applicationScope = applicationScope
+    )
 
     @Provides
     @Singleton

@@ -143,3 +143,10 @@ data class AtHomeChapterDto(
     @SerializedName("dataSaver") val dataSaver: List<String> = emptyList()
 )
 
+data class AtHomeReportRequest(
+    @SerializedName("url") val url: String,
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("bytes") val bytes: Int,
+    @SerializedName("duration") val duration: Long,
+    @SerializedName("cached") val cached: Boolean
+)
