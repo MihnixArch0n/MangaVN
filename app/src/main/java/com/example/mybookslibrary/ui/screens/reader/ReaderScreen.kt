@@ -30,30 +30,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.R
-import com.example.mybookslibrary.domain.model.ReaderTapAction
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.screens.reader.components.PageAction
 import com.example.mybookslibrary.ui.screens.reader.components.PageActionBottomSheet
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.util.findActivePageIndex
+import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
+import com.example.mybookslibrary.ui.viewmodel.ReaderPageAction
+import com.example.mybookslibrary.ui.viewmodel.ReaderPageActionTarget
+import com.example.mybookslibrary.ui.viewmodel.ReaderUiEffect
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.util.storage.ImageSaver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -70,11 +72,6 @@ private enum class ReaderToastType {
     SaveFailed,
     ShareFailed
 }
-
-private data class SelectedPageActionTarget(
-    val pageUrl: String,
-    val pageIndex: Int
-)
 
 /**
  * Main reader surface that coordinates page rendering, overlay bars, reading-mode sync,
@@ -94,6 +91,7 @@ fun ReaderScreen(
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val onEvent: (ReaderEvent) -> Unit = viewModel::onEvent
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
     val scope = rememberCoroutineScope()
@@ -109,8 +107,7 @@ fun ReaderScreen(
 
     Timber.d("ReaderScreen composed: chapter=%s mode=%s pages=%d", state.chapterTitle, state.currentReadingMode, state.pages.size)
 
-    // --- Page Action Bottom Sheet state ---
-    var selectedPageTarget by remember { mutableStateOf<SelectedPageActionTarget?>(null) }
+    // --- Page Action result toast state ---
     var errorMessageEvent by remember { mutableStateOf<String?>(null) }
     var errorToastType by remember { mutableStateOf(ReaderToastType.SaveFailed) }
 
@@ -147,7 +144,7 @@ fun ReaderScreen(
 
     // --- SAF launcher for "Save As" ---
     // Stores the URL temporarily while waiting for SAF result
-    var pendingSaveAsTarget by remember { mutableStateOf<SelectedPageActionTarget?>(null) }
+    var pendingSaveAsTarget by remember { mutableStateOf<ReaderPageActionTarget?>(null) }
     val saveAsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("image/*")
     ) { uri ->
@@ -166,26 +163,23 @@ fun ReaderScreen(
             try {
                 Timber.d("Reader save-as start: page=%d url=%s uri=%s", displayPage, url, uri)
                 imageSaver.saveToUri(url, uri)
-                launch(Dispatchers.Main) {
-                    Toast.makeText(context, savedToFileText, Toast.LENGTH_SHORT).show()
+                withContext(Dispatchers.Main) {
+                    onEvent(ReaderEvent.PageActionCompleted(ReaderPageAction.SaveAs))
                 }
                 Timber.d("Reader save-as end: page=%d url=%s uri=%s", displayPage, url, uri)
             } catch (e: Exception) {
                 Timber.e(e, "Reader save-as failed: page=%d url=%s uri=%s", displayPage, url, uri)
                 withContext(Dispatchers.Main) {
-                    errorToastType = ReaderToastType.SaveFailed
-                    errorMessageEvent = e.message ?: fallbackError
+                    onEvent(
+                        ReaderEvent.PageActionFailed(
+                            action = ReaderPageAction.SaveAs,
+                            message = e.message ?: fallbackError
+                        )
+                    )
                 }
             }
         }
     }
-
-    // --- Long-press handler ---
-    val onPageLongPress: (String, Int) -> Unit = { url, pageIndex ->
-        Timber.d("Reader page long-pressed: page=%d url=%s", pageIndex + 1, url)
-        selectedPageTarget = SelectedPageActionTarget(pageUrl = url, pageIndex = pageIndex)
-    }
-    val onPageTapAction: (ReaderTapAction) -> Unit = viewModel::navigateToPage
 
     // --- Vertical mode state ---
     // Keep the latest active page so we can flush it immediately on dispose.
@@ -200,6 +194,98 @@ fun ReaderScreen(
         initialPage = state.lastReadPageIndex,
         pageCount = { state.pages.size }
     )
+
+    LaunchedEffect(viewModel, pagerState, state.currentReadingMode) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is ReaderUiEffect.NavigateToPage -> {
+                    if (state.currentReadingMode != ReadingMode.VERTICAL) {
+                        Timber.d(
+                            "Reader page navigation start: targetPage=%d mode=%s",
+                            effect.pageIndex,
+                            state.currentReadingMode
+                        )
+                        pagerState.animateScrollToPage(effect.pageIndex)
+                        Timber.d("Reader page navigation end: targetPage=%d", effect.pageIndex)
+                    }
+                }
+                is ReaderUiEffect.QuickSavePage -> {
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val pageNumber = effect.target.pageIndex + 1
+                            Timber.d("Reader quick-save start: page=%d url=%s", pageNumber, effect.target.pageUrl)
+                            imageSaver.quickSave(effect.target.pageUrl, effect.fileName)
+                            withContext(Dispatchers.Main) {
+                                onEvent(ReaderEvent.PageActionCompleted(ReaderPageAction.QuickSave))
+                            }
+                            Timber.d("Reader quick-save end: page=%d url=%s", pageNumber, effect.target.pageUrl)
+                        } catch (e: Exception) {
+                            Timber.e(e, "Reader quick-save failed: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)
+                            withContext(Dispatchers.Main) {
+                                onEvent(
+                                    ReaderEvent.PageActionFailed(
+                                        action = ReaderPageAction.QuickSave,
+                                        message = e.message ?: fallbackError
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+                is ReaderUiEffect.SavePageAs -> {
+                    Timber.d(
+                        "Reader save-as selected: page=%d url=%s",
+                        effect.target.pageIndex + 1,
+                        effect.target.pageUrl
+                    )
+                    pendingSaveAsTarget = effect.target
+                    saveAsLauncher.launch("${effect.fileName}.${effect.extension}")
+                }
+                is ReaderUiEffect.SharePage -> {
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            val pageNumber = effect.target.pageIndex + 1
+                            Timber.d("Reader share start: page=%d url=%s", pageNumber, effect.target.pageUrl)
+                            val intent = imageSaver.shareImage(effect.target.pageUrl, effect.fileName)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, sharingText, Toast.LENGTH_SHORT).show()
+                                context.startActivity(Intent.createChooser(intent, null))
+                                onEvent(ReaderEvent.PageActionCompleted(ReaderPageAction.Share))
+                            }
+                            Timber.d("Reader share end: page=%d url=%s", pageNumber, effect.target.pageUrl)
+                        } catch (e: Exception) {
+                            Timber.e(e, "Reader share failed: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)
+                            withContext(Dispatchers.Main) {
+                                onEvent(
+                                    ReaderEvent.PageActionFailed(
+                                        action = ReaderPageAction.Share,
+                                        message = e.message ?: fallbackError
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+                is ReaderUiEffect.ShowPageActionResult -> {
+                    if (effect.errorMessage == null) {
+                        val text = when (effect.action) {
+                            ReaderPageAction.QuickSave -> savedToPicturesText
+                            ReaderPageAction.SaveAs -> savedToFileText
+                            ReaderPageAction.Share -> sharingText
+                        }
+                        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+                    } else {
+                        errorToastType = when (effect.action) {
+                            ReaderPageAction.Share -> ReaderToastType.ShareFailed
+                            ReaderPageAction.QuickSave,
+                            ReaderPageAction.SaveAs -> ReaderToastType.SaveFailed
+                        }
+                        errorMessageEvent = effect.errorMessage
+                    }
+                }
+            }
+        }
+    }
 
     // ────────────────────────────────────────────────────────────
     // Vertical scroll → ViewModel page tracking
@@ -220,7 +306,9 @@ fun ReaderScreen(
                 Timber.d("Reader vertical page active: page=%d mode=%s", visiblePage, state.currentReadingMode)
                 visiblePage
             }
-            .collect(viewModel::onVisiblePageChanged)
+            .collect { index ->
+                onEvent(ReaderEvent.VisiblePageChanged(index))
+            }
     }
 
     // Restore initial page position for vertical mode (first load only)
@@ -259,24 +347,16 @@ fun ReaderScreen(
                 Timber.d("Reader horizontal page visible: page=%d mode=%s", page, state.currentReadingMode)
                 page
             }
-            .collect(viewModel::onVisiblePageChanged)
-    }
-
-    // Listen to tap-zone navigation events and animate pager to target page
-    LaunchedEffect(pagerState, state.currentReadingMode) {
-        if (state.currentReadingMode == ReadingMode.VERTICAL) return@LaunchedEffect
-        viewModel.pageNavigationEvent.collectLatest { targetPage ->
-            Timber.d("Reader page navigation start: targetPage=%d mode=%s", targetPage, state.currentReadingMode)
-            pagerState.animateScrollToPage(targetPage)
-            Timber.d("Reader page navigation end: targetPage=%d mode=%s", targetPage, state.currentReadingMode)
-        }
+            .collect { page ->
+                onEvent(ReaderEvent.VisiblePageChanged(page))
+            }
     }
 
     // Sync progress to Room when leaving
     DisposableEffect(Unit) {
         onDispose {
             Timber.d("Reader progress sync start: finalPage=%s", latestActivePageIndex.value?.toString() ?: "<none>")
-            viewModel.flushProgress(latestActivePageIndex.value)
+            onEvent(ReaderEvent.FlushProgress(latestActivePageIndex.value))
             Timber.d("Reader progress sync end")
         }
     }
@@ -319,9 +399,7 @@ fun ReaderScreen(
                         VerticalReaderContent(
                             pages = state.pages,
                             listState = listState,
-                            readingMode = state.currentReadingMode,
-                            onTapAction = onPageTapAction,
-                            onPageLongPress = onPageLongPress,
+                            onEvent = onEvent,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -330,8 +408,7 @@ fun ReaderScreen(
                             pages = state.pages,
                             pagerState = pagerState,
                             readingMode = state.currentReadingMode,
-                            onTapAction = onPageTapAction,
-                            onPageLongPress = onPageLongPress,
+                            onEvent = onEvent,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -346,12 +423,7 @@ fun ReaderScreen(
             totalPages = state.pages.size,
             currentReadingMode = state.currentReadingMode,
             onToggleReadingMode = {
-                val next = when (state.currentReadingMode) {
-                    ReadingMode.VERTICAL -> ReadingMode.LTR
-                    ReadingMode.LTR -> ReadingMode.RTL
-                    ReadingMode.RTL -> ReadingMode.VERTICAL
-                }
-                viewModel.setReadingMode(next)
+                onEvent(ReaderEvent.CycleReadingMode)
             }
         )
     }
@@ -359,74 +431,14 @@ fun ReaderScreen(
     // ────────────────────────────────────────────────────────────
     // Page Action Bottom Sheet
     // ────────────────────────────────────────────────────────────
-    if (selectedPageTarget != null) {
+    if (state.selectedPageActionTarget != null) {
         PageActionBottomSheet(
             onDismiss = {
-                selectedPageTarget = null
+                onEvent(ReaderEvent.DismissPageActions)
                 Timber.d("Reader page action sheet dismissed")
             },
             onAction = { action ->
-                val target = selectedPageTarget ?: return@PageActionBottomSheet
-                val pageNumber = target.pageIndex + 1
-                val chapterSlug = state.chapterTitle
-                    .lowercase()
-                    .replace(Regex("[^a-z0-9]+"), "_")
-                    .trim('_')
-                    .ifBlank { "chapter" }
-                val saveAsExtension = target.pageUrl
-                    .toUri()
-                    .lastPathSegment
-                    ?.substringAfterLast('.', "jpg")
-                    ?.takeIf { it.isNotBlank() }
-                    ?: "jpg"
-                val pageName = "${chapterSlug}_p${pageNumber}_${target.pageUrl.hashCode().toUInt().toString(16)}"
-
-                when (action) {
-                    PageAction.QuickSave -> {
-                        scope.launch(Dispatchers.IO) {
-                            try {
-                                Timber.d("Reader quick-save start: page=%d url=%s", pageNumber, target.pageUrl)
-                                imageSaver.quickSave(target.pageUrl, pageName)
-                                launch(Dispatchers.Main) {
-                                    Toast.makeText(context, savedToPicturesText, Toast.LENGTH_SHORT).show()
-                                }
-                                Timber.d("Reader quick-save end: page=%d url=%s", pageNumber, target.pageUrl)
-                            } catch (e: Exception) {
-                                Timber.e(e, "Reader quick-save failed: page=%d url=%s", pageNumber, target.pageUrl)
-                                withContext(Dispatchers.Main) {
-                                    errorToastType = ReaderToastType.SaveFailed
-                                    errorMessageEvent = e.message ?: fallbackError
-                                }
-                            }
-                        }
-                    }
-
-                    PageAction.SaveAs -> {
-                        Timber.d("Reader save-as selected: page=%d url=%s", pageNumber, target.pageUrl)
-                        pendingSaveAsTarget = target
-                        saveAsLauncher.launch("$pageName.$saveAsExtension")
-                    }
-
-                    PageAction.Share -> {
-                        scope.launch(Dispatchers.IO) {
-                            try {
-                                Timber.d("Reader share start: page=%d url=%s", pageNumber, target.pageUrl)
-                                val intent = imageSaver.shareImage(target.pageUrl, pageName)
-                                withContext(Dispatchers.Main) {
-                                    Toast.makeText(context, sharingText, Toast.LENGTH_SHORT).show()
-                                    context.startActivity(Intent.createChooser(intent, null))
-                                }
-                                Timber.d("Reader share end: page=%d url=%s", pageNumber, target.pageUrl)
-                            } catch (e: Exception) {
-                                Timber.e(e, "Reader share failed: page=%d url=%s", pageNumber, target.pageUrl)
-                                withContext(Dispatchers.Main) {
-                                    errorToastType = ReaderToastType.ShareFailed
-                                    errorMessageEvent = e.message ?: fallbackError
-                                }
-                            }
-                        }
-                    }
-                }
+                onEvent(ReaderEvent.PageActionSelected(action.toReaderPageAction()))
             }
         )
     }
@@ -436,12 +448,12 @@ fun ReaderScreen(
 private fun VerticalReaderContent(
     pages: List<String>,
     listState: LazyListState,
-    readingMode: ReadingMode,
-    onTapAction: (ReaderTapAction) -> Unit,
-    onPageLongPress: (String, Int) -> Unit,
+    onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val zoomableState = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f))
+    var containerWidthPx by remember { mutableStateOf(0) }
+    var containerHeightPx by remember { mutableStateOf(0) }
 
     LaunchedEffect(zoomableState) {
         snapshotFlow { zoomableState.zoomFraction }
@@ -454,11 +466,22 @@ private fun VerticalReaderContent(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .onSizeChanged {
+                containerWidthPx = it.width
+                containerHeightPx = it.height
+            }
             .zoomable(
                 state = zoomableState,
                 onClick = { offset ->
                     Timber.d("Reader webtoon container tap: x=%.1f y=%.1f", offset.x, offset.y)
-                    onTapAction(ReaderTapAction.TOGGLE_OVERLAY)
+                    onEvent(
+                        ReaderEvent.TapOnScreen(
+                            x = offset.x,
+                            y = offset.y,
+                            width = containerWidthPx.toFloat(),
+                            height = containerHeightPx.toFloat()
+                        )
+                    )
                 },
                 onLongClick = { offset ->
                     val pageIndex = listState.findPageIndexAtViewportOffset(offset.y)
@@ -471,7 +494,7 @@ private fun VerticalReaderContent(
                         pageUrl
                     )
                     if (pageUrl != null && pageIndex >= 0) {
-                        onPageLongPress(pageUrl, pageIndex)
+                        onEvent(ReaderEvent.PageLongPressed(pageUrl, pageIndex))
                     }
                 }
             )
@@ -481,9 +504,12 @@ private fun VerticalReaderContent(
                 WebtoonPageItem(
                     imageUrl = page,
                     index = index,
-                    readingMode = readingMode,
-                    onTapAction = onTapAction,
-                    onLongPress = onPageLongPress,
+                    onTap = { x, y, width, height ->
+                        onEvent(ReaderEvent.TapOnScreen(x, y, width, height))
+                    },
+                    onLongPress = { url, pageIndex ->
+                        onEvent(ReaderEvent.PageLongPressed(url, pageIndex))
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -561,9 +587,7 @@ private fun ReaderPreviewLayout(
                 VerticalReaderContent(
                     pages = pages,
                     listState = listState,
-                    readingMode = readingMode,
-                    onTapAction = {},
-                    onPageLongPress = { _, _ -> },
+                    onEvent = {},
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -572,8 +596,7 @@ private fun ReaderPreviewLayout(
                     pages = pages,
                     pagerState = pagerState,
                     readingMode = readingMode,
-                    onTapAction = {},
-                    onPageLongPress = { _, _ -> },
+                    onEvent = {},
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -592,4 +615,10 @@ private fun ReaderPreviewLayout(
             onToggleReadingMode = { }
         )
     }
+}
+
+private fun PageAction.toReaderPageAction(): ReaderPageAction = when (this) {
+    PageAction.QuickSave -> ReaderPageAction.QuickSave
+    PageAction.SaveAs -> ReaderPageAction.SaveAs
+    PageAction.Share -> ReaderPageAction.Share
 }

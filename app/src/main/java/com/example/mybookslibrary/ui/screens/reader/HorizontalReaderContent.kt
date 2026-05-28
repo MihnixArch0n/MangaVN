@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
-import com.example.mybookslibrary.domain.model.ReaderTapAction
 import com.example.mybookslibrary.domain.model.ReadingMode
+import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 
 /**
@@ -29,7 +29,7 @@ import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
  * @param pages The list of image URLs for each page.
  * @param pagerState The [PagerState] controlling the pager position and animations.
  * @param readingMode The current [ReadingMode], used to determine layout direction.
- * @param onTapAction Callback invoked when a zoomable page emits a tap-zone reader action.
+ * @param onEvent Callback invoked when reader content emits UI events.
  * @param onPageLongPress Callback invoked on long-press, passing the page's image URL and index.
  * @param modifier Modifier applied to the outer pager container.
  */
@@ -38,8 +38,7 @@ fun HorizontalReaderContent(
     pages: List<String>,
     pagerState: PagerState,
     readingMode: ReadingMode,
-    onTapAction: (ReaderTapAction) -> Unit,
-    onPageLongPress: (String, Int) -> Unit,
+    onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // RTL mode: flip layout direction so HorizontalPager swipes right-to-left for "next"
@@ -59,9 +58,12 @@ fun HorizontalReaderContent(
                 MangaPageItem(
                     imageUrl = pageUrl,
                     index = pageIndex,
-                    readingMode = readingMode,
-                    onTapAction = onTapAction,
-                    onLongPress = onPageLongPress,
+                    onTap = { x, y, width, height ->
+                        onEvent(ReaderEvent.TapOnScreen(x, y, width, height))
+                    },
+                    onLongPress = { url, index ->
+                        onEvent(ReaderEvent.PageLongPressed(url, index))
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -92,8 +94,7 @@ private fun HorizontalReaderContentLtrPreview() {
                 pages = PreviewHorizontalPages,
                 pagerState = pagerState,
                 readingMode = ReadingMode.LTR,
-                onTapAction = {},
-                onPageLongPress = { _, _ -> },
+                onEvent = {},
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -117,8 +118,7 @@ private fun HorizontalReaderContentRtlPreview() {
                 pages = PreviewHorizontalPages,
                 pagerState = pagerState,
                 readingMode = ReadingMode.RTL,
-                onTapAction = {},
-                onPageLongPress = { _, _ -> },
+                onEvent = {},
                 modifier = Modifier.fillMaxSize()
             )
         }

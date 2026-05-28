@@ -11,8 +11,9 @@ import com.example.mybookslibrary.data.download.OfflineDownloadStorage
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.di.IoDispatcher
-import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.domain.model.ReaderTapAction
+import com.example.mybookslibrary.domain.model.ReadingMode
+import com.example.mybookslibrary.domain.model.TapZoneEvaluator
 import kotlinx.coroutines.CoroutineDispatcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -26,16 +27,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
-
-data class ReaderState(
-    val chapterTitle: String = "",
-    val pages: List<String> = emptyList(),
-    val isOverlayVisible: Boolean = false,
-    val lastReadPageIndex: Int = 0,
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val currentReadingMode: ReadingMode = ReadingMode.LTR
-)
 
 // ViewModel cho ReaderScreen — tải ảnh chapter và đồng bộ tiến độ đọc
 @HiltViewModel
@@ -68,9 +59,8 @@ class ReaderViewModel @Inject constructor(
     )
     val state: StateFlow<ReaderState> = _state.asStateFlow()
 
-    // One-shot event: target page index for HorizontalPager to animate to
-    private val _pageNavigationEvent = MutableSharedFlow<Int>(extraBufferCapacity = 1)
-    val pageNavigationEvent: SharedFlow<Int> = _pageNavigationEvent.asSharedFlow()
+    private val _effects = MutableSharedFlow<ReaderUiEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<ReaderUiEffect> = _effects.asSharedFlow()
 
     init {
         Timber.d(
@@ -141,27 +131,52 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    // Bật/tắt overlay (top bar + bottom bar) khi tap vào màn hình
-    fun toggleOverlay() {
+    fun onEvent(event: ReaderEvent) {
+        when (event) {
+            ReaderEvent.ToggleOverlay -> toggleOverlay()
+            is ReaderEvent.ChangeReadingMode -> changeReadingMode(event.mode)
+            ReaderEvent.CycleReadingMode -> cycleReadingMode()
+            is ReaderEvent.JumpToPage -> jumpToPage(event.pageIndex)
+            is ReaderEvent.VisiblePageChanged -> onVisiblePageChanged(event.pageIndex)
+            is ReaderEvent.FlushProgress -> flushProgress(event.pageIndex)
+            is ReaderEvent.TapOnScreen -> handleScreenTap(event)
+            is ReaderEvent.PageLongPressed -> showPageActions(event.pageUrl, event.pageIndex)
+            ReaderEvent.DismissPageActions -> dismissPageActions()
+            is ReaderEvent.PageActionSelected -> handlePageActionSelected(event.action)
+            is ReaderEvent.PageActionCompleted -> handlePageActionCompleted(event.action)
+            is ReaderEvent.PageActionFailed -> handlePageActionFailed(event.action, event.message)
+        }
+    }
+
+    private fun toggleOverlay() {
         _state.update { it.copy(isOverlayVisible = !it.isOverlayVisible) }
     }
 
     /**
      * Updates the current [ReadingMode] and logs the transition.
      */
-    fun setReadingMode(mode: ReadingMode) {
+    private fun changeReadingMode(mode: ReadingMode) {
         val oldMode = _state.value.currentReadingMode
         if (oldMode == mode) return
         Timber.d("ReadingMode changed: %s -> %s", oldMode, mode)
         _state.update { it.copy(currentReadingMode = mode) }
     }
 
+    private fun cycleReadingMode() {
+        val next = when (_state.value.currentReadingMode) {
+            ReadingMode.VERTICAL -> ReadingMode.LTR
+            ReadingMode.LTR -> ReadingMode.RTL
+            ReadingMode.RTL -> ReadingMode.VERTICAL
+        }
+        changeReadingMode(next)
+    }
+
     /**
      * Handles a [ReaderTapAction] from the tap zone system.
      * For NEXT/PREVIOUS, computes the target page index and emits it
-     * via [pageNavigationEvent] for the Pager to consume.
+     * via [effects] for the Pager to consume.
      */
-    fun navigateToPage(action: ReaderTapAction) {
+    private fun navigateToPage(action: ReaderTapAction) {
         val current = _state.value
         if (action == ReaderTapAction.TOGGLE_OVERLAY) {
             toggleOverlay()
@@ -178,8 +193,35 @@ class ReaderViewModel @Inject constructor(
 
         if (targetIndex == current.lastReadPageIndex) return
         Timber.d("navigateToPage: action=%s from=%d to=%d", action, current.lastReadPageIndex, targetIndex)
+        jumpToPage(targetIndex)
+    }
+
+    private fun jumpToPage(pageIndex: Int) {
+        val pages = _state.value.pages
+        if (pages.isEmpty()) return
+        val targetIndex = pageIndex.coerceIn(0, pages.lastIndex)
+        if (targetIndex == _state.value.lastReadPageIndex) return
+        Timber.d("jumpToPage: from=%d to=%d", _state.value.lastReadPageIndex, targetIndex)
         _state.update { it.copy(lastReadPageIndex = targetIndex) }
-        _pageNavigationEvent.tryEmit(targetIndex)
+        _effects.tryEmit(ReaderUiEffect.NavigateToPage(targetIndex))
+    }
+
+    private fun handleScreenTap(event: ReaderEvent.TapOnScreen) {
+        val action = TapZoneEvaluator.evaluateTap(
+            x = event.x,
+            totalWidth = event.width,
+            mode = _state.value.currentReadingMode
+        )
+        Timber.d(
+            "handleScreenTap: x=%.1f y=%.1f width=%.1f height=%.1f mode=%s action=%s",
+            event.x,
+            event.y,
+            event.width,
+            event.height,
+            _state.value.currentReadingMode,
+            action
+        )
+        navigateToPage(action)
     }
 
     /**
@@ -188,7 +230,7 @@ class ReaderViewModel @Inject constructor(
      * The UI already debounces noisy scroll updates, so this method only keeps the
      * latest index and persists it when it actually changes.
      */
-    fun onVisiblePageChanged(index: Int) {
+    private fun onVisiblePageChanged(index: Int) {
         val pages = _state.value.pages
         if (pages.isEmpty()) return
         val boundedIndex = index.coerceIn(0, pages.lastIndex)
@@ -205,7 +247,7 @@ class ReaderViewModel @Inject constructor(
      * This is used when the screen leaves before the debounce window finishes, so the
      * last visible page is not lost.
      */
-    fun flushProgress(index: Int?) {
+    private fun flushProgress(index: Int?) {
         val pages = _state.value.pages
         if (pages.isEmpty()) return
         val target = (index ?: pendingPageIndex ?: _state.value.lastReadPageIndex)
@@ -215,6 +257,63 @@ class ReaderViewModel @Inject constructor(
             _state.update { it.copy(lastReadPageIndex = target) }
         }
         syncProgressToRoom(pageIndexOverride = target, force = true)
+    }
+
+    private fun showPageActions(pageUrl: String, pageIndex: Int) {
+        Timber.d("showPageActions: page=%d url=%s", pageIndex + 1, pageUrl)
+        _state.update {
+            it.copy(selectedPageActionTarget = ReaderPageActionTarget(pageUrl, pageIndex))
+        }
+    }
+
+    private fun dismissPageActions() {
+        Timber.d("dismissPageActions")
+        _state.update { it.copy(selectedPageActionTarget = null) }
+    }
+
+    private fun handlePageActionSelected(action: ReaderPageAction) {
+        val target = _state.value.selectedPageActionTarget ?: return
+        val pageFile = buildPageFile(target)
+        Timber.d("handlePageActionSelected: action=%s page=%d", action, target.pageIndex + 1)
+        when (action) {
+            ReaderPageAction.QuickSave -> _effects.tryEmit(
+                ReaderUiEffect.QuickSavePage(target, pageFile.fileName)
+            )
+            ReaderPageAction.SaveAs -> _effects.tryEmit(
+                ReaderUiEffect.SavePageAs(target, pageFile.fileName, pageFile.extension)
+            )
+            ReaderPageAction.Share -> _effects.tryEmit(
+                ReaderUiEffect.SharePage(target, pageFile.fileName)
+            )
+        }
+    }
+
+    private fun handlePageActionCompleted(action: ReaderPageAction) {
+        Timber.d("handlePageActionCompleted: action=%s", action)
+        _effects.tryEmit(ReaderUiEffect.ShowPageActionResult(action = action))
+    }
+
+    private fun handlePageActionFailed(action: ReaderPageAction, message: String) {
+        Timber.d("handlePageActionFailed: action=%s message=%s", action, message)
+        _effects.tryEmit(ReaderUiEffect.ShowPageActionResult(action = action, errorMessage = message))
+    }
+
+    private fun buildPageFile(target: ReaderPageActionTarget): PageFile {
+        val chapterSlug = _state.value.chapterTitle
+            .lowercase()
+            .replace(Regex("[^a-z0-9]+"), "_")
+            .trim('_')
+            .ifBlank { "chapter" }
+        val extension = target.pageUrl
+            .substringBefore('#')
+            .substringBefore('?')
+            .substringAfterLast('/', "")
+            .substringAfterLast('.', "jpg")
+            .takeIf { it.isNotBlank() }
+            ?: "jpg"
+        val pageNumber = target.pageIndex + 1
+        val fileName = "${chapterSlug}_p${pageNumber}_${target.pageUrl.hashCode().toUInt().toString(16)}"
+        return PageFile(fileName = fileName, extension = extension)
     }
 
     // Lưu tiến độ đọc vào Room DB (chỉ cập nhật nếu manga đã có trong library)
@@ -257,3 +356,8 @@ class ReaderViewModel @Inject constructor(
         private const val START_PAGE_INDEX_ARG = "startPageIndex"
     }
 }
+
+private data class PageFile(
+    val fileName: String,
+    val extension: String
+)

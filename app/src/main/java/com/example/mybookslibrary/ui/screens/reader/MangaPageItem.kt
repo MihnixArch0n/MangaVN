@@ -34,9 +34,6 @@ import androidx.compose.ui.unit.dp
 import coil3.decode.DataSource
 import coil3.request.ImageRequest
 import com.example.mybookslibrary.R
-import com.example.mybookslibrary.domain.model.ReaderTapAction
-import com.example.mybookslibrary.domain.model.ReadingMode
-import com.example.mybookslibrary.domain.model.TapZoneEvaluator
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -56,9 +53,8 @@ import timber.log.Timber
  *
  * @param imageUrl Page image URL loaded by Coil.
  * @param index Zero-based page index used for content description and logs.
- * @param readingMode Current reader mode used to map Telephoto click coordinates to tap-zone actions.
  * @param modifier Modifier applied to the outer container.
- * @param onTapAction Callback invoked with the evaluated reader action for a Telephoto single tap.
+ * @param onTap Callback invoked with raw tap coordinates and page bounds for a Telephoto single tap.
  * @param onLongPress Optional callback invoked with [imageUrl] and [index] when the user
  * long-presses the page; if `null`, the gesture is ignored.
  */
@@ -66,9 +62,8 @@ import timber.log.Timber
 fun MangaPageItem(
     imageUrl: String,
     index: Int,
-    readingMode: ReadingMode,
     modifier: Modifier = Modifier,
-    onTapAction: (ReaderTapAction) -> Unit = {},
+    onTap: (x: Float, y: Float, width: Float, height: Float) -> Unit = { _, _, _, _ -> },
     onLongPress: ((String, Int) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -76,6 +71,7 @@ fun MangaPageItem(
     var retryHash by remember(imageUrl) { mutableIntStateOf(0) }
     var isError by remember(imageUrl) { mutableStateOf(false) }
     var pageWidthPx by remember(imageUrl) { mutableIntStateOf(0) }
+    var pageHeightPx by remember(imageUrl) { mutableIntStateOf(0) }
     val zoomableState = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f))
     val zoomableImageState = rememberZoomableImageState(zoomableState)
     val retryPageLoad = remember(imageUrl, index) {
@@ -131,7 +127,10 @@ fun MangaPageItem(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .onSizeChanged { pageWidthPx = it.width }
+            .onSizeChanged {
+                pageWidthPx = it.width
+                pageHeightPx = it.height
+            }
     ) {
         ZoomableAsyncImage(
             model = imageRequest,
@@ -139,20 +138,15 @@ fun MangaPageItem(
             state = zoomableImageState,
             contentScale = ContentScale.FillWidth,
             onClick = { offset ->
-                val action = TapZoneEvaluator.evaluateTap(
-                    x = offset.x,
-                    totalWidth = pageWidthPx.toFloat(),
-                    mode = readingMode
-                )
                 Timber.d(
-                    "Reader page tap: page=%d x=%.1f width=%d mode=%s action=%s",
+                    "Reader page tap: page=%d x=%.1f y=%.1f width=%d height=%d",
                     index + 1,
                     offset.x,
+                    offset.y,
                     pageWidthPx,
-                    readingMode,
-                    action
+                    pageHeightPx
                 )
-                onTapAction(action)
+                onTap(offset.x, offset.y, pageWidthPx.toFloat(), pageHeightPx.toFloat())
             },
             onLongClick = {
                 Timber.d("Reader page long-click: page=%d url=%s", index + 1, imageUrl)
@@ -214,8 +208,7 @@ private fun MangaPageItemPreview() {
             MangaPageItem(
                 imageUrl = PreviewPageUrl,
                 index = 0,
-                readingMode = ReadingMode.VERTICAL,
-                onTapAction = {},
+                onTap = { _, _, _, _ -> },
                 onLongPress = { _, _ -> },
                 modifier = Modifier.fillMaxSize()
             )
