@@ -8,10 +8,13 @@ import androidx.credentials.GetCredentialResponse
 import com.example.mybookslibrary.data.local.UserEntity
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.UserDao
+import com.example.mybookslibrary.di.IoDispatcher
 import com.example.mybookslibrary.util.AuthSecrets
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
@@ -22,7 +25,8 @@ import javax.inject.Singleton
 @Singleton
 class AuthRepository @Inject constructor(
     private val userDao: UserDao,
-    private val preferencesDataStore: UserPreferencesDataStore
+    private val preferencesDataStore: UserPreferencesDataStore,
+    @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) {
     fun observeLoggedInUserId(): Flow<String?> = preferencesDataStore.observeLoggedInUserId()
 
@@ -32,10 +36,10 @@ class AuthRepository @Inject constructor(
         preferencesDataStore.setLoggedInUserId(null)
     }
 
-    suspend fun register(username: String, password: String): Result<Unit> {
+    suspend fun register(username: String, password: String): Result<Unit> = withContext(ioDispatcher) {
         val existingUser = userDao.getByUsername(username)
         if (existingUser != null) {
-            return Result.failure(Exception("Username already exists"))
+            return@withContext Result.failure(Exception("Username already exists"))
         }
 
         val user = UserEntity(
@@ -43,15 +47,15 @@ class AuthRepository @Inject constructor(
             password = hashPassword(password)
         )
         userDao.upsert(user)
-        return Result.success(Unit)
+        Result.success(Unit)
     }
 
-    suspend fun login(username: String, password: String): Result<Unit> {
+    suspend fun login(username: String, password: String): Result<Unit> = withContext(ioDispatcher) {
         val user = userDao.getByUsername(username)
-            ?: return Result.failure(Exception("Invalid username or password"))
+            ?: return@withContext Result.failure(Exception("Invalid username or password"))
 
         if (!verifyPassword(password, user.password)) {
-            return Result.failure(Exception("Invalid username or password"))
+            return@withContext Result.failure(Exception("Invalid username or password"))
         }
 
         // Migrate dần: user còn lưu hash SHA-256 cũ → re-hash bằng PBKDF2 khi đăng nhập đúng.
@@ -60,7 +64,7 @@ class AuthRepository @Inject constructor(
         }
 
         preferencesDataStore.setLoggedInUserId(user.id.toString())
-        return Result.success(Unit)
+        Result.success(Unit)
     }
 
     suspend fun googleSignIn(context: Context): Result<Unit> {
@@ -132,13 +136,15 @@ class AuthRepository @Inject constructor(
         if (!stored.startsWith("$PBKDF2_PREFIX:")) {
             return legacySha256(password) == stored
         }
-        val parts = stored.split(":")
-        if (parts.size != 4) return false
-        val iterations = parts[1].toIntOrNull() ?: return false
-        val salt = parts[2].hexToBytes()
-        val expected = parts[3].hexToBytes()
-        val actual = pbkdf2(password.toCharArray(), salt, iterations)
-        return MessageDigest.isEqual(actual, expected)
+        // Hash hỏng/định dạng sai (DB bị tamper) → coi như không khớp, không để exception thô thoát ra.
+        return runCatching {
+            val parts = stored.split(":")
+            require(parts.size == 4)
+            val salt = parts[2].hexToBytes()
+            val expected = parts[3].hexToBytes()
+            val actual = pbkdf2(password.toCharArray(), salt, parts[1].toInt())
+            MessageDigest.isEqual(actual, expected)
+        }.getOrDefault(false)
     }
 
     private fun pbkdf2(password: CharArray, salt: ByteArray, iterations: Int): ByteArray {
