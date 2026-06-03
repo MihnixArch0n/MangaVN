@@ -1,19 +1,18 @@
 package com.example.mybookslibrary.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LibraryDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(items: List<LibraryItemEntity>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(item: LibraryItemEntity)
 
     /**
