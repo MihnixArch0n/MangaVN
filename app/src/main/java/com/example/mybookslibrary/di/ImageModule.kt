@@ -3,6 +3,7 @@ package com.example.mybookslibrary.di
 import android.content.Context
 import coil3.ImageLoader
 import coil3.disk.DiskCache
+import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import dagger.Module
 import dagger.Provides
@@ -42,6 +43,12 @@ object ImageModule {
                     .maxSizeBytes(IMAGE_DISK_CACHE_SIZE_BYTES)
                     .build()
             )
+            .memoryCache {
+                // Giới hạn memory cache để giảm áp lực RAM khi đọc nhiều trang lớn (tránh OOM)
+                MemoryCache.Builder()
+                    .maxSizePercent(context, 0.20)
+                    .build()
+            }
             .components {
                 add(OkHttpNetworkFetcherFactory(callFactory = { imageOkHttpClient }))
             }

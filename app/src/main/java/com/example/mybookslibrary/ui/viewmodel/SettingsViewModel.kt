@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
@@ -96,11 +97,17 @@ class SettingsViewModel @Inject constructor(
 
     fun signOut() {
         viewModelScope.launch(ioDispatcher) {
-            // Chỉ reset quality về mặc định, giữ nguyên language + theme
-            preferencesDataStore.setReaderQuality("data")
-            preferencesDataStore.setLoggedInUserId(null)
-            libraryRepository.clearAll()
-            _uiState.update { it.copy(signedOut = true, quality = "data") }
+            try {
+                // Chỉ reset quality về mặc định, giữ nguyên language + theme
+                preferencesDataStore.setReaderQuality("data")
+                preferencesDataStore.setLoggedInUserId(null)
+                libraryRepository.clearAll()
+                _uiState.update { it.copy(signedOut = true, quality = "data") }
+            } catch (e: Exception) {
+                // Tránh crash app do exception không bắt trong viewModelScope (Room/IO có thể ném)
+                Timber.e(e, "signOut thất bại")
+                _uiState.update { it.copy(signedOut = false) }
+            }
         }
     }
 

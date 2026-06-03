@@ -20,6 +20,7 @@ class AuthViewModel @Inject constructor(
     val uiState: StateFlow<AuthState> = _uiState.asStateFlow()
 
     fun login(username: String, password: String) {
+        if (_uiState.value is AuthState.Loading) return
         if (username.isBlank() || password.isBlank()) {
             _uiState.value = AuthState.Error("Username and password cannot be empty")
             return
@@ -36,6 +37,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun register(username: String, password: String) {
+        if (_uiState.value is AuthState.Loading) return
         if (username.isBlank() || password.isBlank()) {
             _uiState.value = AuthState.Error("Username and password cannot be empty")
             return
@@ -52,6 +54,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun googleSignIn(context: Context) {
+        if (_uiState.value is AuthState.Loading) return
         _uiState.value = AuthState.Loading
         viewModelScope.launch {
             val result = authRepository.googleSignIn(context)

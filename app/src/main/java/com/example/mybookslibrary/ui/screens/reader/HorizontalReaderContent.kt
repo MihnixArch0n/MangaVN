@@ -50,7 +50,8 @@ fun HorizontalReaderContent(
         HorizontalPager(
             state = pagerState,
             modifier = modifier,
-            beyondViewportPageCount = 2,
+            // Giữ 1 trang trước/sau (không phải 2) để giảm số bitmap thường trú → tránh OOM máy RAM thấp
+            beyondViewportPageCount = 1,
             key = { index -> pages.getOrNull(index) ?: "missing-page-$index" }
         ) { pageIndex ->
             pages.getOrNull(pageIndex)?.let { pageUrl ->

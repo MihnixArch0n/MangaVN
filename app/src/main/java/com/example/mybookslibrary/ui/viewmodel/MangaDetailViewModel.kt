@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 data class MangaDetailUiState(
@@ -53,6 +54,17 @@ class MangaDetailViewModel @Inject constructor(
         loadMangaDetail()
         observeChapters()
         checkLibraryStatus()
+    }
+
+    // Chạy tác vụ Room/IO trong viewModelScope có bắt lỗi, tránh crash app do exception không xử lý.
+    private fun launchSafe(block: suspend () -> Unit) {
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                block()
+            } catch (e: Exception) {
+                Timber.e(e, "MangaDetailViewModel: tác vụ thất bại")
+            }
+        }
     }
 
     private fun loadMangaDetail() {
@@ -114,7 +126,7 @@ class MangaDetailViewModel @Inject constructor(
 
     private fun checkLibraryStatus() {
         if (mangaId.isBlank()) return
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             val inLib = libraryRepository.isInLibrary(mangaId)
             _uiState.update { it.copy(isInLibrary = inLib) }
         }
@@ -122,14 +134,14 @@ class MangaDetailViewModel @Inject constructor(
 
     fun ensureInLibrary(title: String, coverUrl: String) {
         if (_uiState.value.isInLibrary) return
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             libraryRepository.addToLibrary(mangaId = mangaId, title = title, coverUrl = coverUrl)
             _uiState.update { it.copy(isInLibrary = true) }
         }
     }
 
     fun toggleLibrary(title: String, coverUrl: String) {
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             if (_uiState.value.isInLibrary) {
                 libraryRepository.removeFromLibrary(mangaId)
             } else {
@@ -140,34 +152,34 @@ class MangaDetailViewModel @Inject constructor(
     }
 
     fun markChapterCompleted(chapterId: String, totalPages: Int) {
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             libraryRepository.markChapterCompleted(mangaId, chapterId, totalPages)
         }
     }
 
     fun markChapterUnread(chapterId: String, totalPages: Int) {
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             libraryRepository.markChapterUnread(mangaId, chapterId, totalPages)
         }
     }
 
     fun startChapterDownload(chapterId: String) {
         if (mangaId.isBlank() || chapterId.isBlank()) return
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             offlineDownloadManager.enqueueDownload(mangaId, chapterId)
         }
     }
 
     fun cancelChapterDownload(chapterId: String) {
         if (chapterId.isBlank()) return
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             offlineDownloadManager.cancelDownload(chapterId)
         }
     }
 
     fun deleteChapterDownload(chapterId: String) {
         if (mangaId.isBlank() || chapterId.isBlank()) return
-        viewModelScope.launch(ioDispatcher) {
+        launchSafe {
             offlineDownloadManager.deleteDownload(mangaId, chapterId)
         }
     }
