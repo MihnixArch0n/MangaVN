@@ -105,7 +105,10 @@ fun SearchScreenContent(
                     }
                 }
                 else -> {
-                    LazyColumn(contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyColumn(
+                        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 100.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         items(uiState.results, key = { it.id }) { manga ->
                             SearchResultItem(manga) { onMangaClick(manga) }
                         }

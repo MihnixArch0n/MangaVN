@@ -96,7 +96,7 @@ fun DiscoverScreenContent(
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
-                    contentPadding = PaddingValues(bottom = 32.dp)
+                    contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
                     if (items.isNotEmpty()) {
                         item { SectionHeader(appString(R.string.section_spotlight)) }
