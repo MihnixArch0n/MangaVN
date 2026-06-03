@@ -20,6 +20,7 @@ import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -129,6 +130,9 @@ class ChapterDownloadWorker @AssistedInject constructor(
                 failoverCoordinator.totalPages
             )
             Result.success()
+        } catch (cancellationException: CancellationException) {
+            // Cancel (vd WorkManager hủy work) phải propagate sạch, không ghi thành ERROR
+            throw cancellationException
         } catch (t: Throwable) {
             Timber.e(t, "ChapterDownloadWorker failed: mangaId=%s chapterId=%s", mangaId, chapterId)
             offlineDownloadRepository.updateQueueStatus(
