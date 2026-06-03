@@ -18,3 +18,4 @@ app/src/test/java/com/example/mybookslibrary/data/remote/OkHttpTimeoutTest.kt
 app/src/test/java/com/example/mybookslibrary/data/repository/ChapterDeliveryBoundsTest.kt
 app/src/test/java/com/example/mybookslibrary/data/remote/models/AtHomeResponseDtoParsingTest.kt
 app/src/test/java/com/example/mybookslibrary/data/local/AppDatabaseDestructiveMigrationTest.kt
+app/src/test/java/com/example/mybookslibrary/data/repository/LibraryRepositoryRestoreTest.kt
