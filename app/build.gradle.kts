@@ -1,3 +1,5 @@
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -123,7 +125,7 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.10".toBigDecimal()
+                minimum = "0.20".toBigDecimal()
             }
         }
     }
@@ -131,6 +133,15 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
 
 tasks.named("check") {
     dependsOn("jacocoCoverageVerification")
+}
+
+// JaCoCo cần includeNoLocationClasses để đo coverage code chạy qua Robolectric (sandbox classloader);
+// thiếu cờ này, class test bằng Robolectric bị báo 0% dù đã test.
+tasks.withType<Test>().configureEach {
+    configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+        excludes = listOf("jdk.internal.*")
+    }
 }
 
 dependencies {
