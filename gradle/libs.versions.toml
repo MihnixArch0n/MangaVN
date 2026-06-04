@@ -40,6 +40,8 @@ espressoCore = "3.7.0"
 coroutinesTest = "1.11.0"
 mockk = "1.14.11"
 robolectric = "4.16.1"
+# Property-based testing (kotest-property độc lập, chạy trong JUnit qua runBlocking)
+kotest = "6.1.11"
 
 # Static analysis (version xác nhận tồn tại trên Maven/Plugin Portal 2026-06)
 detekt = "1.23.8"
@@ -104,6 +106,7 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
