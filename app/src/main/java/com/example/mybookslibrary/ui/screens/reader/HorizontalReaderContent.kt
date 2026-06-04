@@ -9,8 +9,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -21,6 +25,7 @@ import com.example.mybookslibrary.domain.model.ReaderTapAction
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
+import java.util.concurrent.atomic.AtomicBoolean
 import timber.log.Timber
 
 /**
@@ -48,30 +53,45 @@ fun HorizontalReaderContent(
 ) {
     val scope = rememberCoroutineScope()
     val viewConfiguration = LocalViewConfiguration.current
+    var isNavigationActive by remember { mutableStateOf(false) }
+    val latestNavigationActive = rememberUpdatedState(isNavigationActive)
+    val navigationActiveRef = remember { AtomicBoolean(false) }
     val navigationCoordinator = remember(pagerState, scope) {
         HorizontalPagerNavigationCoordinator(
             scope = scope,
             currentPage = { pagerState.currentPage },
             lastPageIndex = { pagerState.pageCount - 1 },
-            animateToPage = { nextPage, pendingTargetPage, isRetargeted ->
+            animateToPage = { nextPage, pendingTargetPage, isQueuedNavigation ->
                 val durationMillis = horizontalPageAnimationDurationMillis(
                     currentPage = pagerState.currentPage,
                     nextPage = pendingTargetPage,
-                    isRetargeted = isRetargeted
+                    isQueuedNavigation = isQueuedNavigation
                 )
                 Timber.d(
-                    "Reader pager animateScrollToPage: current=%d settled=%d target=%d next=%d duration=%d retargeted=%s",
+                    "Reader pager animateScrollToPage: current=%d settled=%d target=%d next=%d duration=%d queued=%s",
                     pagerState.currentPage,
                     pagerState.settledPage,
                     pagerState.targetPage,
                     nextPage,
                     durationMillis,
-                    isRetargeted
+                    isQueuedNavigation
                 )
                 pagerState.animateScrollToPage(
                     page = nextPage,
                     animationSpec = tween(durationMillis = durationMillis)
                 )
+            },
+            onNavigationActiveChanged = { active ->
+                Timber.d(
+                    "Reader pager navigation active changed: active=%s userScrollEnabled=%s current=%d settled=%d target=%d",
+                    active,
+                    !active,
+                    pagerState.currentPage,
+                    pagerState.settledPage,
+                    pagerState.targetPage
+                )
+                isNavigationActive = active
+                navigationActiveRef.set(active)
             }
         )
     }
@@ -80,20 +100,29 @@ fun HorizontalReaderContent(
         ReadingMode.RTL -> LayoutDirection.Rtl
         else -> LayoutDirection.Ltr
     }
-    val onConfirmedEdgeTap: (Float, Float) -> Unit = { x, width ->
+    val onConfirmedPageTap: (Float, Float) -> Unit = { x, width ->
         when (val action = evaluateHorizontalTap(x, width, readingMode)) {
             ReaderTapAction.NEXT_PAGE,
             ReaderTapAction.PREVIOUS_PAGE -> {
                 Timber.d(
-                    "Reader pager confirmed edge tap: action=%s current=%d settled=%d target=%d",
+                    "Reader pager confirmed page tap: action=%s current=%d settled=%d target=%d active=%s width=%.1f x=%.1f",
                     action,
                     pagerState.currentPage,
                     pagerState.settledPage,
-                    pagerState.targetPage
+                    pagerState.targetPage,
+                    isNavigationActive,
+                    width,
+                    x
                 )
-                navigationCoordinator.enqueue(action)
+                if (!isNavigationActive) {
+                    navigationCoordinator.enqueue(action)
+                }
             }
-            ReaderTapAction.TOGGLE_OVERLAY,
+            ReaderTapAction.TOGGLE_OVERLAY -> {
+                if (!isNavigationActive) {
+                    onEvent(ReaderEvent.ToggleOverlay)
+                }
+            }
             ReaderTapAction.NONE -> Unit
         }
     }
@@ -101,15 +130,42 @@ fun HorizontalReaderContent(
     CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
         HorizontalPager(
             state = pagerState,
-            modifier = modifier.observeConfirmedEdgeTaps(
+            modifier = modifier.consumeNavigationDuringAnimation(
                 viewConfiguration = viewConfiguration,
-                onConfirmedEdgeTap = { offset ->
-                    onConfirmedEdgeTap(offset.x, pagerState.layoutInfo.viewportSize.width.toFloat())
+                isNavigationActive = { navigationActiveRef.get() || latestNavigationActive.value },
+                isNavigationTap = { offset ->
+                    val width = pagerState.layoutInfo.viewportSize.width.toFloat()
+                    when (evaluateHorizontalTap(offset.x, width, readingMode)) {
+                        ReaderTapAction.NEXT_PAGE,
+                        ReaderTapAction.PREVIOUS_PAGE -> true
+                        ReaderTapAction.TOGGLE_OVERLAY,
+                        ReaderTapAction.NONE -> false
+                    }
                 },
-                onManualDrag = navigationCoordinator::cancelPendingNavigation
+                onNavigationTap = { offset ->
+                    val width = pagerState.layoutInfo.viewportSize.width.toFloat()
+                    when (val action = evaluateHorizontalTap(offset.x, width, readingMode)) {
+                        ReaderTapAction.NEXT_PAGE,
+                        ReaderTapAction.PREVIOUS_PAGE -> {
+                            Timber.d(
+                                "Reader pager animation shield queued tap: action=%s current=%d settled=%d target=%d width=%.1f x=%.1f",
+                                action,
+                                pagerState.currentPage,
+                                pagerState.settledPage,
+                                pagerState.targetPage,
+                                width,
+                                offset.x
+                            )
+                            navigationCoordinator.enqueue(action)
+                        }
+                        ReaderTapAction.TOGGLE_OVERLAY,
+                        ReaderTapAction.NONE -> Unit
+                    }
+                }
             ),
             // Giữ 1 trang trước/sau (không phải 2) để giảm số bitmap thường trú → tránh OOM máy RAM thấp
             beyondViewportPageCount = 1,
+            userScrollEnabled = !isNavigationActive,
             key = { index -> pages.getOrNull(index) ?: "missing-page-$index" }
         ) { pageIndex ->
             pages.getOrNull(pageIndex)?.let { pageUrl ->
@@ -117,9 +173,7 @@ fun HorizontalReaderContent(
                     imageUrl = pageUrl,
                     index = pageIndex,
                     onConfirmedTap = { x, _, width, _ ->
-                        if (evaluateHorizontalTap(x, width, readingMode) == ReaderTapAction.TOGGLE_OVERLAY) {
-                            onEvent(ReaderEvent.ToggleOverlay)
-                        }
+                        onConfirmedPageTap(x, width)
                     },
                     onLongPress = { url, index ->
                         onEvent(ReaderEvent.PageLongPressed(url, index))

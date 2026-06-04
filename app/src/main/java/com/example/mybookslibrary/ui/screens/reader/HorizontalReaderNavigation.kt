@@ -46,8 +46,8 @@ internal fun calculateHorizontalTargetPage(
 internal fun horizontalPageAnimationDurationMillis(
     currentPage: Int,
     nextPage: Int,
-    isRetargeted: Boolean = false
-): Int = if (isRetargeted || abs(currentPage - nextPage) > 1) {
+    isQueuedNavigation: Boolean = false
+): Int = if (isQueuedNavigation || abs(currentPage - nextPage) > 1) {
     FAST_PAGE_ANIMATION_DURATION_MILLIS
 } else {
     DEFAULT_PAGE_ANIMATION_DURATION_MILLIS
@@ -55,5 +55,5 @@ internal fun horizontalPageAnimationDurationMillis(
 
 private const val LEFT_ZONE_END_RATIO = 0.25f
 private const val RIGHT_ZONE_START_RATIO = 0.75f
-internal const val DEFAULT_PAGE_ANIMATION_DURATION_MILLIS = 300
-internal const val FAST_PAGE_ANIMATION_DURATION_MILLIS = 125
+internal const val DEFAULT_PAGE_ANIMATION_DURATION_MILLIS = 220
+internal const val FAST_PAGE_ANIMATION_DURATION_MILLIS = 90

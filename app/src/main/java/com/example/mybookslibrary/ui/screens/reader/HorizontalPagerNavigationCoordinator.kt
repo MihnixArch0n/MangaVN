@@ -3,24 +3,24 @@ package com.example.mybookslibrary.ui.screens.reader
 import com.example.mybookslibrary.domain.model.ReaderTapAction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
- * Coalesces horizontal pager navigation so consecutive taps retarget the active animation
- * instead of waiting for each adjacent page animation to finish.
+ * Queues horizontal pager navigation so consecutive taps still render each intermediate
+ * page transition instead of cancelling the active animation and jumping to the final page.
  */
 internal class HorizontalPagerNavigationCoordinator(
     private val scope: CoroutineScope,
     private val currentPage: () -> Int,
     private val lastPageIndex: () -> Int,
-    private val animateToPage: suspend (page: Int, pendingTargetPage: Int, isRetargeted: Boolean) -> Unit
+    private val animateToPage: suspend (page: Int, pendingTargetPage: Int, isQueuedNavigation: Boolean) -> Unit,
+    private val onNavigationActiveChanged: (Boolean) -> Unit = {}
 ) {
     private var pendingTargetPage: Int? = null
     private var navigationJob: Job? = null
-    private var navigationGeneration = 0
+    private var hasQueuedNavigation = false
 
     fun enqueue(action: ReaderTapAction) {
         val basePage = pendingTargetPage ?: currentPage()
@@ -31,7 +31,7 @@ internal class HorizontalPagerNavigationCoordinator(
         ) ?: return
 
         Timber.d(
-            "Reader pager retarget enqueue: action=%s current=%d pending=%s base=%d nextTarget=%d active=%s",
+            "Reader pager queue enqueue: action=%s current=%d pending=%s base=%d nextTarget=%d active=%s",
             action,
             currentPage(),
             pendingTargetPage?.toString() ?: "<none>",
@@ -40,67 +40,88 @@ internal class HorizontalPagerNavigationCoordinator(
             navigationJob?.isActive == true
         )
         if (nextTargetPage == basePage) {
-            Timber.d("Reader pager retarget ignored at boundary: page=%d action=%s", basePage, action)
+            Timber.d("Reader pager queue ignored at boundary: page=%d action=%s", basePage, action)
             return
         }
-        val isRetargeted = navigationJob?.isActive == true
+        val hadPendingTarget = pendingTargetPage != null
         pendingTargetPage = nextTargetPage
-        launchNavigationTo(nextTargetPage, isRetargeted)
+        if (navigationJob?.isActive == true || hadPendingTarget) {
+            hasQueuedNavigation = true
+        }
+        if (navigationJob?.isActive == true) {
+            Timber.d("Reader pager queue extended: pending=%d", nextTargetPage)
+            return
+        }
+        launchNavigationWorker()
     }
 
     fun cancelPendingNavigation() {
         Timber.d(
-            "Reader pager retarget cleared by drag: current=%d pending=%s active=%s",
+            "Reader pager queue cleared by drag: current=%d pending=%s active=%s",
             currentPage(),
             pendingTargetPage?.toString() ?: "<none>",
             navigationJob?.isActive == true
         )
         pendingTargetPage = null
-        navigationGeneration++
+        hasQueuedNavigation = false
         navigationJob?.cancel()
         navigationJob = null
+        onNavigationActiveChanged(false)
     }
 
-    private fun launchNavigationTo(targetPage: Int, isRetargeted: Boolean) {
-        val generation = ++navigationGeneration
-        navigationJob?.cancel()
+    private fun launchNavigationWorker() {
+        navigationJob = scope.launch {
+            Timber.d("Reader pager queue worker start: pending=%s", pendingTargetPage?.toString() ?: "<none>")
+            onNavigationActiveChanged(true)
+            try {
+                animatePendingPages()
+            } finally {
+                Timber.d("Reader pager queue worker end: pending=%s", pendingTargetPage?.toString() ?: "<none>")
+                navigationJob = null
+                onNavigationActiveChanged(false)
+            }
+        }
+    }
 
-        val job = scope.launch(start = CoroutineStart.LAZY) {
+    private suspend fun animatePendingPages() {
+        while (true) {
+            val targetPage = pendingTargetPage ?: return
             val page = currentPage()
             if (page == targetPage || lastPageIndex() < 0) {
                 pendingTargetPage = null
-                return@launch
+                hasQueuedNavigation = false
+                return
             }
 
-            Timber.d("Reader pager retarget animation start: current=%d target=%d generation=%d", page, targetPage, generation)
+            val nextPage = if (targetPage > page) page + 1 else page - 1
+            val isQueuedNavigation = hasQueuedNavigation
+            Timber.d(
+                "Reader pager queue animation start: current=%d next=%d pending=%d queued=%s",
+                page,
+                nextPage,
+                targetPage,
+                isQueuedNavigation
+            )
             try {
-                animateToPage(targetPage, targetPage, isRetargeted)
+                animateToPage(nextPage, targetPage, isQueuedNavigation)
                 Timber.d(
-                    "Reader pager retarget animation end: current=%d target=%d pending=%s generation=%d",
+                    "Reader pager queue animation end: current=%d next=%d pending=%s",
                     currentPage(),
-                    targetPage,
-                    pendingTargetPage?.toString() ?: "<none>",
-                    generation
+                    nextPage,
+                    pendingTargetPage?.toString() ?: "<none>"
                 )
-                if (pendingTargetPage == targetPage) {
-                    pendingTargetPage = null
-                }
             } catch (cancellation: CancellationException) {
                 Timber.d(
                     cancellation,
-                    "Reader pager retarget animation interrupted: current=%d target=%d pending=%s generation=%d",
+                    "Reader pager queue animation interrupted: current=%d next=%d pending=%s",
                     currentPage(),
-                    targetPage,
-                    pendingTargetPage?.toString() ?: "<none>",
-                    generation
+                    nextPage,
+                    pendingTargetPage?.toString() ?: "<none>"
                 )
-            } finally {
-                if (navigationGeneration == generation) {
-                    navigationJob = null
-                }
+                pendingTargetPage = null
+                hasQueuedNavigation = false
+                return
             }
         }
-        navigationJob = job
-        job.start()
     }
 }

@@ -61,10 +61,10 @@ class HorizontalReaderNavigationTest {
     }
 
     @Test
-    fun `animation uses fast duration for retargeted adjacent page`() {
+    fun `animation uses fast duration for queued adjacent page`() {
         assertEquals(
             FAST_PAGE_ANIMATION_DURATION_MILLIS,
-            horizontalPageAnimationDurationMillis(currentPage = 2, nextPage = 3, isRetargeted = true)
+            horizontalPageAnimationDurationMillis(currentPage = 2, nextPage = 3, isQueuedNavigation = true)
         )
     }
 }

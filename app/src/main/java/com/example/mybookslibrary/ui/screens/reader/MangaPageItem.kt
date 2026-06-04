@@ -139,7 +139,7 @@ fun MangaPageItem(
             contentScale = ContentScale.FillWidth,
             onClick = { offset ->
                 Timber.d(
-                    "Reader page tap: page=%d x=%.1f y=%.1f width=%d height=%d",
+                    "Reader page confirmed tap: page=%d x=%.1f y=%.1f width=%d height=%d",
                     index + 1,
                     offset.x,
                     offset.y,
