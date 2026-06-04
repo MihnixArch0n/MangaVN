@@ -46,13 +46,21 @@ jobs:
         run: ./gradlew :app:jacocoTestReport --console=plain
 
       - name: Gate diff coverage (code mới ≥ 80%)
+        id: coverage-report
         uses: madrapps/jacoco-report@v1.8.0
         with:
           paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Chặn (fail check) nếu dòng MỚI trong PR được phủ < 80%.
           min-coverage-changed-files: 80
-          # Không gate theo coverage tổng (đã có JaCoCo ratchet riêng) — đặt 0.
           min-coverage-overall: 0
           title: Coverage cho code mới (PR)
           update-comment: true
+
+      # madrapps/jacoco-report không hỗ trợ fail-on-violation → đọc output và fail thủ công.
+      # Nếu coverage code mới < 80%, bước này exit 1 → job fail → PR bị chặn (khi branch
+      # protection bật require check "diff-coverage").
+      - name: Fail nếu coverage code mới dưới ngưỡng
+        if: ${{ steps.coverage-report.outputs.coverage-changed-files < 80.0 }}
+        run: |
+          echo "Coverage code mới ${{ steps.coverage-report.outputs.coverage-changed-files }}% thấp hơn ngưỡng 80%"
+          exit 1
