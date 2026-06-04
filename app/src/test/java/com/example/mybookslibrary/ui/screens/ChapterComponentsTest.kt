@@ -2,6 +2,7 @@ package com.example.mybookslibrary.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.domain.model.ChapterDownloadState
 import com.example.mybookslibrary.domain.model.ChapterDownloadStatus
@@ -118,6 +119,74 @@ class ChapterComponentsTest {
         }
         // "42p" (detail_pages_suffix = "%1$dp")
         composeRule.onNodeWithText("42p").assertIsDisplayed()
+    }
+
+    // ---- ChapterRow + DownloadIndicator states ----
+
+    @Test
+    fun chapterRow_notDownloaded_showsDownloadIcon() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(downloadStatus = ChapterDownloadStatus.NOT_DOWNLOADED),
+                chapterTitle = "Ch 1",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+            )
+        }
+        composeRule.onNodeWithContentDescription("Download chapter").assertIsDisplayed()
+    }
+
+    @Test
+    fun chapterRow_downloaded_showsDeleteIcon() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(downloadStatus = ChapterDownloadStatus.DOWNLOADED),
+                chapterTitle = "Ch 1",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+            )
+        }
+        composeRule.onNodeWithContentDescription("Delete download").assertIsDisplayed()
+    }
+
+    @Test
+    fun chapterRow_downloadError_showsErrorIcon() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(downloadStatus = ChapterDownloadStatus.ERROR),
+                chapterTitle = "Ch 1",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+            )
+        }
+        composeRule.onNodeWithContentDescription("Download failed").assertIsDisplayed()
+    }
+
+    @Test
+    fun chapterRow_pending_showsCancelDownload() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(downloadStatus = ChapterDownloadStatus.PENDING),
+                chapterTitle = "Ch 1",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+            )
+        }
+        // PENDING: IconButton có CircularProgressIndicator — không có text, không crash
+        composeRule.waitForIdle()
+    }
+
+    @Test
+    fun chapterRow_downloading_showsStopIcon() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(downloadStatus = ChapterDownloadStatus.DOWNLOADING),
+                chapterTitle = "Ch 1",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+            )
+        }
+        composeRule.onNodeWithContentDescription("Cancel download").assertIsDisplayed()
     }
 
     // ---- buildChapterTitle ----

@@ -80,6 +80,30 @@ class SearchScreenContentTest {
     }
 
     @Test
+    fun errorState_rendersWithoutCrash() {
+        // Error text có thể nằm ngoài viewport tùy config Robolectric — verify không crash
+        val repo = mockk<MangaRepository>()
+        coEvery { repo.getTags() } returns Result.success(emptyList())
+        every { repo.searchManga(any(), any()) } returns
+            flowOf(Result.failure(IllegalStateException("timeout")))
+        val viewModel = SearchViewModel(repo)
+        viewModel.onQueryChange("one piece")
+
+        composeRule.setContent { SearchScreenContent(viewModel = viewModel) }
+        composeRule.waitForIdle()
+        // "Search" title luôn visible (ở đầu)
+        composeRule.onNodeWithText("Search").assertIsDisplayed()
+    }
+
+    @Test
+    fun filterSheet_openState_renders() {
+        val viewModel = vm()
+        viewModel.onOpenFilterSheet()
+        composeRule.setContent { SearchScreenContent(viewModel = viewModel) }
+        composeRule.waitForIdle()
+    }
+
+    @Test
     fun withResults_rendersWithoutCrash() {
         val manga = MangaModel("m1", "Naruto", "Desc", null, emptyList())
         val repo = mockk<MangaRepository>()

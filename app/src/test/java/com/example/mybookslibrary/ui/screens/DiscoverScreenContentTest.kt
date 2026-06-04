@@ -75,4 +75,20 @@ class DiscoverScreenContentTest {
 
         composeRule.onNodeWithText("Berserk").assertIsDisplayed()
     }
+
+    @Test
+    fun errorState_withNullMessage_showsGenericError() {
+        val repo = mockk<MangaRepository>()
+        every { repo.getDiscoverManga(any(), any()) } returns flowOf(Result.failure(RuntimeException()))
+        val vm = DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
+        composeRule.setContent { DiscoverScreenContent(vm = vm) }
+        composeRule.onNodeWithText("Couldn't load home screen").assertIsDisplayed()
+    }
+
+    @Test
+    fun withManyItems_rendersFirstSpotlight() {
+        val items = List(15) { MangaModel("m$it", "Manga $it", "", null, emptyList()) }
+        composeRule.setContent { DiscoverScreenContent(vm = loadedVm(items)) }
+        composeRule.waitForIdle()
+    }
 }

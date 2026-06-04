@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import org.junit.After
 import org.junit.Before
@@ -61,5 +62,22 @@ class MangaPageItemTest {
             )
         }
         composeRule.waitForIdle()
+    }
+
+    @Test
+    fun errorState_showsRetryButton() {
+        FakeImageLoader.reset()
+        FakeImageLoader.installFailing()
+        try {
+            composeRule.setContent {
+                MangaPageItem(imageUrl = "https://x/p.jpg", index = 0)
+            }
+            composeRule.waitForIdle()
+            // isError=true khi Coil fail → "Tap to retry" hoặc BrokenImage icon visible
+            composeRule.onNodeWithText("Tap to retry").assertIsDisplayed()
+        } finally {
+            FakeImageLoader.reset()
+            FakeImageLoader.install()
+        }
     }
 }

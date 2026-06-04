@@ -6,6 +6,7 @@ import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.asImage
 import coil3.decode.DataSource
+import coil3.request.ErrorResult
 import coil3.request.ImageRequest
 import coil3.request.ImageResult
 import coil3.request.SuccessResult
@@ -27,6 +28,24 @@ object FakeImageLoader {
                             image = ColorDrawable(Color.GRAY).asImage(),
                             request = ImageRequest.Builder(context).data("fake").build(),
                             dataSource = DataSource.MEMORY,
+                        )
+                    })
+                }
+                .build()
+        }
+    }
+
+    /** Cài ImageLoader luôn thất bại → trigger `isError=true` trong MangaPageItem/WebtoonPageItem. */
+    fun installFailing() {
+        val context = RuntimeEnvironment.getApplication()
+        SingletonImageLoader.setSafe {
+            ImageLoader.Builder(context)
+                .components {
+                    add(coil3.intercept.Interceptor { chain ->
+                        ErrorResult(
+                            image = null,
+                            request = chain.request,
+                            throwable = RuntimeException("fake load error"),
                         )
                     })
                 }

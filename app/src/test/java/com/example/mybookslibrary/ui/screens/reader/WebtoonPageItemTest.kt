@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import org.junit.After
 import org.junit.Before
@@ -60,5 +61,22 @@ class WebtoonPageItemTest {
             )
         }
         composeRule.waitForIdle()
+        assert(!pressed) // không tự bấm
+    }
+
+    @Test
+    fun errorState_showsRetryButton() {
+        FakeImageLoader.reset()
+        FakeImageLoader.installFailing()
+        try {
+            composeRule.setContent {
+                WebtoonPageItem(imageUrl = "https://x/w.jpg", index = 0)
+            }
+            composeRule.waitForIdle()
+            composeRule.onNodeWithText("Tap to retry").assertIsDisplayed()
+        } finally {
+            FakeImageLoader.reset()
+            FakeImageLoader.install()
+        }
     }
 }

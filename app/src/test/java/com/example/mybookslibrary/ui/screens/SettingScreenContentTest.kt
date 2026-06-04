@@ -91,10 +91,25 @@ class SettingScreenContentTest {
 
     @Test
     fun screenLoadsWithoutCrash() {
-        // LazyColumn lazy items ngoài viewport không render — test chỉ xác nhận không crash
-        composeRule.setContent {
-            SettingScreenContent(viewModel = viewModel())
-        }
+        composeRule.setContent { SettingScreenContent(viewModel = viewModel()) }
         composeRule.waitForIdle()
+    }
+
+    @Test
+    fun qualityToggle_rendersNewLabel() {
+        composeRule.setContent { SettingScreenContent(viewModel = viewModel(quality = "data-saver")) }
+        composeRule.onNodeWithText("Data Saver").assertIsDisplayed()
+    }
+
+    @Test
+    fun themeLight_rendersLightLabel() {
+        composeRule.setContent { SettingScreenContent(viewModel = viewModel(theme = "light")) }
+        composeRule.onNodeWithText("Light").assertIsDisplayed()
+    }
+
+    @Test
+    fun themeDark_rendersDarkLabel() {
+        composeRule.setContent { SettingScreenContent(viewModel = viewModel(theme = "dark")) }
+        composeRule.onNodeWithText("Dark").assertIsDisplayed()
     }
 }
