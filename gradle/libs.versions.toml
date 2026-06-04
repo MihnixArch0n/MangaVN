@@ -38,7 +38,7 @@ junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 coroutinesTest = "1.11.0"
-mockk = "1.14.9"
+mockk = "1.14.11"
 robolectric = "4.16.1"
 
 # Static analysis (version xác nhận tồn tại trên Maven/Plugin Portal 2026-06)
