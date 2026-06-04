@@ -13,20 +13,19 @@ import org.junit.Test
 class HorizontalPagerNavigationCoordinatorTest {
 
     @Test
-    fun `second tap extends queue without interrupting active animation`() = runTest {
+    fun `second tap retargets active animation without waiting for first animation to finish`() = runTest {
         val harness = CoordinatorHarness(this)
 
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
-        assertEquals(AnimationRequest(nextPage = 1, pendingTargetPage = 1), harness.requests.tryReceive().getOrNull())
+        assertEquals(AnimationRequest(page = 1, pendingTargetPage = 1), harness.requests.tryReceive().getOrNull())
 
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
-        assertNull(harness.requests.tryReceive().getOrNull())
-
-        harness.releaseAnimation()
-        runCurrent()
-        assertEquals(AnimationRequest(nextPage = 2, pendingTargetPage = 2), harness.requests.tryReceive().getOrNull())
+        assertEquals(
+            AnimationRequest(page = 2, pendingTargetPage = 2, isRetargeted = true),
+            harness.requests.tryReceive().getOrNull()
+        )
 
         harness.releaseAnimation()
         runCurrent()
@@ -39,10 +38,22 @@ class HorizontalPagerNavigationCoordinatorTest {
 
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
-        assertEquals(AnimationRequest(nextPage = 1, pendingTargetPage = 1), harness.requests.tryReceive().getOrNull())
+        assertEquals(AnimationRequest(page = 1, pendingTargetPage = 1), harness.requests.tryReceive().getOrNull())
 
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
+        runCurrent()
+        assertEquals(
+            AnimationRequest(page = 2, pendingTargetPage = 2, isRetargeted = true),
+            harness.requests.tryReceive().getOrNull()
+        )
+
         harness.coordinator.enqueue(ReaderTapAction.PREVIOUS_PAGE)
+        runCurrent()
+        assertEquals(
+            AnimationRequest(page = 1, pendingTargetPage = 1, isRetargeted = true),
+            harness.requests.tryReceive().getOrNull()
+        )
+
         harness.releaseAnimation()
         runCurrent()
 
@@ -58,7 +69,7 @@ class HorizontalPagerNavigationCoordinatorTest {
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
-        assertEquals(AnimationRequest(nextPage = 2, pendingTargetPage = 2), harness.requests.tryReceive().getOrNull())
+        assertEquals(AnimationRequest(page = 2, pendingTargetPage = 2), harness.requests.tryReceive().getOrNull())
 
         harness.releaseAnimation()
         runCurrent()
@@ -75,8 +86,8 @@ class HorizontalPagerNavigationCoordinatorTest {
             scope = this,
             currentPage = { currentPage },
             lastPageIndex = { 7 },
-            animateToPage = { nextPage, pendingTargetPage ->
-                requests.send(AnimationRequest(nextPage, pendingTargetPage))
+            animateToPage = { nextPage, pendingTargetPage, isRetargeted ->
+                requests.send(AnimationRequest(nextPage, pendingTargetPage, isRetargeted))
                 if (shouldInterrupt) {
                     shouldInterrupt = false
                     throw CancellationException("Pointer input interrupted animation")
@@ -87,12 +98,11 @@ class HorizontalPagerNavigationCoordinatorTest {
 
         coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
-        assertEquals(AnimationRequest(nextPage = 1, pendingTargetPage = 1), requests.tryReceive().getOrNull())
+        assertEquals(AnimationRequest(page = 1, pendingTargetPage = 1), requests.tryReceive().getOrNull())
 
         coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
-        assertEquals(AnimationRequest(nextPage = 1, pendingTargetPage = 2), requests.tryReceive().getOrNull())
-        assertEquals(AnimationRequest(nextPage = 2, pendingTargetPage = 2), requests.tryReceive().getOrNull())
+        assertEquals(AnimationRequest(page = 2, pendingTargetPage = 2), requests.tryReceive().getOrNull())
         assertEquals(2, currentPage)
     }
 
@@ -102,7 +112,7 @@ class HorizontalPagerNavigationCoordinatorTest {
 
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
-        assertEquals(AnimationRequest(nextPage = 1, pendingTargetPage = 1), harness.requests.tryReceive().getOrNull())
+        assertEquals(AnimationRequest(page = 1, pendingTargetPage = 1), harness.requests.tryReceive().getOrNull())
 
         harness.coordinator.cancelPendingNavigation()
         runCurrent()
@@ -110,7 +120,7 @@ class HorizontalPagerNavigationCoordinatorTest {
         harness.coordinator.enqueue(ReaderTapAction.NEXT_PAGE)
         runCurrent()
 
-        assertEquals(AnimationRequest(nextPage = 4, pendingTargetPage = 4), harness.requests.tryReceive().getOrNull())
+        assertEquals(AnimationRequest(page = 4, pendingTargetPage = 4), harness.requests.tryReceive().getOrNull())
         harness.coordinator.cancelPendingNavigation()
         runCurrent()
     }
@@ -127,10 +137,10 @@ class HorizontalPagerNavigationCoordinatorTest {
             scope = scope,
             currentPage = { currentPage },
             lastPageIndex = { lastPageIndex },
-            animateToPage = { nextPage, pendingTargetPage ->
-                requests.send(AnimationRequest(nextPage, pendingTargetPage))
+            animateToPage = { page, pendingTargetPage, isRetargeted ->
+                requests.send(AnimationRequest(page, pendingTargetPage, isRetargeted))
                 releases.receive()
-                currentPage = nextPage
+                currentPage = page
             }
         )
 
@@ -140,7 +150,8 @@ class HorizontalPagerNavigationCoordinatorTest {
     }
 
     private data class AnimationRequest(
-        val nextPage: Int,
-        val pendingTargetPage: Int
+        val page: Int,
+        val pendingTargetPage: Int,
+        val isRetargeted: Boolean = false
     )
 }

@@ -23,8 +23,11 @@ internal fun Modifier.observeConfirmedEdgeTaps(
     onManualDrag: () -> Unit
 ): Modifier = pointerInput(viewConfiguration, onConfirmedEdgeTap, onManualDrag) {
     coroutineScope {
-        var pendingTap: PendingTap? = null
         var confirmationJob: Job? = null
+        val tapTracker = ConfirmedEdgeTapTracker(
+            touchSlop = viewConfiguration.touchSlop,
+            onConfirmedEdgeTap = onConfirmedEdgeTap
+        )
 
         awaitEachGesture {
             val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
@@ -46,7 +49,7 @@ internal fun Modifier.observeConfirmedEdgeTaps(
                         hasReportedDrag = true
                         confirmationJob?.cancel()
                         confirmationJob = null
-                        pendingTap = null
+                        tapTracker.cancelPendingTap()
                         Timber.d("Reader pager observer detected manual drag")
                         onManualDrag()
                     }
@@ -61,33 +64,80 @@ internal fun Modifier.observeConfirmedEdgeTaps(
 
             if (!isTap || pointerCount > 1) {
                 Timber.d("Reader pager observer ignored gesture: isTap=%s pointerCount=%d", isTap, pointerCount)
+                confirmationJob?.cancel()
+                confirmationJob = null
+                tapTracker.cancelPendingTap()
                 return@awaitEachGesture
             }
             val tapPosition = upPosition
-            val previousTap = pendingTap
-            val isDoubleTap = previousTap != null &&
-                (previousTap.position - tapPosition).getDistance() <= viewConfiguration.touchSlop
-
-            if (isDoubleTap) {
-                Timber.d("Reader pager observer suppressed double tap: x=%.1f y=%.1f", tapPosition.x, tapPosition.y)
-                confirmationJob?.cancel()
-                confirmationJob = null
-                pendingTap = null
-            } else {
-                confirmationJob?.cancel()
-                previousTap?.let { onConfirmedEdgeTap(it.position) }
-                pendingTap = PendingTap(tapPosition)
-                confirmationJob = launch {
-                    delay(viewConfiguration.doubleTapTimeoutMillis)
-                    if (pendingTap?.position == tapPosition) {
-                        pendingTap = null
-                        Timber.d("Reader pager observer confirmed tap: x=%.1f y=%.1f", tapPosition.x, tapPosition.y)
-                        onConfirmedEdgeTap(tapPosition)
+            confirmationJob?.cancel()
+            confirmationJob = null
+            when (tapTracker.onTap(tapPosition)) {
+                EdgeTapConfirmation.Pending -> {
+                    confirmationJob = launch {
+                        delay(viewConfiguration.doubleTapTimeoutMillis)
+                        if (tapTracker.confirmPendingTap(tapPosition)) {
+                            Timber.d("Reader pager observer confirmed tap: x=%.1f y=%.1f", tapPosition.x, tapPosition.y)
+                        }
                     }
+                }
+                EdgeTapConfirmation.ConfirmedPrevious -> {
+                    confirmationJob = launch {
+                        delay(viewConfiguration.doubleTapTimeoutMillis)
+                        if (tapTracker.confirmPendingTap(tapPosition)) {
+                            Timber.d("Reader pager observer confirmed tap: x=%.1f y=%.1f", tapPosition.x, tapPosition.y)
+                        }
+                    }
+                }
+                EdgeTapConfirmation.SuppressedDoubleTap -> {
+                    Timber.d("Reader pager observer suppressed double tap: x=%.1f y=%.1f", tapPosition.x, tapPosition.y)
                 }
             }
         }
     }
+}
+
+internal class ConfirmedEdgeTapTracker(
+    private val touchSlop: Float,
+    private val onConfirmedEdgeTap: (Offset) -> Unit
+) {
+    private var pendingTap: PendingTap? = null
+
+    fun onTap(position: Offset): EdgeTapConfirmation {
+        val previousTap = pendingTap
+        val isDoubleTap = previousTap != null &&
+            (previousTap.position - position).getDistance() <= touchSlop
+
+        return if (isDoubleTap) {
+            pendingTap = null
+            EdgeTapConfirmation.SuppressedDoubleTap
+        } else {
+            previousTap?.let { onConfirmedEdgeTap(it.position) }
+            pendingTap = PendingTap(position)
+            if (previousTap == null) {
+                EdgeTapConfirmation.Pending
+            } else {
+                EdgeTapConfirmation.ConfirmedPrevious
+            }
+        }
+    }
+
+    fun confirmPendingTap(position: Offset): Boolean {
+        if (pendingTap?.position != position) return false
+        pendingTap = null
+        onConfirmedEdgeTap(position)
+        return true
+    }
+
+    fun cancelPendingTap() {
+        pendingTap = null
+    }
+}
+
+internal enum class EdgeTapConfirmation {
+    Pending,
+    ConfirmedPrevious,
+    SuppressedDoubleTap
 }
 
 private data class PendingTap(val position: Offset)

@@ -59,4 +59,12 @@ class HorizontalReaderNavigationTest {
     fun `animation uses fast duration for accumulated target`() {
         assertEquals(FAST_PAGE_ANIMATION_DURATION_MILLIS, horizontalPageAnimationDurationMillis(2, 4))
     }
+
+    @Test
+    fun `animation uses fast duration for retargeted adjacent page`() {
+        assertEquals(
+            FAST_PAGE_ANIMATION_DURATION_MILLIS,
+            horizontalPageAnimationDurationMillis(currentPage = 2, nextPage = 3, isRetargeted = true)
+        )
+    }
 }

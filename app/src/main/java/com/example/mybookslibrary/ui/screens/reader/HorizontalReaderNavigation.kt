@@ -45,8 +45,9 @@ internal fun calculateHorizontalTargetPage(
 
 internal fun horizontalPageAnimationDurationMillis(
     currentPage: Int,
-    nextPage: Int
-): Int = if (abs(currentPage - nextPage) > 1) {
+    nextPage: Int,
+    isRetargeted: Boolean = false
+): Int = if (isRetargeted || abs(currentPage - nextPage) > 1) {
     FAST_PAGE_ANIMATION_DURATION_MILLIS
 } else {
     DEFAULT_PAGE_ANIMATION_DURATION_MILLIS

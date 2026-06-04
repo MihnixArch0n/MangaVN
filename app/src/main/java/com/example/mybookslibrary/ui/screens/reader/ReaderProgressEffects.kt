@@ -70,14 +70,17 @@ internal fun ReaderProgressEffects(
         Timber.d("Reader mode sync end: mode=%s targetPage=%d", state.currentReadingMode, targetPage)
     }
 
-    LaunchedEffect(pagerState, state.currentReadingMode) {
+    LaunchedEffect(pagerState, state.pages.size, state.currentReadingMode) {
         if (state.currentReadingMode == ReadingMode.VERTICAL) return@LaunchedEffect
+        if (state.pages.isEmpty()) return@LaunchedEffect
         Timber.d("Reader horizontal page tracking active: mode=%s", state.currentReadingMode)
-        snapshotFlow { pagerState.currentPage }
+        snapshotFlow { pagerState.settledPage }
             .distinctUntilChanged()
             .map { page ->
-                Timber.d("Reader horizontal page visible: page=%d mode=%s", page, state.currentReadingMode)
-                page
+                val visiblePage = page.coerceIn(0, state.pages.lastIndex)
+                latestActivePageIndex.value = visiblePage
+                Timber.d("Reader horizontal page settled: page=%d mode=%s", visiblePage, state.currentReadingMode)
+                visiblePage
             }
             .collect { page ->
                 onEvent(ReaderEvent.VisiblePageChanged(page))

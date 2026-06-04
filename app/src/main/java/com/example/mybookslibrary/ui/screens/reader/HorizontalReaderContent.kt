@@ -53,18 +53,20 @@ fun HorizontalReaderContent(
             scope = scope,
             currentPage = { pagerState.currentPage },
             lastPageIndex = { pagerState.pageCount - 1 },
-            animateToPage = { nextPage, pendingTargetPage ->
+            animateToPage = { nextPage, pendingTargetPage, isRetargeted ->
                 val durationMillis = horizontalPageAnimationDurationMillis(
                     currentPage = pagerState.currentPage,
-                    nextPage = pendingTargetPage
+                    nextPage = pendingTargetPage,
+                    isRetargeted = isRetargeted
                 )
                 Timber.d(
-                    "Reader pager animateScrollToPage: current=%d settled=%d target=%d next=%d duration=%d",
+                    "Reader pager animateScrollToPage: current=%d settled=%d target=%d next=%d duration=%d retargeted=%s",
                     pagerState.currentPage,
                     pagerState.settledPage,
                     pagerState.targetPage,
                     nextPage,
-                    durationMillis
+                    durationMillis,
+                    isRetargeted
                 )
                 pagerState.animateScrollToPage(
                     page = nextPage,
