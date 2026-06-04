@@ -15,7 +15,17 @@ concurrency:
 
 jobs:
   build-test:
-    runs-on: ubuntu-latest
+    strategy:
+      # Không hủy các OS khác khi một OS fail → thấy kết quả đầy đủ.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    # Dùng bash trên cả 3 OS để heredoc (stub) và ./gradlew chạy đồng nhất
+    # (windows runner mặc định pwsh — có sẵn git bash).
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
@@ -48,6 +58,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
+          # Tên artifact phải khác nhau theo OS — upload-artifact@v4 cấm trùng tên trong cùng run.
+          name: test-report-${{ matrix.os }}
           path: app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: ignore
