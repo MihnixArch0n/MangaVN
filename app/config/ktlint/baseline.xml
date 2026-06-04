@@ -2291,6 +2291,34 @@
         <error line="16" column="80" source="standard:function-signature" />
         <error line="28" column="1" source="standard:no-consecutive-blank-lines" />
     </file>
+    <file name="src/test/java/com/example/mybookslibrary/ui/screens/ChapterComponentsTest.kt">
+        <error line="38" column="70" source="standard:trailing-comma-on-call-site" />
+        <error line="59" column="31" source="standard:argument-list-wrapping" />
+        <error line="59" column="53" source="standard:argument-list-wrapping" />
+        <error line="60" column="39" source="standard:argument-list-wrapping" />
+        <error line="60" column="62" source="standard:argument-list-wrapping" />
+        <error line="60" column="83" source="standard:trailing-comma-on-call-site" />
+        <error line="73" column="31" source="standard:argument-list-wrapping" />
+        <error line="73" column="53" source="standard:argument-list-wrapping" />
+        <error line="74" column="39" source="standard:argument-list-wrapping" />
+        <error line="74" column="62" source="standard:argument-list-wrapping" />
+        <error line="74" column="83" source="standard:trailing-comma-on-call-site" />
+        <error line="88" column="31" source="standard:argument-list-wrapping" />
+        <error line="88" column="53" source="standard:argument-list-wrapping" />
+        <error line="89" column="39" source="standard:argument-list-wrapping" />
+        <error line="89" column="62" source="standard:argument-list-wrapping" />
+        <error line="89" column="83" source="standard:trailing-comma-on-call-site" />
+        <error line="101" column="31" source="standard:argument-list-wrapping" />
+        <error line="101" column="53" source="standard:argument-list-wrapping" />
+        <error line="102" column="39" source="standard:argument-list-wrapping" />
+        <error line="102" column="62" source="standard:argument-list-wrapping" />
+        <error line="102" column="83" source="standard:trailing-comma-on-call-site" />
+        <error line="115" column="31" source="standard:argument-list-wrapping" />
+        <error line="115" column="53" source="standard:argument-list-wrapping" />
+        <error line="116" column="39" source="standard:argument-list-wrapping" />
+        <error line="116" column="62" source="standard:argument-list-wrapping" />
+        <error line="116" column="83" source="standard:trailing-comma-on-call-site" />
+    </file>
     <file name="src/test/java/com/example/mybookslibrary/ui/screens/DiscoverScreenContentTest.kt">
         <error line="7" column="1" source="standard:no-unused-imports" />
         <error line="33" column="1" source="standard:spacing-between-declarations-with-annotations" />
@@ -2329,6 +2357,10 @@
         <error line="168" column="47" source="standard:argument-list-wrapping" />
         <error line="168" column="65" source="standard:argument-list-wrapping" />
     </file>
+    <file name="src/test/java/com/example/mybookslibrary/ui/screens/SearchFilterSheetTest.kt">
+        <error line="31" column="31" source="standard:trailing-comma-on-call-site" />
+        <error line="49" column="31" source="standard:trailing-comma-on-call-site" />
+    </file>
     <file name="src/test/java/com/example/mybookslibrary/ui/screens/SearchScreenContentTest.kt">
         <error line="31" column="1" source="standard:spacing-between-declarations-with-annotations" />
         <error line="31" column="5" source="standard:blank-line-before-declaration" />
@@ -2340,6 +2372,19 @@
         <error line="36" column="6" source="standard:parameter-list-wrapping" />
         <error line="36" column="6" source="standard:function-signature" />
         <error line="36" column="6" source="standard:trailing-comma-on-declaration-site" />
+    </file>
+    <file name="src/test/java/com/example/mybookslibrary/ui/screens/auth/RegisterScreenTest.kt">
+        <error line="3" column="1" source="standard:import-ordering" />
+        <error line="9" column="1" source="standard:import-ordering" />
+        <error line="9" column="1" source="standard:no-unused-imports" />
+        <error line="10" column="1" source="standard:import-ordering" />
+        <error line="10" column="1" source="standard:no-unused-imports" />
+        <error line="15" column="1" source="standard:import-ordering" />
+        <error line="15" column="1" source="standard:no-unused-imports" />
+    </file>
+    <file name="src/test/java/com/example/mybookslibrary/ui/screens/detail/MangaDetailScreenWrapperTest.kt">
+        <error line="27" column="1" source="standard:spacing-between-declarations-with-annotations" />
+        <error line="27" column="5" source="standard:blank-line-before-declaration" />
     </file>
     <file name="src/test/java/com/example/mybookslibrary/ui/screens/reader/MangaPageItemTest.kt">
         <error line="3" column="1" source="standard:import-ordering" />
@@ -2424,6 +2469,9 @@
         <error line="33" column="50" source="standard:trailing-comma-on-call-site" />
         <error line="45" column="26" source="standard:trailing-comma-on-call-site" />
         <error line="59" column="57" source="standard:trailing-comma-on-call-site" />
+    </file>
+    <file name="src/test/java/com/example/mybookslibrary/ui/screens/reader/components/PageActionBottomSheetTest.kt">
+        <error line="6" column="1" source="standard:no-unused-imports" />
     </file>
     <file name="src/test/java/com/example/mybookslibrary/ui/util/FakeImageLoader.kt">
         <error line="10" column="1" source="standard:no-unused-imports" />

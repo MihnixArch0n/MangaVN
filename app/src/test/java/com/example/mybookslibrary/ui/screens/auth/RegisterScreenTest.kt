@@ -1,6 +1,9 @@
 package com.example.mybookslibrary.ui.screens.auth
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
@@ -12,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.example.mybookslibrary.data.repository.AuthRepository
 import com.example.mybookslibrary.ui.viewmodel.AuthViewModel
+import io.mockk.coEvery
 import io.mockk.mockk
 import org.junit.Rule
 import org.junit.Test
@@ -98,5 +102,22 @@ class RegisterScreenTest {
 
         // TextButton ở cuối Column — viewport nhỏ có thể chưa scroll tới → assertExists (đã compose)
         composeRule.onNodeWithText("Already have an account? Login").assertExists()
+    }
+
+    @Test
+    fun errorState_showsErrorMessage() {
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        coEvery { authRepository.register(any(), any()) } returns
+            Result.failure(IllegalStateException("Username already taken"))
+        val vm = AuthViewModel(authRepository)
+        composeRule.setContent {
+            RegisterScreen(onRegisterSuccess = {}, onNavigateToLogin = {}, viewModel = vm)
+        }
+        composeRule.onNodeWithText("Username").performTextInput("existing")
+        composeRule.onNodeWithText("Password").performTextInput("pass1")
+        composeRule.onNodeWithText("Confirm Password").performTextInput("pass1")
+        composeRule.onNode(hasText("Register") and hasClickAction()).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Username already taken").assertIsDisplayed()
     }
 }
