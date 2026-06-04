@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
 }
 
 android {
@@ -44,6 +46,22 @@ android {
 ksp {
     // Xuất schema Room để viết migration cho các version sau (đã bỏ destructive migration).
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+// Static analysis — baseline cho code cũ để không chặn CI, fix dần (xem .claude/test-plan.md §1.1).
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+    baseline = file("$rootDir/config/detekt/baseline.xml")
+}
+
+ktlint {
+    android = true
+    // Bỏ qua code do KSP/Room/Hilt sinh ra (chỉ lint source do người viết).
+    filter {
+        exclude { it.file.path.contains("generated") }
+        exclude { it.file.path.contains("build/") }
+    }
 }
 
 dependencies {

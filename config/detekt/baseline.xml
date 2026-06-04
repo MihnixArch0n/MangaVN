@@ -1,0 +1,346 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:TapZoneEvaluator.kt$TapZoneEvaluator$!x.isFinite() || !y.isFinite() || !screenWidth.isFinite() || !screenHeight.isFinite()</ID>
+    <ID>ConstructorParameterNaming:ChapterProgressEntity.kt$ChapterProgressEntity$@ColumnInfo(name = "is_downloaded") val is_downloaded: Boolean = false</ID>
+    <ID>ConstructorParameterNaming:ChapterProgressEntity.kt$ChapterProgressEntity$@ColumnInfo(name = "last_read_page") val last_read_page: Int = 0</ID>
+    <ID>ConstructorParameterNaming:ChapterProgressEntity.kt$ChapterProgressEntity$@ColumnInfo(name = "manga_id") val manga_id: String</ID>
+    <ID>ConstructorParameterNaming:ChapterProgressEntity.kt$ChapterProgressEntity$@ColumnInfo(name = "total_pages") val total_pages: Int = 0</ID>
+    <ID>ConstructorParameterNaming:ChapterProgressEntity.kt$ChapterProgressEntity$@ColumnInfo(name = "updated_at") val updated_at: Long</ID>
+    <ID>ConstructorParameterNaming:ChapterProgressEntity.kt$ChapterProgressEntity$@PrimaryKey @ColumnInfo(name = "chapter_id") val chapter_id: String</ID>
+    <ID>ConstructorParameterNaming:DownloadQueueEntity.kt$DownloadQueueEntity$@ColumnInfo(name = "error_msg") val error_msg: String? = null</ID>
+    <ID>ConstructorParameterNaming:DownloadQueueEntity.kt$DownloadQueueEntity$@ColumnInfo(name = "manga_id") val manga_id: String</ID>
+    <ID>ConstructorParameterNaming:DownloadQueueEntity.kt$DownloadQueueEntity$@ColumnInfo(name = "progress_percent") val progress_percent: Int = 0</ID>
+    <ID>ConstructorParameterNaming:DownloadQueueEntity.kt$DownloadQueueEntity$@PrimaryKey @ColumnInfo(name = "chapter_id") val chapter_id: String</ID>
+    <ID>ConstructorParameterNaming:LibraryItemEntity.kt$LibraryItemEntity$@ColumnInfo(name = "cover_url") val cover_url: String</ID>
+    <ID>ConstructorParameterNaming:LibraryItemEntity.kt$LibraryItemEntity$@ColumnInfo(name = "last_read_chapter_id") val last_read_chapter_id: String? = null</ID>
+    <ID>ConstructorParameterNaming:LibraryItemEntity.kt$LibraryItemEntity$@ColumnInfo(name = "last_read_page_index") val last_read_page_index: Int = 0</ID>
+    <ID>ConstructorParameterNaming:LibraryItemEntity.kt$LibraryItemEntity$@ColumnInfo(name = "updated_at") val updated_at: Long = System.currentTimeMillis()</ID>
+    <ID>ConstructorParameterNaming:LibraryItemEntity.kt$LibraryItemEntity$@PrimaryKey @ColumnInfo(name = "manga_id") val manga_id: String</ID>
+    <ID>ConstructorParameterNaming:UserEntity.kt$UserEntity$@ColumnInfo(name = "avatar_path") val avatar_path: String? = null</ID>
+    <ID>ConstructorParameterNaming:UserEntity.kt$UserEntity$@ColumnInfo(name = "created_at") val created_at: Long = System.currentTimeMillis()</ID>
+    <ID>ConstructorParameterNaming:UserEntity.kt$UserEntity$@ColumnInfo(name = "google_id") val google_id: String? = null</ID>
+    <ID>CyclomaticComplexMethod:ImageSaver.kt$ImageSaver$private fun detectFormat(data: ByteArray): ImageFormat?</ID>
+    <ID>CyclomaticComplexMethod:MainNavGraph.kt$@OptIn(ExperimentalSharedTransitionApi::class) @Composable fun MainNavHost(loggedInUserId: String?)</ID>
+    <ID>CyclomaticComplexMethod:MangaDetailScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun MangaDetailScreen( mangaId: String, title: String, coverArt: String, description: String, tags: List&lt;String&gt;, onBackClick: () -&gt; Unit, onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -&gt; Unit, onReviewClick: (mangaId: String) -&gt; Unit = {}, viewModel: MangaDetailViewModel = hiltViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:ReaderEffectHandler.kt$@Composable internal fun ReaderEffectHandler( effects: SharedFlow&lt;ReaderUiEffect&gt;, pagerState: PagerState, currentReadingMode: ReadingMode, onEvent: (ReaderEvent) -&gt; Unit )</ID>
+    <ID>CyclomaticComplexMethod:SettingScreen.kt$@Suppress("unused") @Composable fun SettingScreenContent( viewModel: SettingsViewModel = hiltViewModel() )</ID>
+    <ID>CyclomaticComplexMethod:TapZoneEvaluator.kt$TapZoneEvaluator$operator fun invoke( x: Float, y: Float, screenWidth: Float, screenHeight: Float, mode: ReadingMode ): ReaderTapAction</ID>
+    <ID>FunctionNaming:ChapterComponents.kt$@Composable fun ChapterRow( chapter: ChapterWithProgressModel, chapterTitle: String, onClick: () -&gt; Unit, onMarkCompleted: () -&gt; Unit, onMarkUnread: () -&gt; Unit, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, onDeleteDownload: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:ChapterComponents.kt$@Composable fun VolumeHeader(volume: String)</ID>
+    <ID>FunctionNaming:ChapterComponents.kt$@Composable private fun ChapterDownloadIndicator( state: ChapterDownloadState, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, onDeleteDownload: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:DiscoverScreen.kt$@Composable private fun ExpandedBookGrid(items: List&lt;MangaModel&gt;, onItemClick: (MangaModel) -&gt; Unit)</ID>
+    <ID>FunctionNaming:DiscoverScreen.kt$@Composable private fun HorizontalBookScroll(items: List&lt;MangaModel&gt;, onItemClick: (MangaModel) -&gt; Unit)</ID>
+    <ID>FunctionNaming:DiscoverScreen.kt$@Composable private fun MangaCardItem(manga: MangaModel, onClick: () -&gt; Unit, modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:DiscoverScreen.kt$@Composable private fun SectionHeader(title: String, expanded: Boolean = false, onToggle: (() -&gt; Unit)? = null)</ID>
+    <ID>FunctionNaming:DiscoverScreen.kt$@Composable private fun SpotlightCard(manga: MangaModel, onClick: () -&gt; Unit, modifier: Modifier = Modifier)</ID>
+    <ID>FunctionNaming:DiscoverScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable private fun EditorialTopBar( onSearchClick: () -&gt; Unit = {}, onLibraryClick: () -&gt; Unit = {}, onProfileClick: () -&gt; Unit = {} )</ID>
+    <ID>FunctionNaming:DiscoverScreen.kt$@Suppress("unused") @Composable fun DiscoverScreenContent( onMangaClick: (MangaModel) -&gt; Unit = {}, onSearchClick: () -&gt; Unit = {}, onLibraryClick: () -&gt; Unit = {}, onProfileClick: () -&gt; Unit = {} )</ID>
+    <ID>FunctionNaming:HorizontalReaderContent.kt$@Composable fun HorizontalReaderContent( pages: List&lt;String&gt;, pagerState: PagerState, readingMode: ReadingMode, onEvent: (ReaderEvent) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>FunctionNaming:HorizontalReaderContent.kt$@Preview(name = "Horizontal Reader - LTR", showBackground = true) @Composable private fun HorizontalReaderContentLtrPreview()</ID>
+    <ID>FunctionNaming:HorizontalReaderContent.kt$@Preview(name = "Horizontal Reader - RTL", showBackground = true) @Composable private fun HorizontalReaderContentRtlPreview()</ID>
+    <ID>FunctionNaming:LibraryScreen.kt$@Composable private fun LibraryItemCard( title: String, coverUrl: String, status: LibraryStatus, onClick: () -&gt; Unit, onLongClick: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:LibraryScreen.kt$@Composable private fun StatusChip(status: LibraryStatus)</ID>
+    <ID>FunctionNaming:LibraryScreen.kt$@Suppress("unused") @OptIn(ExperimentalMaterial3Api::class) @Composable fun LibraryScreenContent( onOpenDetail: (mangaId: String, title: String, coverUrl: String) -&gt; Unit )</ID>
+    <ID>FunctionNaming:LoginScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun LoginScreen( onLoginSuccess: () -&gt; Unit, onNavigateToRegister: () -&gt; Unit, viewModel: AuthViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:MainNavGraph.kt$@Composable private fun FloatingPillNavBar( currentDestination: NavDestination?, onNavigate: (BottomNavDestination) -&gt; Unit )</ID>
+    <ID>FunctionNaming:MainNavGraph.kt$@Composable private fun PillNavItem(icon: ImageVector, label: String, selected: Boolean, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:MainNavGraph.kt$@OptIn(ExperimentalSharedTransitionApi::class) @Composable fun MainNavHost(loggedInUserId: String?)</ID>
+    <ID>FunctionNaming:MainScreens.kt$@Composable fun DiscoverScreen( onMangaClick: (MangaModel) -&gt; Unit = {}, onSearchClick: () -&gt; Unit = {}, onLibraryClick: () -&gt; Unit = {}, onProfileClick: () -&gt; Unit = {} )</ID>
+    <ID>FunctionNaming:MainScreens.kt$@Composable fun LibraryScreen( onOpenDetail: (mangaId: String, title: String, coverUrl: String) -&gt; Unit )</ID>
+    <ID>FunctionNaming:MainScreens.kt$@Composable fun SearchScreen( onMangaClick: (MangaModel) -&gt; Unit = {}, viewModel: SearchViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:MainScreens.kt$@Composable fun SettingScreen( viewModel: SettingsViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:MangaDetailScreen.kt$@Composable fun MangaDetailScreen( mangaId: String, title: String, coverArt: String, description: String, tags: List&lt;String&gt;, onBackClick: () -&gt; Unit, onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -&gt; Unit, onReviewClick: (mangaId: String) -&gt; Unit = {} )</ID>
+    <ID>FunctionNaming:MangaDetailScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun MangaDetailScreen( mangaId: String, title: String, coverArt: String, description: String, tags: List&lt;String&gt;, onBackClick: () -&gt; Unit, onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -&gt; Unit, onReviewClick: (mangaId: String) -&gt; Unit = {}, viewModel: MangaDetailViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:MangaPageItem.kt$@Composable fun MangaPageItem( imageUrl: String, index: Int, modifier: Modifier = Modifier, onTap: (x: Float, y: Float, width: Float, height: Float) -&gt; Unit = { _, _, _, _ -&gt; }, onLongPress: ((String, Int) -&gt; Unit)? = null )</ID>
+    <ID>FunctionNaming:MangaPageItem.kt$@Preview(name = "Manga Page Item", showBackground = true) @Composable private fun MangaPageItemPreview()</ID>
+    <ID>FunctionNaming:MangaReviewScreen.kt$@Composable private fun RatingBarRow(stars: Int, progress: Float)</ID>
+    <ID>FunctionNaming:MangaReviewScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun MangaReviewScreen( onBackClick: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:PageActionBottomSheet.kt$@Composable private fun ActionItem( icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:PageActionBottomSheet.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun PageActionBottomSheet( onDismiss: () -&gt; Unit, onAction: (PageAction) -&gt; Unit )</ID>
+    <ID>FunctionNaming:PageActionBottomSheet.kt$@Preview(name = "Page Action Sheet", showBackground = true) @Composable private fun PageActionBottomSheetPreview()</ID>
+    <ID>FunctionNaming:ReaderBars.kt$@Composable fun BoxScope.ReaderBottomBar( isVisible: Boolean, currentPage: Int, totalPages: Int, currentReadingMode: ReadingMode, onToggleReadingMode: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:ReaderBars.kt$@Composable fun BoxScope.ReaderTopBar(chapterTitle: String, isVisible: Boolean, onBackClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:ReaderBars.kt$@Preview(name = "Reader Bottom Bar", showBackground = true) @Composable private fun ReaderBottomBarPreview()</ID>
+    <ID>FunctionNaming:ReaderBars.kt$@Preview(name = "Reader Top Bar", showBackground = true) @Composable private fun ReaderTopBarPreview()</ID>
+    <ID>FunctionNaming:ReaderContentHost.kt$@Composable internal fun ReaderContentHost( state: ReaderState, listState: LazyListState, pagerState: PagerState, onBackClick: () -&gt; Unit, onEvent: (ReaderEvent) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>FunctionNaming:ReaderEffectHandler.kt$@Composable internal fun ReaderEffectHandler( effects: SharedFlow&lt;ReaderUiEffect&gt;, pagerState: PagerState, currentReadingMode: ReadingMode, onEvent: (ReaderEvent) -&gt; Unit )</ID>
+    <ID>FunctionNaming:ReaderPreview.kt$@Composable private fun ReaderPreviewLayout( chapterTitle: String, pages: List&lt;String&gt;, currentPage: Int, readingMode: ReadingMode )</ID>
+    <ID>FunctionNaming:ReaderPreview.kt$@Preview(name = "Reader - Horizontal", showBackground = true) @Composable private fun ReaderHorizontalPreview()</ID>
+    <ID>FunctionNaming:ReaderPreview.kt$@Preview(name = "Reader - Vertical", showBackground = true) @Composable private fun ReaderVerticalPreview()</ID>
+    <ID>FunctionNaming:ReaderProgressEffects.kt$@OptIn(FlowPreview::class) @Composable internal fun ReaderProgressEffects( state: ReaderState, listState: LazyListState, pagerState: PagerState, latestActivePageIndex: MutableState&lt;Int?&gt;, hasRestoredInitialPage: MutableState&lt;Boolean&gt;, onEvent: (ReaderEvent) -&gt; Unit )</ID>
+    <ID>FunctionNaming:ReaderScreen.kt$@Composable fun ReaderScreen( onBackClick: () -&gt; Unit, modifier: Modifier = Modifier, viewModel: ReaderViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:ReaderSystemBars.kt$@Composable internal fun ConfigureReaderSystemBars( activity: ComponentActivity?, backgroundIsLight: Boolean )</ID>
+    <ID>FunctionNaming:RegisterScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RegisterScreen( onRegisterSuccess: () -&gt; Unit, onNavigateToLogin: () -&gt; Unit, viewModel: AuthViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:SearchScreen.kt$@Composable private fun SearchResultItem(manga: MangaModel, onClick: () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SearchScreen.kt$@Suppress("unused") @Composable fun SearchScreenContent( onMangaClick: (MangaModel) -&gt; Unit = {}, viewModel: SearchViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:SettingScreen.kt$@Composable private fun SettingsCard(content: @Composable () -&gt; Unit)</ID>
+    <ID>FunctionNaming:SettingScreen.kt$@Composable private fun SettingsDivider()</ID>
+    <ID>FunctionNaming:SettingScreen.kt$@Composable private fun SettingsRow( title: String, subtitle: String, titleColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface, onClick: () -&gt; Unit )</ID>
+    <ID>FunctionNaming:SettingScreen.kt$@Composable private fun SettingsSectionLabel(title: String)</ID>
+    <ID>FunctionNaming:SettingScreen.kt$@Suppress("unused") @Composable fun SettingScreenContent( viewModel: SettingsViewModel = hiltViewModel() )</ID>
+    <ID>FunctionNaming:Theme.kt$@Composable fun MyBooksLibraryTheme( darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -&gt; Unit )</ID>
+    <ID>FunctionNaming:VerticalReaderContent.kt$@Composable internal fun VerticalReaderContent( pages: List&lt;String&gt;, listState: LazyListState, onEvent: (ReaderEvent) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>FunctionNaming:WebtoonPageItem.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun WebtoonPageItem( imageUrl: String, index: Int, modifier: Modifier = Modifier, onTap: (x: Float, y: Float, width: Float, height: Float) -&gt; Unit = { _, _, _, _ -&gt; }, onLongPress: ((String, Int) -&gt; Unit)? = null )</ID>
+    <ID>FunctionNaming:WebtoonPageItem.kt$@Preview(name = "Webtoon Page Item", showBackground = true) @Composable private fun WebtoonPageItemPreview()</ID>
+    <ID>InstanceOfCheckForException:ImageSaver.kt$ImageSaver$e is ImageSaveException</ID>
+    <ID>LongMethod:ChapterComponents.kt$@Composable fun ChapterRow( chapter: ChapterWithProgressModel, chapterTitle: String, onClick: () -&gt; Unit, onMarkCompleted: () -&gt; Unit, onMarkUnread: () -&gt; Unit, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, onDeleteDownload: () -&gt; Unit )</ID>
+    <ID>LongMethod:ChapterDownloadWorker.kt$ChapterDownloadWorker$@OptIn(ExperimentalCoroutinesApi::class) override suspend fun doWork(): Result</ID>
+    <ID>LongMethod:DiscoverScreen.kt$@Suppress("unused") @Composable fun DiscoverScreenContent( onMangaClick: (MangaModel) -&gt; Unit = {}, onSearchClick: () -&gt; Unit = {}, onLibraryClick: () -&gt; Unit = {}, onProfileClick: () -&gt; Unit = {} )</ID>
+    <ID>LongMethod:LoginScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun LoginScreen( onLoginSuccess: () -&gt; Unit, onNavigateToRegister: () -&gt; Unit, viewModel: AuthViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:MainNavGraph.kt$@OptIn(ExperimentalSharedTransitionApi::class) @Composable fun MainNavHost(loggedInUserId: String?)</ID>
+    <ID>LongMethod:MangaDetailScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun MangaDetailScreen( mangaId: String, title: String, coverArt: String, description: String, tags: List&lt;String&gt;, onBackClick: () -&gt; Unit, onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -&gt; Unit, onReviewClick: (mangaId: String) -&gt; Unit = {}, viewModel: MangaDetailViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:MangaPageItem.kt$@Composable fun MangaPageItem( imageUrl: String, index: Int, modifier: Modifier = Modifier, onTap: (x: Float, y: Float, width: Float, height: Float) -&gt; Unit = { _, _, _, _ -&gt; }, onLongPress: ((String, Int) -&gt; Unit)? = null )</ID>
+    <ID>LongMethod:MangaReviewScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun MangaReviewScreen( onBackClick: () -&gt; Unit )</ID>
+    <ID>LongMethod:ReaderContentHost.kt$@Composable internal fun ReaderContentHost( state: ReaderState, listState: LazyListState, pagerState: PagerState, onBackClick: () -&gt; Unit, onEvent: (ReaderEvent) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:ReaderEffectHandler.kt$@Composable internal fun ReaderEffectHandler( effects: SharedFlow&lt;ReaderUiEffect&gt;, pagerState: PagerState, currentReadingMode: ReadingMode, onEvent: (ReaderEvent) -&gt; Unit )</ID>
+    <ID>LongMethod:ReaderProgressEffects.kt$@OptIn(FlowPreview::class) @Composable internal fun ReaderProgressEffects( state: ReaderState, listState: LazyListState, pagerState: PagerState, latestActivePageIndex: MutableState&lt;Int?&gt;, hasRestoredInitialPage: MutableState&lt;Boolean&gt;, onEvent: (ReaderEvent) -&gt; Unit )</ID>
+    <ID>LongMethod:RegisterScreen.kt$@OptIn(ExperimentalMaterial3Api::class) @Composable fun RegisterScreen( onRegisterSuccess: () -&gt; Unit, onNavigateToLogin: () -&gt; Unit, viewModel: AuthViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:SearchScreen.kt$@Suppress("unused") @Composable fun SearchScreenContent( onMangaClick: (MangaModel) -&gt; Unit = {}, viewModel: SearchViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:SettingScreen.kt$@Suppress("unused") @Composable fun SettingScreenContent( viewModel: SettingsViewModel = hiltViewModel() )</ID>
+    <ID>LongMethod:VerticalReaderContent.kt$@Composable internal fun VerticalReaderContent( pages: List&lt;String&gt;, listState: LazyListState, onEvent: (ReaderEvent) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongMethod:WebtoonPageItem.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun WebtoonPageItem( imageUrl: String, index: Int, modifier: Modifier = Modifier, onTap: (x: Float, y: Float, width: Float, height: Float) -&gt; Unit = { _, _, _, _ -&gt; }, onLongPress: ((String, Int) -&gt; Unit)? = null )</ID>
+    <ID>LongParameterList:ChapterComponents.kt$( chapter: ChapterWithProgressModel, chapterTitle: String, onClick: () -&gt; Unit, onMarkCompleted: () -&gt; Unit, onMarkUnread: () -&gt; Unit, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, onDeleteDownload: () -&gt; Unit )</ID>
+    <ID>LongParameterList:MangaDetailScreen.kt$( mangaId: String, title: String, coverArt: String, description: String, tags: List&lt;String&gt;, onBackClick: () -&gt; Unit, onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -&gt; Unit, onReviewClick: (mangaId: String) -&gt; Unit = {} )</ID>
+    <ID>LongParameterList:MangaDetailScreen.kt$( mangaId: String, title: String, coverArt: String, description: String, tags: List&lt;String&gt;, onBackClick: () -&gt; Unit, onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -&gt; Unit, onReviewClick: (mangaId: String) -&gt; Unit = {}, viewModel: MangaDetailViewModel = hiltViewModel() )</ID>
+    <ID>LongParameterList:MangaDexApi.kt$MangaDexApi$( @Path("mangaId") mangaId: String, @Query("translatedLanguage[]") translatedLanguages: List&lt;String&gt; = listOf("en", "vi"), @Query("order[volume]") volumeOrder: String = "asc", @Query("order[chapter]") chapterOrder: String = "asc", @Query("limit") limit: Int = 500, @Query("offset") offset: Int = 0, @Query("includeUnavailable") includeUnavailable: Int = 0 )</ID>
+    <ID>LongParameterList:ReaderContentHost.kt$( state: ReaderState, listState: LazyListState, pagerState: PagerState, onBackClick: () -&gt; Unit, onEvent: (ReaderEvent) -&gt; Unit, modifier: Modifier = Modifier )</ID>
+    <ID>LongParameterList:ReaderProgressEffects.kt$( state: ReaderState, listState: LazyListState, pagerState: PagerState, latestActivePageIndex: MutableState&lt;Int?&gt;, hasRestoredInitialPage: MutableState&lt;Boolean&gt;, onEvent: (ReaderEvent) -&gt; Unit )</ID>
+    <ID>LongParameterList:ReaderViewModel.kt$ReaderViewModel$( application: Application, savedStateHandle: SavedStateHandle, private val mangaRepository: MangaRepository, private val libraryRepository: LibraryRepository, private val downloadedChapterCache: DownloadedChapterCache, private val offlineDownloadStorage: OfflineDownloadStorage, private val tapZoneEvaluator: TapZoneEvaluator, @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher )</ID>
+    <ID>MagicNumber:AuthRepository.kt$AuthRepository$16</ID>
+    <ID>MagicNumber:AuthRepository.kt$AuthRepository$3</ID>
+    <ID>MagicNumber:AuthRepository.kt$AuthRepository$4</ID>
+    <ID>MagicNumber:ChapterComponents.kt$0.55f</ID>
+    <ID>MagicNumber:ChapterComponents.kt$100</ID>
+    <ID>MagicNumber:ChapterDownloadWorker.kt$ChapterDownloadWorker$100</ID>
+    <ID>MagicNumber:ChapterDownloadWorker.kt$ChapterDownloadWorker$100f</ID>
+    <ID>MagicNumber:ChapterDownloadWorker.kt$ChapterDownloadWorker$5</ID>
+    <ID>MagicNumber:Color.kt$0xFF121212</ID>
+    <ID>MagicNumber:Color.kt$0xFF1A1A1A</ID>
+    <ID>MagicNumber:Color.kt$0xFF1E1E1E</ID>
+    <ID>MagicNumber:Color.kt$0xFF2A2A2A</ID>
+    <ID>MagicNumber:Color.kt$0xFF2C2C2C</ID>
+    <ID>MagicNumber:Color.kt$0xFF2E7D32</ID>
+    <ID>MagicNumber:Color.kt$0xFF3A3A3A</ID>
+    <ID>MagicNumber:Color.kt$0xFF66BB6A</ID>
+    <ID>MagicNumber:Color.kt$0xFF8C8B88</ID>
+    <ID>MagicNumber:Color.kt$0xFF9E9D9A</ID>
+    <ID>MagicNumber:Color.kt$0xFFC04A33</ID>
+    <ID>MagicNumber:Color.kt$0xFFD4705C</ID>
+    <ID>MagicNumber:Color.kt$0xFFE65100</ID>
+    <ID>MagicNumber:Color.kt$0xFFE8E6E3</ID>
+    <ID>MagicNumber:Color.kt$0xFFF9F8F6</ID>
+    <ID>MagicNumber:Color.kt$0xFFFF8A65</ID>
+    <ID>MagicNumber:Color.kt$0xFFFFFFFF</ID>
+    <ID>MagicNumber:DiscoverScreen.kt$11</ID>
+    <ID>MagicNumber:DiscoverScreen.kt$3</ID>
+    <ID>MagicNumber:DiscoverScreen.kt$5</ID>
+    <ID>MagicNumber:DiscoverScreen.kt$6</ID>
+    <ID>MagicNumber:ImageModule.kt$ImageModule$0.20</ID>
+    <ID>MagicNumber:ImageSaver.kt$ImageSaver$10</ID>
+    <ID>MagicNumber:ImageSaver.kt$ImageSaver$11</ID>
+    <ID>MagicNumber:ImageSaver.kt$ImageSaver$12</ID>
+    <ID>MagicNumber:ImageSaver.kt$ImageSaver$3</ID>
+    <ID>MagicNumber:ImageSaver.kt$ImageSaver$4</ID>
+    <ID>MagicNumber:ImageSaver.kt$ImageSaver$8</ID>
+    <ID>MagicNumber:ImageSaver.kt$ImageSaver$9</ID>
+    <ID>MagicNumber:MainNavGraph.kt$300</ID>
+    <ID>MagicNumber:MainNavGraph.kt$MangaDetailDestination$3</ID>
+    <ID>MagicNumber:MangaDetailScreen.kt$0.85f</ID>
+    <ID>MagicNumber:MangaDetailScreen.kt$5</ID>
+    <ID>MagicNumber:MangaDetailScreen.kt$DetailDimensions$20</ID>
+    <ID>MagicNumber:MangaDetailScreen.kt$DetailDimensions$40</ID>
+    <ID>MagicNumber:MangaDetailScreen.kt$DetailDimensions$60</ID>
+    <ID>MagicNumber:MangaDetailScreen.kt$DetailDimensions$80</ID>
+    <ID>MagicNumber:MangaDetailViewModel.kt$MangaDetailViewModel$5</ID>
+    <ID>MagicNumber:MangaReviewScreen.kt$5</ID>
+    <ID>MagicNumber:NetworkModule.kt$NetworkModule$15</ID>
+    <ID>MagicNumber:NetworkModule.kt$NetworkModule$30</ID>
+    <ID>MagicNumber:NetworkModule.kt$NetworkModule$60</ID>
+    <ID>MagicNumber:OfflineDownloadRepository.kt$OfflineDownloadRepository$100</ID>
+    <ID>MagicNumber:ReaderProgressEffects.kt$300</ID>
+    <ID>MagicNumber:ReaderScreen.kt$0.5f</ID>
+    <ID>MagicNumber:ReaderViewModel.kt$ReaderViewModel$16</ID>
+    <ID>MagicNumber:SearchScreen.kt$3</ID>
+    <ID>MagicNumber:SearchViewModel.kt$SearchViewModel$400</ID>
+    <ID>MatchingDeclarationName:PageActionBottomSheet.kt$PageAction</ID>
+    <ID>MaxLineLength:ChapterComponents.kt$text = "${appString(R.string.status_reading)} · Page ${chapter.lastReadPage + 1}/${chapter.totalPages.coerceAtLeast(1)}"</ID>
+    <ID>MaxLineLength:ChapterComponents.kt$val num = if (!ch.chapterNumber.isNullOrBlank()) appString(R.string.chapter_num_prefix, ch.chapterNumber) else appString(R.string.chapter_oneshot)</ID>
+    <ID>MaxLineLength:ChapterDownloadWorker.kt$ChapterDownloadWorker$setForeground(createForegroundInfo(chapterId, progressPercent = progress, indeterminate = false))</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$// Text(appString(R.string.search_prompt_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$// style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$AsyncImage(model = manga.coverArt, contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$SpotlightCard(items.first(), { onMangaClick(items.first()) }, Modifier.padding(horizontal = 24.dp))</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$Text(manga.tags.first().uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onTertiary)</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$item { SectionHeader(appString(R.string.section_explore), expandedExplore.value) { expandedExplore.value = !expandedExplore.value } }</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$item { SectionHeader(appString(R.string.section_new_releases), expandedNew.value) { expandedNew.value = !expandedNew.value } }</ID>
+    <ID>MaxLineLength:DiscoverScreen.kt$item { SectionHeader(appString(R.string.section_popular), expandedPopular.value) { expandedPopular.value = !expandedPopular.value } }</ID>
+    <ID>MaxLineLength:DiscoverViewModel.kt$DiscoverViewModel$error = throwable.message ?: getApplication&lt;Application&gt;().getString(R.string.error_load_discover)</ID>
+    <ID>MaxLineLength:GetChapterListWithProgressUseCase.kt$GetChapterListWithProgressUseCase$"GetChapterListWithProgressUseCase mapped: chapterId=%s status=%s lastReadPage=%d totalPages=%d progressFound=%s downloadStatus=%s"</ID>
+    <ID>MaxLineLength:ImageSaverTest.kt$ImageSaverTest$every { FileProvider.getUriForFile(context, "com.example.mybookslibrary.provider", any()) } throws RuntimeException("provider")</ID>
+    <ID>MaxLineLength:LibraryRepository.kt$LibraryRepository$"updateReadingProgress tx: writing chapter_progress chapterId=%s status=%s lastReadPage=%d totalPages=%d"</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$AsyncImage(model = coverUrl, contentDescription = title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$Card</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$Text(appString(R.string.library_empty_subtitle), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$Text(appString(R.string.library_empty_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$Text(appString(R.string.library_title), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$Text(text = appString(R.string.library_remove_bookmark), style = MaterialTheme.typography.titleLarge)</ID>
+    <ID>MaxLineLength:LibraryScreen.kt$Text(text = appString(R.string.library_remove_bookmark_confirm, item.title), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:LoginScreen.kt$CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)</ID>
+    <ID>MaxLineLength:LoginScreen.kt$Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")</ID>
+    <ID>MaxLineLength:LoginScreen.kt$visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()</ID>
+    <ID>MaxLineLength:MainNavGraph.kt$MangaDetailDestination$return "$route/${Uri.encode(mangaId)}/${Uri.encode(title)}/${Uri.encode(coverArt ?: "")}/${Uri.encode(safeDesc)}/${Uri.encode(safeTags)}"</ID>
+    <ID>MaxLineLength:MainNavGraph.kt$enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) + scaleIn(initialScale = 0.95f, animationSpec = tween(300, easing = FastOutSlowInEasing)) }</ID>
+    <ID>MaxLineLength:MainNavGraph.kt$startDestination = if (loggedInUserId == null) AuthDestination.Login else BottomNavDestination.Discover.route</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$"MangaDetail chapter click: mangaId=%s chapterId=%s status=%s lastReadPage=%d startPageIndex=%d totalPages=%d"</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$"MangaDetail read-now: mangaId=%s chapterId=%s status=%s lastReadPage=%d startPageIndex=%d totalPages=%d"</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Column</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$DummyReview("A masterpiece", "Truly one of the best mangas I've read in a long time. Highly recommend it to anyone.", "Nov 05, 2025", "MangaFan99")</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$DummyReview("Great read", "I couldn't put this down. The story is engaging and the art is fantastic.", "Oct 12, 2025", "User123")</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$DummyReview("Stunning visuals", "The attention to detail in every panel is just breathtaking.", "Dec 20, 2025", "ArtLover")</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Text</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Text(appString(R.string.detail_chapters), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onBackground)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Text(review.body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Text(review.date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Text(review.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Text(review.username, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$Text(tag, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$color = MaterialTheme.colorScheme.onSurfaceVariant</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$contentColor = if (uiState.isInLibrary) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$if (firstChapter != null) appString(R.string.detail_read_now) else appString(R.string.detail_loading)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$if (uiState.isInLibrary) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$if (uiState.isInLibrary) appString(R.string.detail_in_library) else appString(R.string.detail_add_to_library)</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$imageVector = if (chaptersExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$onMarkCompleted = { viewModel.markChapterCompleted(chapter.chapterId, chapter.totalPages) }</ID>
+    <ID>MaxLineLength:MangaDetailScreen.kt$onMarkUnread = { viewModel.markChapterUnread(chapter.chapterId, chapter.totalPages) }</ID>
+    <ID>MaxLineLength:MangaDtos.kt$val fallbackLang = if (preferredLang == MangaDexConstants.LANG_VI) MangaDexConstants.LANG_EN else MangaDexConstants.LANG_VI</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$DummyReview("A masterpiece", "Truly one of the best mangas I've read in a long time. Highly recommend it to anyone.", "05 Nov 2025", "FanBoy")</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$DummyReview("Great read", "I couldn't put this down. The story is engaging and the art is fantastic.", "12 Oct 2025", "User456")</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$DummyReview("Hay", "Cái này giúp cho mình biết được nó có thể giúp gì\n\n\uD83D\uDC96\uD83D\uDC9E\uD83D\uDC98", "5 Oct 2024", "MangaFan99")</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$Text(review.body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$Text(review.date + ", " + review.username, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$Text(review.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onBackground)</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold, fontSize = 64.sp)</ID>
+    <ID>MaxLineLength:MangaReviewScreen.kt$tint = if (index &lt; 3) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)</ID>
+    <ID>MaxLineLength:ReaderEffectHandler.kt$Timber.d("Reader quick-save end: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)</ID>
+    <ID>MaxLineLength:ReaderEffectHandler.kt$Timber.d("Reader quick-save start: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)</ID>
+    <ID>MaxLineLength:ReaderEffectHandler.kt$Timber.d("Reader save-as selected: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)</ID>
+    <ID>MaxLineLength:ReaderEffectHandler.kt$Timber.d("Reader share end: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)</ID>
+    <ID>MaxLineLength:ReaderEffectHandler.kt$Timber.d("Reader share start: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)</ID>
+    <ID>MaxLineLength:ReaderEffectHandler.kt$Timber.e(e, "Reader quick-save failed: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)</ID>
+    <ID>MaxLineLength:ReaderEffectHandler.kt$Timber.e(e, "Reader share failed: page=%d url=%s", effect.target.pageIndex + 1, effect.target.pageUrl)</ID>
+    <ID>MaxLineLength:ReaderViewModel.kt$ReaderViewModel$Timber.d("flushProgress: requested=%s pending=%s target=%d", index?.toString() ?: "&lt;none&gt;", pendingPageIndex?.toString() ?: "&lt;none&gt;", target)</ID>
+    <ID>MaxLineLength:ReaderViewModel.kt$ReaderViewModel$Timber.w("loadChapterPages local missing, fallback network: mangaId=%s chapterId=%s", mangaId, chapterId)</ID>
+    <ID>MaxLineLength:ReaderViewModel.kt$ReaderViewModel$_state.update { it.copy(isLoading = false, error = throwable.message ?: str(R.string.error_load_pages)) }</ID>
+    <ID>MaxLineLength:ReaderViewModel.kt$ReaderViewModel$_state.update { it.copy(pages = emptyList(), isLoading = false, error = str(R.string.error_load_pages)) }</ID>
+    <ID>MaxLineLength:RegisterScreen.kt$CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)</ID>
+    <ID>MaxLineLength:RegisterScreen.kt$Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")</ID>
+    <ID>MaxLineLength:RegisterScreen.kt$enabled = uiState !is AuthState.Loading &amp;&amp; password == confirmPassword &amp;&amp; password.isNotEmpty() &amp;&amp; username.isNotEmpty()</ID>
+    <ID>MaxLineLength:RegisterScreen.kt$visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()</ID>
+    <ID>MaxLineLength:SearchScreen.kt$AsyncImage(model = manga.coverArt, contentDescription = manga.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())</ID>
+    <ID>MaxLineLength:SearchScreen.kt$Text</ID>
+    <ID>MaxLineLength:SearchScreen.kt$Text(appString(R.string.search_error_subtitle), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))</ID>
+    <ID>MaxLineLength:SearchScreen.kt$Text(appString(R.string.search_error_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:SearchScreen.kt$Text(appString(R.string.search_no_results, uiState.query), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:SearchScreen.kt$Text(appString(R.string.search_prompt_subtitle), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))</ID>
+    <ID>MaxLineLength:SearchScreen.kt$Text(appString(R.string.search_prompt_title), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:SearchScreen.kt$Text(appString(R.string.search_title), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)</ID>
+    <ID>MaxLineLength:SearchScreen.kt$androidx.compose.foundation.layout</ID>
+    <ID>MaxLineLength:SearchScreen.kt$color = MaterialTheme.colorScheme.onSurfaceVariant</ID>
+    <ID>MaxLineLength:SearchScreen.kt$leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }</ID>
+    <ID>MaxLineLength:SearchScreen.kt$placeholder = { Text(appString(R.string.search_placeholder), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }</ID>
+    <ID>MaxLineLength:SettingScreen.kt$SettingsRow(appString(R.string.settings_backup), backupSub) { backupLauncher.launch("kanso_library_backup.json") }</ID>
+    <ID>MaxLineLength:SettingScreen.kt$SettingsRow(appString(R.string.settings_restore), restoreSub) { restoreLauncher.launch(arrayOf("application/json")) }</ID>
+    <ID>MaxLineLength:SettingScreen.kt$Text(appString(R.string.settings_title), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)</ID>
+    <ID>MaxLineLength:SettingScreen.kt$Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:SettingScreen.kt$val cacheSubtitle = if (uiState.cacheCleared) appString(R.string.settings_cache_cleared) else appString(R.string.settings_cache_subtitle)</ID>
+    <ID>MaxLineLength:SettingScreen.kt$val langLabel = if (uiState.language == "vi") appString(R.string.settings_language_vietnamese) else appString(R.string.settings_language_english)</ID>
+    <ID>MaxLineLength:SettingScreen.kt$val qualityLabel = if (uiState.quality == "data") appString(R.string.settings_quality_original) else appString(R.string.settings_quality_data_saver)</ID>
+    <ID>MaxLineLength:SettingScreen.kt$val signOutSub = if (uiState.signedOut) appString(R.string.settings_signed_out_subtitle) else appString(R.string.settings_sign_out_subtitle)</ID>
+    <ID>MaxLineLength:SettingScreen.kt$val signOutTitle = if (uiState.signedOut) appString(R.string.settings_signed_out) else appString(R.string.settings_sign_out)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val centerResult = evaluator(x = 2f, y = 500f, screenWidth = 4f, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val leftResult = evaluator(x = 0f, y = 500f, screenWidth = 4f, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = -50f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 0f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 0f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.RTL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 1000f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 1000f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.RTL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 100f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 1500f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 249f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 249f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.RTL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 250f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 250f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.RTL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 500f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 500f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.RTL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 500f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 50f, y = 500f, screenWidth = -100f, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 749f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 750f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 750f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.RTL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val result = evaluator(x = 900f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL)</ID>
+    <ID>MaxLineLength:TapZoneEvaluatorTest.kt$TapZoneEvaluatorTest$val rightResult = evaluator(x = 3f, y = 500f, screenWidth = 4f, screenHeight = totalHeight, mode = ReadingMode.LTR)</ID>
+    <ID>NewLineAtEndOfFile:ExampleUnitTest.kt$com.example.mybookslibrary.ExampleUnitTest.kt</ID>
+    <ID>ReturnCount:AtHomeReportInterceptor.kt$AtHomeReportInterceptor$override fun intercept(chain: Interceptor.Chain): Response</ID>
+    <ID>ReturnCount:AuthRepository.kt$AuthRepository$suspend fun googleSignIn(context: Context): Result&lt;Unit&gt;</ID>
+    <ID>ReturnCount:GetChapterListWithProgressUseCase.kt$private fun DownloadQueueEntity?.toDownloadState(isDownloaded: Boolean): ChapterDownloadState</ID>
+    <ID>ReturnCount:LazyListLayoutInfoExt.kt$fun LazyListLayoutInfo.findActivePageIndex(): Int</ID>
+    <ID>ReturnCount:ReaderViewModel.kt$ReaderViewModel$private fun navigateToPage(action: ReaderTapAction)</ID>
+    <ID>ReturnCount:TapZoneEvaluator.kt$TapZoneEvaluator$operator fun invoke( x: Float, y: Float, screenWidth: Float, screenHeight: Float, mode: ReadingMode ): ReaderTapAction</ID>
+    <ID>SwallowedException:AppDatabaseDestructiveMigrationTest.kt$AppDatabaseDestructiveMigrationTest$e: Exception</ID>
+    <ID>ThrowsCount:ImageSaver.kt$ImageSaver$@Suppress("NewApi") private fun saveViaMediaStore( bytes: ByteArray, filename: String, mimeType: String ): Uri</ID>
+    <ID>ThrowsCount:ImageSaver.kt$ImageSaver$private fun downloadImage(url: String): DownloadedImage</ID>
+    <ID>TooGenericExceptionCaught:AuthRepository.kt$AuthRepository$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ChapterDownloadWorker.kt$ChapterDownloadWorker$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ChapterDownloadWorker.kt$ChapterDownloadWorker$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:DownloadedChapterCache.kt$DownloadedChapterCache$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ImageSaver.kt$ImageSaver$delE: Exception</ID>
+    <ID>TooGenericExceptionCaught:ImageSaver.kt$ImageSaver$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MangaDetailViewModel.kt$MangaDetailViewModel$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:MangaRepository.kt$MangaRepository$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:OfflineDownloadStorage.kt$OfflineDownloadStorage$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReaderEffectHandler.kt$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:ReaderViewModel.kt$ReaderViewModel$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SettingsViewModel.kt$SettingsViewModel$e: Exception</ID>
+    <ID>TooManyFunctions:AuthRepository.kt$AuthRepository</ID>
+    <ID>TooManyFunctions:ChapterDao.kt$ChapterDao</ID>
+    <ID>TooManyFunctions:ChapterDownloadWorker.kt$ChapterDownloadWorker : CoroutineWorker</ID>
+    <ID>TooManyFunctions:LibraryRepository.kt$LibraryRepository</ID>
+    <ID>TooManyFunctions:MangaDetailViewModel.kt$MangaDetailViewModel : ViewModel</ID>
+    <ID>TooManyFunctions:OfflineDownloadRepository.kt$OfflineDownloadRepository</ID>
+    <ID>TooManyFunctions:OfflineDownloadStorage.kt$OfflineDownloadStorage</ID>
+    <ID>TooManyFunctions:ReaderViewModel.kt$ReaderViewModel : AndroidViewModel</ID>
+    <ID>TooManyFunctions:UserPreferencesDataStore.kt$UserPreferencesDataStore</ID>
+    <ID>TopLevelPropertyNaming:MangaPageItem.kt$private const val PreviewPageUrl = "https://example.com/preview-page.jpg"</ID>
+    <ID>UnusedParameter:MangaDetailScreen.kt$mangaId: String</ID>
+    <ID>UnusedPrivateMember:HorizontalReaderContent.kt$@Preview(name = "Horizontal Reader - LTR", showBackground = true) @Composable private fun HorizontalReaderContentLtrPreview()</ID>
+    <ID>UnusedPrivateMember:HorizontalReaderContent.kt$@Preview(name = "Horizontal Reader - RTL", showBackground = true) @Composable private fun HorizontalReaderContentRtlPreview()</ID>
+    <ID>UnusedPrivateMember:MangaPageItem.kt$@Preview(name = "Manga Page Item", showBackground = true) @Composable private fun MangaPageItemPreview()</ID>
+    <ID>UnusedPrivateMember:PageActionBottomSheet.kt$@Preview(name = "Page Action Sheet", showBackground = true) @Composable private fun PageActionBottomSheetPreview()</ID>
+    <ID>UnusedPrivateMember:ReaderBars.kt$@Preview(name = "Reader Bottom Bar", showBackground = true) @Composable private fun ReaderBottomBarPreview()</ID>
+    <ID>UnusedPrivateMember:ReaderBars.kt$@Preview(name = "Reader Top Bar", showBackground = true) @Composable private fun ReaderTopBarPreview()</ID>
+    <ID>UnusedPrivateMember:ReaderPreview.kt$@Preview(name = "Reader - Horizontal", showBackground = true) @Composable private fun ReaderHorizontalPreview()</ID>
+    <ID>UnusedPrivateMember:ReaderPreview.kt$@Preview(name = "Reader - Vertical", showBackground = true) @Composable private fun ReaderVerticalPreview()</ID>
+    <ID>UnusedPrivateMember:WebtoonPageItem.kt$@Preview(name = "Webtoon Page Item", showBackground = true) @Composable private fun WebtoonPageItemPreview()</ID>
+    <ID>UseCheckOrError:ChapterDownloadWorker.kt$ChapterDownloadWorker$throw IllegalStateException("Chapter has no pages")</ID>
+    <ID>UseCheckOrError:ChapterDownloadWorker.kt$ChapterDownloadWorker$throw IllegalStateException("Page download failed: HTTP ${response.code}")</ID>
+    <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException( "Phản hồi At-Home không hợp lệ cho chapter $chapterId (result=${atHomeResponse.result})" )</ID>
+    <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException("Phản hồi At-Home thiếu baseUrl cho chapter $chapterId")</ID>
+    <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException("Phản hồi At-Home thiếu chapter cho chapter $chapterId")</ID>
+    <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException("Phản hồi At-Home thiếu hash cho chapter $chapterId")</ID>
+    <ID>WildcardImport:ExampleUnitTest.kt$import org.junit.Assert.*</ID>
+    <ID>WildcardImport:ImageSaverTest.kt$import io.mockk.*</ID>
+    <ID>WildcardImport:LoginScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:LoginScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:LoginScreen.kt$import androidx.compose.runtime.*</ID>
+    <ID>WildcardImport:MangaReviewScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:MangaReviewScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:RegisterScreen.kt$import androidx.compose.foundation.layout.*</ID>
+    <ID>WildcardImport:RegisterScreen.kt$import androidx.compose.material3.*</ID>
+    <ID>WildcardImport:RegisterScreen.kt$import androidx.compose.runtime.*</ID>
+  </CurrentIssues>
+</SmellBaseline>
