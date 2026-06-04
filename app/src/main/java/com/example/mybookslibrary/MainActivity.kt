@@ -9,10 +9,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.ui.navigation.MainNavHost
@@ -20,6 +25,7 @@ import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.LocalAppLocale
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.flow.map
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -34,8 +40,9 @@ class MainActivity : ComponentActivity() {
                 .collectAsStateWithLifecycle(initialValue = "en")
             val themeMode by preferencesDataStore.observeThemeMode()
                 .collectAsStateWithLifecycle(initialValue = "system")
-            val loggedInUserId by preferencesDataStore.observeLoggedInUserId()
-                .collectAsStateWithLifecycle(initialValue = null)
+            val authSession by preferencesDataStore.observeLoggedInUserId()
+                .map { userId -> AuthSession.Ready(userId) }
+                .collectAsStateWithLifecycle(initialValue = AuthSession.Loading)
 
 
             val darkTheme = when (themeMode) {
@@ -56,7 +63,10 @@ class MainActivity : ComponentActivity() {
             // LocalAppLocale thay đổi → toàn bộ appString() recompose → chuyển ngôn ngữ mượt mà
             CompositionLocalProvider(LocalAppLocale provides language) {
                 MyBooksLibraryTheme(darkTheme = darkTheme) {
-                    MainNavHost(loggedInUserId)
+                    when (val session = authSession) {
+                        AuthSession.Loading -> AuthLoadingScreen()
+                        is AuthSession.Ready -> MainNavHost(session.loggedInUserId)
+                    }
                 }
             }
         }
@@ -75,4 +85,18 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val POST_NOTIFICATIONS_REQUEST_CODE = 1001
     }
+}
+
+private sealed interface AuthSession {
+    data object Loading : AuthSession
+    data class Ready(val loggedInUserId: String?) : AuthSession
+}
+
+@Composable
+private fun AuthLoadingScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
+    )
 }
