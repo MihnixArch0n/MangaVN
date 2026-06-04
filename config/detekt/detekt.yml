@@ -335,6 +335,9 @@ naming:
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
     functionPattern: '[a-z][a-zA-Z0-9]*'
     excludeClassPattern: '$^'
+    # Hàm @Composable emit UI dùng PascalCase theo guideline Compose (cố ý lệch convention
+    # Kotlin) → bỏ qua khỏi rule naming, tránh false-positive cho mọi Composable.
+    ignoreAnnotated: ['Composable']
   FunctionParameterNaming:
     active: true
     parameterPattern: '[a-z][A-Za-z0-9]*'
