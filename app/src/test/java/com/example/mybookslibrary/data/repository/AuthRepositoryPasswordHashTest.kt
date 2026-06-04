@@ -19,7 +19,8 @@ import org.junit.Test
 class AuthRepositoryPasswordHashTest {
     private val userDao = mockk<UserDao>()
     private val preferences = mockk<UserPreferencesDataStore>(relaxed = true)
-    private val repository = AuthRepository(userDao, preferences, Dispatchers.IO)
+    private val googleSignInClient = mockk<GoogleSignInClient>(relaxed = true)
+    private val repository = AuthRepository(userDao, preferences, Dispatchers.IO, googleSignInClient)
 
     @Test
     fun register_twoUsersSamePassword_produceDifferentHashes() =

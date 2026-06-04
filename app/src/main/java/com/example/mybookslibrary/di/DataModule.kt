@@ -3,12 +3,14 @@ package com.example.mybookslibrary.di
 import android.content.Context
 import com.example.mybookslibrary.data.local.AppDatabase
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
-import com.example.mybookslibrary.data.local.userPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.DownloadQueueDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 import com.example.mybookslibrary.data.local.dao.UserDao
+import com.example.mybookslibrary.data.local.userPreferencesDataStore
 import com.example.mybookslibrary.data.remote.MangaDexApi
+import com.example.mybookslibrary.data.repository.CredentialManagerGoogleSignInClient
+import com.example.mybookslibrary.data.repository.GoogleSignInClient
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import dagger.Module
@@ -23,11 +25,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
-
     @Provides
     @Singleton
     fun provideAppDatabase(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): AppDatabase = AppDatabase.getInstance(context)
 
     @Provides
@@ -43,30 +44,29 @@ object DataModule {
     @Provides
     fun provideUserDao(database: AppDatabase): UserDao = database.userDao()
 
-
     @Provides
     @Singleton
     fun provideLibraryRepository(
         libraryDao: LibraryDao,
         chapterDao: ChapterDao,
-        database: AppDatabase
-    ): LibraryRepository {
-        return LibraryRepository(libraryDao, chapterDao, database)
-    }
+        database: AppDatabase,
+    ): LibraryRepository = LibraryRepository(libraryDao, chapterDao, database)
 
     @Provides
     @Singleton
     fun provideUserPreferencesDataStore(
-        @ApplicationContext context: Context
-    ): UserPreferencesDataStore =
-        UserPreferencesDataStore(context.userPreferencesDataStore)
+        @ApplicationContext context: Context,
+    ): UserPreferencesDataStore = UserPreferencesDataStore(context.userPreferencesDataStore)
 
     @Provides
     @Singleton
     fun provideMangaRepository(
         api: MangaDexApi,
         preferencesDataStore: UserPreferencesDataStore,
-        @IoDispatcher ioDispatcher: CoroutineDispatcher
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): MangaRepository = MangaRepository(api, preferencesDataStore, ioDispatcher)
 
+    @Provides
+    @Singleton
+    fun provideGoogleSignInClient(): GoogleSignInClient = CredentialManagerGoogleSignInClient()
 }

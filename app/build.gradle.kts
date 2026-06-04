@@ -92,6 +92,8 @@ val jacocoGeneratedFilter =
         "**/Dagger*.*",
         "**/*Args.*",
         "**/*Directions.*",
+        // Android-glue (Credential Manager) — không unit test được, đã tách khỏi AuthRepository.
+        "**/CredentialManagerGoogleSignInClient.*",
     )
 
 // AGP 9 "built-in Kotlin" xuất class compile ở built_in_kotlinc (không phải tmp/kotlin-classes).
