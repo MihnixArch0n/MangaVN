@@ -1,0 +1,36 @@
+# Tự bật auto-merge cho Dependabot PR mức patch/minor (major để review tay).
+#
+# YÊU CẦU owner bật (nếu không, --auto không gate đúng):
+#   1. Settings → General → "Allow auto-merge" = ON.
+#   2. Branch protection `main`: require status check `build-test` (3 OS).
+#      → auto-merge sẽ CHỜ CI xanh mới merge. Thiếu branch protection thì --auto
+#      merge ngay (không chờ check) — KHÔNG an toàn.
+#
+# Dùng pull_request_target để có token ghi cho PR của Dependabot, nhưng KHÔNG checkout
+# code PR (không chạy code untrusted) → an toàn; chỉ đọc metadata + gọi gh API.
+name: Dependabot auto-merge
+
+on: pull_request_target
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lấy metadata Dependabot
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Chỉ patch + minor → auto-merge (squash). Major: bỏ qua, để người duyệt.
+      - name: Bật auto-merge (patch/minor)
+        if: ${{ steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' }}
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

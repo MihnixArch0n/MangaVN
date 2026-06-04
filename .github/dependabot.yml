@@ -11,6 +11,22 @@ updates:
       prefix: build
     labels:
       - dependencies
+    # Gom nhóm để bump ĐỒNG BỘ (tránh bump lẻ gây mismatch, vd compose-plugin 2.4
+    # mà Kotlin vẫn 2.3 → vỡ). Kotlin + KSP + Hilt + compose-plugin phải khớp nhau.
+    groups:
+      kotlin-toolchain:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "com.google.devtools.ksp*"
+          - "com.google.dagger*"
+    ignore:
+      # core-ktx 1.19+ yêu cầu compileSdk 37 (project đang 36) — đợi nâng compileSdk.
+      - dependency-name: "androidx.core:core-ktx"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+      # Kotlin 2.4+ bị Hilt 2.59.2 chặn (metadata 2.3.0). Bỏ ignore này khi Dagger/Hilt
+      # ra bản hỗ trợ metadata 2.4 — rồi để group kotlin-toolchain bump đồng bộ.
+      - dependency-name: "org.jetbrains.kotlin*"
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
