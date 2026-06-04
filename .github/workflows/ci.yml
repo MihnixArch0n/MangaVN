@@ -62,17 +62,8 @@ jobs:
           }
           EOF
 
-      # --profile để đo timing lint/detekt/ktlint (tạm giữ để xác nhận mức giảm; bỏ sau khi chốt).
       - name: Lint + detekt + ktlint
-        run: ./gradlew lintDebug detekt ktlintCheck --console=plain --profile
-
-      - name: Upload profile report (static-analysis)
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: profile-static-analysis
-          path: build/reports/profile/
-          if-no-files-found: ignore
+        run: ./gradlew lintDebug detekt ktlintCheck --console=plain
 
   build-test:
     strategy:
@@ -122,10 +113,8 @@ jobs:
           }
           EOF
 
-      # --profile sinh report timing từng task ($rootDir/build/reports/profile/*.html)
-      # để chẩn đoán task nào là bottleneck (log thường không in duration per-task).
       - name: Chạy unit test
-        run: ./gradlew :app:testDebugUnitTest --console=plain --profile
+        run: ./gradlew :app:testDebugUnitTest --console=plain
 
       - name: Upload test report
         if: always()
@@ -133,8 +122,5 @@ jobs:
         with:
           # Tên artifact phải khác nhau theo OS — upload-artifact@v4 cấm trùng tên trong cùng run.
           name: test-report-${{ matrix.os }}
-          # Gồm cả profile report (timing per-task) để so sánh bottleneck giữa các OS.
-          path: |
-            app/build/reports/tests/testDebugUnitTest/
-            build/reports/profile/
+          path: app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: ignore
