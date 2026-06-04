@@ -131,10 +131,15 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
                 minimum = "0.20".toBigDecimal()
             }
         }
-        // Lớp logic data.repository đã phủ kỹ → giữ ngưỡng cao.
+        // Lớp logic (data.repository + domain) đã phủ kỹ → giữ ngưỡng cao.
         rule {
             element = "PACKAGE"
-            includes = listOf("com.example.mybookslibrary.data.repository")
+            includes =
+                listOf(
+                    "com.example.mybookslibrary.data.repository",
+                    "com.example.mybookslibrary.domain.usecase",
+                    "com.example.mybookslibrary.domain.model",
+                )
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
