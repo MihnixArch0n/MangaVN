@@ -35,6 +35,27 @@
     <string name="search_prompt_subtitle">Type at least 2 characters to search</string>
     <string name="search_no_results">No results for \"%1$s\"</string>
 
+    <!-- Search Filters -->
+    <string name="cd_filter">Filters</string>
+    <string name="filter_title">Filters</string>
+    <string name="filter_section_genre">Genre</string>
+    <string name="filter_section_theme">Theme</string>
+    <string name="filter_section_language">Language</string>
+    <string name="filter_section_rating">Content rating</string>
+    <string name="filter_section_status">Status</string>
+    <string name="filter_clear">Clear</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_lang_en">English</string>
+    <string name="filter_lang_vi">Vietnamese</string>
+    <string name="filter_lang_ja">Japanese</string>
+    <string name="filter_rating_safe">Safe</string>
+    <string name="filter_rating_suggestive">Suggestive</string>
+    <string name="filter_rating_erotica">Erotica</string>
+    <string name="filter_status_ongoing">Ongoing</string>
+    <string name="filter_status_completed">Completed</string>
+    <string name="filter_status_hiatus">Hiatus</string>
+    <string name="filter_status_cancelled">Cancelled</string>
+
     <!-- Library Screen -->
     <string name="library_title">My Library</string>
     <string name="library_empty_title">Your library is empty</string>

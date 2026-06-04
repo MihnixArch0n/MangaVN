@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,11 +16,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -54,24 +59,42 @@ fun SearchScreenContent(
                 Spacer(Modifier.height(24.dp))
                 Text(appString(R.string.search_title), style = MaterialTheme.typography.displayMedium, color = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.height(20.dp))
-                OutlinedTextField(
-                    value = uiState.query,
-                    onValueChange = viewModel::onQueryChange,
-                    placeholder = { Text(appString(R.string.search_placeholder), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        cursorColor = MaterialTheme.colorScheme.primary,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = uiState.query,
+                        onValueChange = viewModel::onQueryChange,
+                        placeholder = { Text(appString(R.string.search_placeholder), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(24.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        )
                     )
-                )
+                    Spacer(Modifier.width(8.dp))
+                    BadgedBox(
+                        badge = {
+                            if (uiState.activeFilterCount > 0) {
+                                Badge { Text("${uiState.activeFilterCount}") }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = viewModel::onOpenFilterSheet) {
+                            Icon(
+                                Icons.Filled.FilterList,
+                                contentDescription = appString(R.string.cd_filter),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
             }
 
@@ -114,6 +137,18 @@ fun SearchScreenContent(
                         }
                     }
                 }
+            }
+
+            if (uiState.isFilterSheetOpen) {
+                SearchFilterSheet(
+                    state = uiState,
+                    onToggleTag = viewModel::onToggleTag,
+                    onToggleLanguage = viewModel::onToggleLanguage,
+                    onToggleContentRating = viewModel::onToggleContentRating,
+                    onToggleStatus = viewModel::onToggleStatus,
+                    onClearFilters = viewModel::onClearFilters,
+                    onDismiss = viewModel::onDismissFilterSheet
+                )
             }
         }
     }

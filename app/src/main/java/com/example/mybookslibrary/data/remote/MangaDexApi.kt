@@ -4,6 +4,7 @@ import com.example.mybookslibrary.data.remote.models.AtHomeResponseDto
 import com.example.mybookslibrary.data.remote.models.ChapterListDto
 import com.example.mybookslibrary.data.remote.models.MangaDetailResponseDto
 import com.example.mybookslibrary.data.remote.models.MangaListResponseDto
+import com.example.mybookslibrary.data.remote.models.TagListResponseDto
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Headers
@@ -24,13 +25,24 @@ interface MangaDexApi {
         @Query("includes[]") includes: List<String> = listOf("cover_art")
     ): MangaListResponseDto
 
-    // Tìm kiếm manga theo tên, trả về kết quả với cover art
+    // Tìm kiếm manga theo tên + bộ lọc tuỳ chọn (list rỗng → Retrofit bỏ qua, không lọc).
+    // @Suppress LongParameterList: Retrofit cần mỗi tiêu chí là một @Query riêng.
+    @Suppress("LongParameterList")
     @GET("manga")
     suspend fun searchManga(
         @Query("title") title: String,
         @Query("limit") limit: Int = 20,
-        @Query("includes[]") includes: List<String> = listOf("cover_art")
+        @Query("includes[]") includes: List<String> = listOf("cover_art"),
+        @Query("includedTags[]") includedTags: List<String> = emptyList(),
+        @Query("includedTagsMode") includedTagsMode: String = "AND",
+        @Query("availableTranslatedLanguage[]") translatedLanguages: List<String> = emptyList(),
+        @Query("contentRating[]") contentRatings: List<String> = emptyList(),
+        @Query("status[]") statuses: List<String> = emptyList(),
     ): MangaListResponseDto
+
+    // Danh sách toàn bộ tag của MangaDex (genre/theme/format/content) để dựng bộ lọc
+    @GET("manga/tag")
+    suspend fun getTags(): TagListResponseDto
 
     // Lấy chi tiết 1 manga cụ thể (dùng khi vào Detail từ Library)
     @GET("manga/{mangaId}")

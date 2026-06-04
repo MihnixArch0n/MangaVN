@@ -9,10 +9,14 @@ import com.example.mybookslibrary.data.remote.models.toDomainModel
 import com.example.mybookslibrary.data.remote.models.toDomainModel as chapterToDomainModel
 import com.example.mybookslibrary.domain.model.ChapterModel
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.domain.model.MangaTag
+import com.example.mybookslibrary.domain.model.SearchFilters
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.IOException
@@ -26,6 +30,10 @@ class MangaRepository(
         private const val FEED_PAGE_LIMIT = 500
     }
 
+    @Volatile
+    private var cachedTags: List<MangaTag>? = null
+    private val tagsMutex = Mutex()
+
     private suspend fun lang(): String = preferencesDataStore.getLanguage()
 
     fun getDiscoverManga(limit: Int = 20, offset: Int = 0): Flow<Result<List<MangaModel>>> = flow {
@@ -37,13 +45,39 @@ class MangaRepository(
         emit(result)
     }
 
-    fun searchManga(query: String): Flow<Result<List<MangaModel>>> = flow {
+    fun searchManga(
+        query: String,
+        filters: SearchFilters = SearchFilters()
+    ): Flow<Result<List<MangaModel>>> = flow {
         val preferredLang = lang()
         val result = runCatching {
-            api.searchManga(title = query, includes = listOf("cover_art"))
-                .data.map { it.toDomainModel(preferredLang) }
+            api.searchManga(
+                title = query,
+                includes = listOf("cover_art"),
+                includedTags = filters.includedTagIds,
+                translatedLanguages = filters.languages,
+                contentRatings = filters.contentRatings,
+                statuses = filters.statuses
+            ).data.map { it.toDomainModel(preferredLang) }
         }
         emit(result)
+    }
+
+    /**
+     * Tải danh sách tag MangaDex (genre/theme/format/content) cho bộ lọc Search.
+     * Cache in-memory vì tag hiếm khi đổi; chỉ cache khi thành công.
+     */
+    suspend fun getTags(): Result<List<MangaTag>> {
+        cachedTags?.let { return Result.success(it) }
+        return tagsMutex.withLock {
+            cachedTags?.let { return@withLock Result.success(it) }
+            runCatching {
+                withContext(ioDispatcher) {
+                    val preferredLang = lang()
+                    api.getTags().data.map { it.toDomainModel(preferredLang) }
+                }
+            }.onSuccess { cachedTags = it }
+        }
     }
 
     suspend fun getMangaDetail(mangaId: String): Result<MangaModel> = runCatching {

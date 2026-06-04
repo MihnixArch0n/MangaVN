@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.data.remote.models
 
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.domain.model.MangaTag
 import com.example.mybookslibrary.domain.model.ChapterModel
 import com.google.gson.annotations.SerializedName
 
@@ -10,6 +11,21 @@ object MangaDexConstants {
     const val COVER_BASE_URL = "https://uploads.mangadex.org/covers"
     const val LANG_EN = "en"
     const val LANG_VI = "vi"
+
+    // Nhóm tag trả về từ /manga/tag (attributes.group)
+    const val TAG_GROUP_GENRE = "genre"
+    const val TAG_GROUP_THEME = "theme"
+
+    // Content rating hợp lệ của MangaDex
+    const val RATING_SAFE = "safe"
+    const val RATING_SUGGESTIVE = "suggestive"
+    const val RATING_EROTICA = "erotica"
+
+    // Trạng thái phát hành
+    const val STATUS_ONGOING = "ongoing"
+    const val STATUS_COMPLETED = "completed"
+    const val STATUS_HIATUS = "hiatus"
+    const val STATUS_CANCELLED = "cancelled"
 }
 
 data class MangaListResponseDto(
@@ -84,6 +100,31 @@ fun MangaDataDto.extractCoverUrl(): String? {
         ?: return null
 
     return "${MangaDexConstants.COVER_BASE_URL}/$id/$coverFileName"
+}
+
+// Response của /manga/tag — danh sách tag để dựng bộ lọc Search
+data class TagListResponseDto(
+    @SerializedName("data") val data: List<TagItemDto> = emptyList(),
+)
+
+data class TagItemDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("attributes") val attributes: TagItemAttributesDto = TagItemAttributesDto(),
+)
+
+data class TagItemAttributesDto(
+    @SerializedName("name") val name: Map<String, String> = emptyMap(),
+    @SerializedName("group") val group: String = "",
+)
+
+fun TagItemDto.toDomainModel(preferredLang: String = MangaDexConstants.LANG_EN): MangaTag {
+    val fallbackLang =
+        if (preferredLang == MangaDexConstants.LANG_VI) MangaDexConstants.LANG_EN else MangaDexConstants.LANG_VI
+    val displayName = attributes.name[preferredLang]
+        ?: attributes.name[fallbackLang]
+        ?: attributes.name.values.firstOrNull()
+        ?: ""
+    return MangaTag(id = id, name = displayName, group = attributes.group)
 }
 
 data class ChapterListDto(

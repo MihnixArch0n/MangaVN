@@ -10,7 +10,12 @@ import com.example.mybookslibrary.data.remote.models.ChapterListDto
 import com.example.mybookslibrary.data.remote.models.MangaAttributesDto
 import com.example.mybookslibrary.data.remote.models.MangaDataDto
 import com.example.mybookslibrary.data.remote.models.MangaListResponseDto
+import com.example.mybookslibrary.data.remote.models.TagItemAttributesDto
+import com.example.mybookslibrary.data.remote.models.TagItemDto
+import com.example.mybookslibrary.data.remote.models.TagListResponseDto
+import com.example.mybookslibrary.domain.model.SearchFilters
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -137,7 +142,18 @@ class MangaRepositoryTest {
     fun searchManga_mapsDtoToDomainWithPreferredLanguageTitle() =
         runTest {
             coEvery { prefs.getLanguage() } returns "vi"
-            coEvery { api.searchManga(title = "naruto", limit = any(), includes = any()) } returns
+            coEvery {
+                api.searchManga(
+                    title = "naruto",
+                    limit = any(),
+                    includes = any(),
+                    includedTags = any(),
+                    includedTagsMode = any(),
+                    translatedLanguages = any(),
+                    contentRatings = any(),
+                    statuses = any(),
+                )
+            } returns
                 MangaListResponseDto(
                     data =
                         listOf(
@@ -153,6 +169,69 @@ class MangaRepositoryTest {
             assertEquals("m1", result.single().id)
             assertEquals("Naruto VN", result.single().title)
             assertFalse(result.isEmpty())
+        }
+
+    @Test
+    fun searchManga_passesFilterParamsToApi() =
+        runTest {
+            coEvery { prefs.getLanguage() } returns "en"
+            coEvery {
+                api.searchManga(
+                    title = any(),
+                    limit = any(),
+                    includes = any(),
+                    includedTags = any(),
+                    includedTagsMode = any(),
+                    translatedLanguages = any(),
+                    contentRatings = any(),
+                    statuses = any(),
+                )
+            } returns MangaListResponseDto(data = emptyList())
+
+            repository()
+                .searchManga(
+                    "naruto",
+                    SearchFilters(includedTagIds = listOf("tag-1"), languages = listOf("vi")),
+                ).first()
+
+            coVerify {
+                api.searchManga(
+                    title = "naruto",
+                    limit = any(),
+                    includes = any(),
+                    includedTags = listOf("tag-1"),
+                    includedTagsMode = any(),
+                    translatedLanguages = listOf("vi"),
+                    contentRatings = emptyList(),
+                    statuses = emptyList(),
+                )
+            }
+        }
+
+    @Test
+    fun getTags_mapsTagsAndCachesAcrossCalls() =
+        runTest {
+            coEvery { prefs.getLanguage() } returns "en"
+            coEvery { api.getTags() } returns
+                TagListResponseDto(
+                    data =
+                        listOf(
+                            TagItemDto(
+                                id = "t1",
+                                attributes = TagItemAttributesDto(name = mapOf("en" to "Action"), group = "genre"),
+                            ),
+                        ),
+                )
+
+            val repo = repository()
+            val first = repo.getTags().getOrThrow()
+            val second = repo.getTags().getOrThrow()
+
+            assertEquals("t1", first.single().id)
+            assertEquals("Action", first.single().name)
+            assertEquals("genre", first.single().group)
+            assertEquals(first, second)
+            coVerify(exactly = 1) { api.getTags() }
         }
 
     private fun chapterDto(

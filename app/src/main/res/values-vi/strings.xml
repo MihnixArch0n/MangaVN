@@ -35,6 +35,27 @@
     <string name="search_prompt_subtitle">Nhập ít nhất 2 ký tự để tìm kiếm</string>
     <string name="search_no_results">Không tìm thấy kết quả cho \"%1$s\"</string>
 
+    <!-- Bộ lọc Search -->
+    <string name="cd_filter">Bộ lọc</string>
+    <string name="filter_title">Bộ lọc</string>
+    <string name="filter_section_genre">Thể loại</string>
+    <string name="filter_section_theme">Chủ đề</string>
+    <string name="filter_section_language">Ngôn ngữ</string>
+    <string name="filter_section_rating">Mức nội dung</string>
+    <string name="filter_section_status">Trạng thái</string>
+    <string name="filter_clear">Xoá lọc</string>
+    <string name="filter_apply">Áp dụng</string>
+    <string name="filter_lang_en">Tiếng Anh</string>
+    <string name="filter_lang_vi">Tiếng Việt</string>
+    <string name="filter_lang_ja">Tiếng Nhật</string>
+    <string name="filter_rating_safe">An toàn</string>
+    <string name="filter_rating_suggestive">Gợi cảm</string>
+    <string name="filter_rating_erotica">Người lớn</string>
+    <string name="filter_status_ongoing">Đang ra</string>
+    <string name="filter_status_completed">Hoàn thành</string>
+    <string name="filter_status_hiatus">Tạm ngưng</string>
+    <string name="filter_status_cancelled">Đã huỷ</string>
+
     <!-- Library -->
     <string name="library_title">Thư viện của tôi</string>
     <string name="library_empty_title">Thư viện trống</string>
