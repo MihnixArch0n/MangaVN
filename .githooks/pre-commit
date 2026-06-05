@@ -1,0 +1,28 @@
+#!/bin/sh
+# Pre-commit hook: ktlintCheck khi có staged .kt files.
+# Cài tự động qua Gradle task installGitHooks (chạy khi build lần đầu).
+
+STAGED_KT=$(git diff --cached --name-only --diff-filter=ACM | grep '\.kt$')
+if [ -z "$STAGED_KT" ]; then
+    exit 0
+fi
+
+echo ">>> ktlint: kiểm tra staged .kt files..."
+
+if [ -f "./gradlew" ]; then
+    GRADLEW="./gradlew"
+else
+    echo "Không tìm thấy gradlew — bỏ qua ktlintCheck."
+    exit 0
+fi
+
+"$GRADLEW" ktlintCheck --console=plain -q
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+    echo ""
+    echo "ktlint FAILED — sửa violations rồi commit lại."
+    echo "Linux/macOS: chạy './gradlew ktlintFormat' để auto-fix."
+    echo "Windows: sửa tay (ktlintFormat đổi CRLF)."
+fi
+exit $STATUS

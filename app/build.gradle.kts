@@ -305,3 +305,16 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+// Cài git hooks từ .githooks/ khi build lần đầu sau khi clone.
+// `git config core.hooksPath` chạy <10ms và idempotent — không ảnh hưởng build time đáng kể.
+tasks.register<Exec>("installGitHooks") {
+    group = "setup"
+    description = "Trỏ git hooks về .githooks/ để pre-commit hook active sau khi clone"
+    commandLine("git", "config", "core.hooksPath", ".githooks")
+    isIgnoreExitValue = true
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("installGitHooks")
+}
