@@ -44,7 +44,7 @@ class GetChapterListWithProgressUseCase @Inject constructor(
                 offlineDownloadRepository.observeQueueByManga(mangaId),
                 downloadedChapterCache.downloadedChapterIds
             ) { progressList, queueList, downloadedIds ->
-                Timber.d(
+                Timber.v(
                     "GetChapterListWithProgressUseCase snapshot: mangaId=%s progressRows=%d queueRows=%d downloaded=%d",
                     mangaId,
                     progressList.size,
@@ -63,15 +63,6 @@ class GetChapterListWithProgressUseCase @Inject constructor(
                         else -> 0
                     }
                     val mappedStatus = progress?.status.toDomainStatus()
-                    Timber.d(
-                        "GetChapterListWithProgressUseCase mapped: chapterId=%s status=%s lastReadPage=%d totalPages=%d progressFound=%s downloadStatus=%s",
-                        chapter.id,
-                        mappedStatus,
-                        progress?.last_read_page ?: 0,
-                        totalPages,
-                        progress != null,
-                        downloadState.status
-                    )
 
                     ChapterWithProgressModel(
                         chapterId = chapter.id,
