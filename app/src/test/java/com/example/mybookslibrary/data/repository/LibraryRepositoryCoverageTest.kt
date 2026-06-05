@@ -125,6 +125,21 @@ class LibraryRepositoryCoverageTest {
             assertNull(db.chapterDao().getChapterProgressByChapter(CHAPTER_ID))
         }
 
+    @Test
+    fun restoreItems_insertsAllItems() =
+        runTest {
+            val items =
+                listOf(
+                    LibraryItemEntity(manga_id = "m1", title = "T1", cover_url = ""),
+                    LibraryItemEntity(manga_id = "m2", title = "T2", cover_url = ""),
+            )
+
+            repository.restoreItems(items)
+
+            assertTrue(repository.isInLibrary("m1"))
+            assertTrue(repository.isInLibrary("m2"))
+        }
+
     private companion object {
         const val MANGA_ID = "manga-1"
         const val CHAPTER_ID = "chapter-1"

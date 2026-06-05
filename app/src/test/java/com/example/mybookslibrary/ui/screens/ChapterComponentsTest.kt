@@ -2,8 +2,10 @@ package com.example.mybookslibrary.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
 import com.example.mybookslibrary.domain.model.ChapterDownloadState
 import com.example.mybookslibrary.domain.model.ChapterDownloadStatus
 import com.example.mybookslibrary.domain.model.ChapterReadingStatus
@@ -36,7 +38,7 @@ class ChapterComponentsTest {
         status = status,
         lastReadPage = lastReadPage,
         totalPages = totalPages,
-        downloadState = ChapterDownloadState(status = downloadStatus)
+        downloadState = ChapterDownloadState(status = downloadStatus),
     )
 
     // ---- VolumeHeader ----
@@ -49,7 +51,7 @@ class ChapterComponentsTest {
         composeRule.onNodeWithText("Volume 1").assertIsDisplayed()
     }
 
-    // ---- ChapterRow status states ----
+    // ---- ChapterRow ----
 
     @Test
     fun chapterRow_unread_showsStatusLabel() {
@@ -61,7 +63,6 @@ class ChapterComponentsTest {
                 onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
             )
         }
-        composeRule.onNodeWithText("Chapter 1").assertIsDisplayed()
         composeRule.onNodeWithText("Unread").assertIsDisplayed()
     }
 
@@ -76,7 +77,7 @@ class ChapterComponentsTest {
             )
         }
         composeRule.onNodeWithText("Chapter 2").assertIsDisplayed()
-        // "Reading · Page 5/20"
+        // "Reading · Page 5/20" (lastReadPage + 1 = 5)
         composeRule.onNodeWithText("Reading · Page 5/20").assertIsDisplayed()
     }
 
@@ -112,7 +113,7 @@ class ChapterComponentsTest {
         composeRule.setContent {
             ChapterRow(
                 chapter = chapter(totalPages = 42),
-                chapterTitle = "Ch",
+                chapterTitle = "Ch 1",
                 onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
                 onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
             )
@@ -120,8 +121,6 @@ class ChapterComponentsTest {
         // "42p" (detail_pages_suffix = "%1$dp")
         composeRule.onNodeWithText("42p").assertIsDisplayed()
     }
-
-    // ---- ChapterRow + DownloadIndicator states ----
 
     @Test
     fun chapterRow_notDownloaded_showsDownloadIcon() {
@@ -187,6 +186,54 @@ class ChapterComponentsTest {
             )
         }
         composeRule.onNodeWithContentDescription("Cancel download").assertIsDisplayed()
+    }
+
+    // ---- Dropdown menu ----
+
+    @Test
+    fun chapterRow_longClick_unread_showsMarkCompletedOption() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(status = ChapterReadingStatus.UNREAD),
+                chapterTitle = "Ch 1",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {},
+            )
+        }
+        composeRule.onNodeWithText("Ch 1").performTouchInput { longClick() }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Mark as completed").assertIsDisplayed()
+    }
+
+    @Test
+    fun chapterRow_longClick_completed_showsMarkUnreadOption() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(status = ChapterReadingStatus.COMPLETED),
+                chapterTitle = "Ch 2",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {},
+            )
+        }
+        composeRule.onNodeWithText("Ch 2").performTouchInput { longClick() }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Mark as unread").assertIsDisplayed()
+    }
+
+    @Test
+    fun chapterRow_longClick_reading_showsBothOptions() {
+        composeRule.setContent {
+            ChapterRow(
+                chapter = chapter(status = ChapterReadingStatus.READING),
+                chapterTitle = "Ch 3",
+                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
+                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {},
+            )
+        }
+        composeRule.onNodeWithText("Ch 3").performTouchInput { longClick() }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Mark as completed").assertIsDisplayed()
+        composeRule.onNodeWithText("Mark as unread").assertIsDisplayed()
     }
 
     // ---- buildChapterTitle ----

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug manifest: khai báo test Activity cho Robolectric + Hilt test.
+     Chỉ merge vào debug build, không ảnh hưởng release. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name=".ui.navigation.HiltTestActivity" />
+    </application>
+</manifest>

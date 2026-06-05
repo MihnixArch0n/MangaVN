@@ -164,4 +164,23 @@ class OfflineDownloadRepositoryCoverageTest {
 
             assertNotNull(db.chapterDao().getChapterProgressByChapter("c1"))
         }
+
+    @Test
+    fun markChapterDownloaded_withExistingProgress_updatesExistingEntry() =
+        // Covers branch current != null trong markChapterDownloaded (lines 96-98)
+        runTest {
+            db.libraryDao().upsert(LibraryItemEntity(manga_id = "m1", title = "T", cover_url = ""))
+            // Tạo progress trước (current != null)
+            repository.markChapterDownloaded("m1", "c1", totalPages = 10)
+            val before = db.chapterDao().getChapterProgressByChapter("c1")
+            assertNotNull(before)
+
+            // Gọi lại để trigger branch current?.copy(...)
+            repository.markChapterDownloaded("m1", "c1", totalPages = 0)
+
+            val after = db.chapterDao().getChapterProgressByChapter("c1")
+            assertNotNull(after)
+            // total_pages giữ nguyên giá trị cũ (10) vì takeIf { it > 0 }
+            assertEquals(10, after!!.total_pages)
+        }
 }

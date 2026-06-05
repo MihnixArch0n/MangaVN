@@ -120,4 +120,20 @@ class RegisterScreenTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Username already taken").assertIsDisplayed()
     }
+
+    @Test
+    fun successState_callsOnRegisterSuccess() {
+        // AuthState.Success → LaunchedEffect gọi resetState() + onRegisterSuccess()
+        var successCalled = false
+        val repo = mockk<AuthRepository>(relaxed = true)
+        coEvery { repo.register(any(), any()) } coAnswers { Result.success(Unit) }
+        val vm = AuthViewModel(repo)
+        vm.register("newuser", "pass1")
+
+        composeRule.setContent {
+            RegisterScreen(onRegisterSuccess = { successCalled = true }, onNavigateToLogin = {}, viewModel = vm)
+        }
+        composeRule.waitForIdle()
+        assert(successCalled) { "onRegisterSuccess phải được gọi khi register thành công" }
+    }
 }

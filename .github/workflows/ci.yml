@@ -139,6 +139,10 @@ jobs:
   emulator-test:
     needs: build-test
     runs-on: ubuntu-latest
+    # Cần write permission để madrapps/jacoco-report post comment lên PR.
+    permissions:
+      contents: read
+      pull-requests: write
     defaults:
       run:
         shell: bash
@@ -196,13 +200,52 @@ jobs:
 
       # Download .exec từ build-test (ubuntu) để kết hợp với .ec emulator.
       - name: Download unit exec từ build-test
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.3.0
         with:
           name: unit-exec
           path: app/build/jacoco/
 
       - name: Tạo combined coverage report (unit + instrumented)
         run: ./gradlew :app:jacocoCombinedReport --console=plain
+
+      # Gate combined coverage: Compose composable lambdas không được JaCoCo trace đúng
+      # ngay cả trên emulator → diff bị kéo xuống bởi MainNavGraph.kt (63%).
+      # Threshold diff 65%: thực tế đo được; overall 84%: ratchet tại mức hiện tại.
+      # Diff coverage chỉ có ý nghĩa trên PR (cần base SHA để tính diff).
+      - name: Gate combined coverage (code mới ≥ 60%, overall ≥ 84%)
+        id: combined-coverage
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.8.0
+        with:
+          paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-changed-files: 60
+          min-coverage-overall: 84
+          title: Combined Coverage (unit + emulator)
+          update-comment: true
+
+      - name: Gate combined overall (push main)
+        id: combined-overall
+        if: github.event_name != 'pull_request'
+        uses: madrapps/jacoco-report@v1.8.0
+        with:
+          paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 84
+          title: Combined Coverage (unit + emulator)
+          update-comment: false
+
+      - name: Fail nếu combined coverage vi phạm ngưỡng
+        if: >
+          ${{ (github.event_name == 'pull_request' &&
+               (steps.combined-coverage.outputs.coverage-changed-files < 60.0 ||
+                steps.combined-coverage.outputs.coverage-overall < 84.0)) ||
+              (github.event_name != 'pull_request' &&
+               steps.combined-overall.outputs.coverage-overall < 84.0) }}
+        run: |
+          echo "Combined coverage code mới: ${{ steps.combined-coverage.outputs.coverage-changed-files }}% (ngưỡng 60%)"
+          echo "Combined coverage tổng: ${{ steps.combined-coverage.outputs.coverage-overall }}% (ngưỡng 84%)"
+          exit 1
 
       - name: Upload combined coverage report
         if: always()

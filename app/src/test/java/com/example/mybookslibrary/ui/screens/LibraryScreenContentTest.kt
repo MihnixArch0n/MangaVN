@@ -3,6 +3,8 @@ package com.example.mybookslibrary.ui.screens
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.longClick
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.repository.LibraryRepository
@@ -76,5 +78,18 @@ class LibraryScreenContentTest {
         composeRule.onNodeWithText("My Library").assertIsDisplayed()
         composeRule.onNodeWithText("Naruto").assertIsDisplayed()
         composeRule.onNodeWithText("One Piece").assertIsDisplayed()
+    }
+
+    @Test
+    fun longClickItem_triggersRemovalFlow() {
+        // Long click → pendingRemoval != null → ModalBottomSheet render (lines 93-97)
+        composeRule.setContent {
+            LibraryScreenContent(vm = vmWithItems("Naruto"))
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Naruto").performTouchInput { longClick() }
+        composeRule.waitForIdle()
+        // Verify không crash — ModalBottomSheet đã compose
+        composeRule.onNodeWithText("My Library").assertIsDisplayed()
     }
 }

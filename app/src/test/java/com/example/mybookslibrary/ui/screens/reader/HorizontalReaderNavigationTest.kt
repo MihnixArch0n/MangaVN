@@ -50,6 +50,18 @@ class HorizontalReaderNavigationTest {
     }
 
     @Test
+    fun `left zone tap in vertical mode toggles overlay`() {
+        // ReadingMode.VERTICAL trong left zone → TOGGLE_OVERLAY (line 20)
+        assertEquals(ReaderTapAction.TOGGLE_OVERLAY, evaluateHorizontalTap(50f, 1000f, ReadingMode.VERTICAL))
+    }
+
+    @Test
+    fun `right zone tap in vertical mode toggles overlay`() {
+        // ReadingMode.VERTICAL trong right zone → TOGGLE_OVERLAY (line 26)
+        assertEquals(ReaderTapAction.TOGGLE_OVERLAY, evaluateHorizontalTap(950f, 1000f, ReadingMode.VERTICAL))
+    }
+
+    @Test
     fun `animation uses default duration for adjacent page`() {
         assertEquals(DEFAULT_PAGE_ANIMATION_DURATION_MILLIS, horizontalPageAnimationDurationMillis(2, 3))
     }

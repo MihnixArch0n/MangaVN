@@ -1,13 +1,12 @@
-# Diff/patch coverage gate: chặn PR nếu CODE MỚI (dòng thay đổi trong PR) không được test đủ.
-# Khác JaCoCo ratchet (đo TOÀN project) — gate này đo riêng phần thay đổi, bắt được
-# feature mới quên viết test dù coverage tổng vẫn cao.
+# JVM-only coverage: quick sanity check chạy trước emulator (fast feedback).
+# Chỉ check overall — diff-coverage authoritative dùng combined report trong ci.yml.
 name: Coverage
 
 on: pull_request
 
 permissions:
   contents: read
-  pull-requests: write # để comment kết quả coverage lên PR
+  pull-requests: write
 
 concurrency:
   group: coverage-${{ github.ref }}
@@ -19,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0 # cần full history để diff PR base..head
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -30,7 +29,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      # Stub AuthSecrets (file thật bị gitignore) — giá trị test, không phải secret.
       - name: Stub AuthSecrets
         run: |
           mkdir -p app/src/main/java/com/example/mybookslibrary/util
@@ -42,29 +40,23 @@ jobs:
           }
           EOF
 
-      - name: Tạo báo cáo JaCoCo
+      - name: Tạo báo cáo JaCoCo (JVM-only)
         run: ./gradlew :app:jacocoTestReport --console=plain
 
-      - name: Gate diff coverage (code mới ≥ 80%)
+      # Chỉ check overall — đủ để phát hiện regression sớm (< 5 phút).
+      # Diff-coverage (code mới) dùng combined report trong ci.yml sau emulator.
+      - name: JVM overall coverage ≥ 82% (early check)
         id: coverage-report
         uses: madrapps/jacoco-report@v1.8.0
         with:
           paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-changed-files: 80
-          # Bật overall gate: PR không được làm tổng project tụt dưới 70%.
-          # Khớp với sàn trong jacocoCoverageVerification (build.gradle.kts).
-          min-coverage-overall: 70
-          title: Coverage cho code mới (PR)
+          min-coverage-overall: 82
+          title: JVM Coverage (early check)
           update-comment: true
 
-      # madrapps/jacoco-report không hỗ trợ fail-on-violation → đọc output và fail thủ công.
-      # Bắt 2 vi phạm: (a) code mới < 80%, (b) tổng project tụt < 70%.
-      - name: Fail nếu coverage vi phạm ngưỡng
-        if: >
-          ${{ steps.coverage-report.outputs.coverage-changed-files < 80.0 ||
-              steps.coverage-report.outputs.coverage-overall < 70.0 }}
+      - name: Fail nếu overall JVM coverage tụt dưới 82%
+        if: ${{ steps.coverage-report.outputs.coverage-overall < 82.0 }}
         run: |
-          echo "Coverage code mới: ${{ steps.coverage-report.outputs.coverage-changed-files }}% (ngưỡng 80%)"
-          echo "Coverage tổng project: ${{ steps.coverage-report.outputs.coverage-overall }}% (ngưỡng 70%)"
+          echo "JVM coverage tổng: ${{ steps.coverage-report.outputs.coverage-overall }}% (ngưỡng 82%)"
           exit 1

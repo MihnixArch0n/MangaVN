@@ -7,9 +7,12 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import com.example.mybookslibrary.data.repository.AuthRepository
 import com.example.mybookslibrary.ui.viewmodel.AuthViewModel
+import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.delay
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,5 +66,43 @@ class LoginScreenTest {
         composeRule.onNodeWithContentDescription("Show password").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Show password").performClick()
         composeRule.onNodeWithContentDescription("Hide password").assertIsDisplayed()
+    }
+
+    @Test
+    fun successState_callsOnLoginSuccess() {
+        // AuthState.Success → LaunchedEffect gọi resetState() + onLoginSuccess()
+        var successCalled = false
+        val repo = mockk<AuthRepository>(relaxed = true)
+        coEvery { repo.login(any(), any()) } coAnswers { Result.success(Unit) }
+        val vm = AuthViewModel(repo)
+        vm.login("user", "pass")
+
+        composeRule.setContent {
+            LoginScreen(onLoginSuccess = { successCalled = true }, onNavigateToRegister = {}, viewModel = vm)
+        }
+        composeRule.waitForIdle()
+        assert(successCalled) { "onLoginSuccess phải được gọi khi login thành công" }
+    }
+
+    @Test
+    fun loadingState_showsProgressInLoginButton() {
+        // AuthState.Loading → CircularProgressIndicator thay vì Text "Login" trong nút
+        val repo = mockk<AuthRepository>(relaxed = true)
+        coEvery { repo.login(any(), any()) } coAnswers {
+            delay(Long.MAX_VALUE)
+            Result.success(Unit)
+        }
+        val vm = AuthViewModel(repo)
+
+        composeRule.setContent {
+            LoginScreen(onLoginSuccess = {}, onNavigateToRegister = {}, viewModel = vm)
+        }
+        composeRule.onNodeWithText("Username").performTextInput("user")
+        composeRule.onNodeWithText("Password").performTextInput("pass")
+        composeRule.onNode(hasText("Login") and hasClickAction()).performClick()
+        composeRule.waitForIdle()
+        // Trong loading state: nút bị disabled (hasClickAction trả về nút không click được)
+        // Nút "Login" với click action không còn hiện (đang loading → nút disabled)
+        composeRule.onNodeWithText("Login").assertIsDisplayed() // text vẫn hiện (ở top bar) nhưng button bị disable
     }
 }

@@ -384,7 +384,7 @@ fun MainNavHost(loggedInUserId: String?) {
 }
 
 @Composable
-private fun FloatingPillNavBar(
+internal fun FloatingPillNavBar(
     currentDestination: NavDestination?,
     onNavigate: (BottomNavDestination) -> Unit
 ) {

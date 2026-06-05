@@ -569,6 +569,24 @@ class ReaderViewModelCoverageTest {
             }
         }
 
+    @Test
+    fun syncProgressToRoom_samePageTwice_skipSecondSync() =
+        // Covers lines 326-327: skip khi !force && lastSyncedPageIndex == pageIndex
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            val vm = loadedVm(startPageIndex = 0)
+            advanceUntilIdle()
+
+            vm.onEvent(ReaderEvent.VisiblePageChanged(2))
+            advanceUntilIdle()
+            // Lần 2 cùng page 2 → lastSyncedPageIndex == 2, !force → skip lines 326-327
+            vm.onEvent(ReaderEvent.VisiblePageChanged(2))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                libraryRepository.updateReadingProgress(MANGA_ID, CHAPTER_ID, 2, 8)
+            }
+        }
+
     private companion object {
         const val MANGA_ID = "manga-1"
         const val CHAPTER_ID = "chapter-1"

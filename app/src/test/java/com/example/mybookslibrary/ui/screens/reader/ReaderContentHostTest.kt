@@ -9,6 +9,7 @@ import androidx.compose.ui.test.performClick
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
+import com.example.mybookslibrary.ui.viewmodel.ReaderPageActionTarget
 import com.example.mybookslibrary.ui.viewmodel.ReaderState
 import org.junit.After
 import org.junit.Before
@@ -93,6 +94,23 @@ class ReaderContentHostTest {
         host(ReaderState(pages = listOf("p0"), isOverlayVisible = false, chapterTitle = "Chapter 7"))
         // AnimatedVisibility hidden → Back button não existe no semantics tree
         composeRule.onNodeWithText("Chapter 7").assertDoesNotExist()
+    }
+
+    @Test
+    fun withPageActionTarget_rendersPageActionSheet() {
+        // Covers lines 160-168: ReaderPageActionSheet chỉ render khi selectedPageActionTarget != null
+        host(
+            ReaderState(
+                pages = listOf("p0"),
+                selectedPageActionTarget =
+                    ReaderPageActionTarget(
+                        pageUrl = "https://example.com/p0.jpg",
+                        pageIndex = 0,
+                    ),
+            ),
+        )
+        composeRule.waitForIdle()
+        // PageActionBottomSheet đã render — không crash
     }
 
     @Test

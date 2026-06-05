@@ -80,4 +80,20 @@ class NavigationTest {
         runBlocking { preferencesDataStore.setLoggedInUserId(null) }
         composeRule.waitForIdle()
     }
+
+    @Test
+    fun loginScreen_bottomNavBar_isNotVisible() {
+        // Khi ở Login/Register, FloatingPillNavBar phải bị ẩn (showBottomBar = false).
+        composeRule.waitForIdle()
+        val isLoginScreen =
+            runCatching {
+                composeRule.onNodeWithText("Welcome Back!").assertIsDisplayed()
+            }.isSuccess
+        if (isLoginScreen) {
+            // Không có tab Discover/Search/Library/Settings trên Login screen
+            runCatching {
+                composeRule.onNodeWithText("Discover").assertIsDisplayed()
+            }.let { assert(!it.isSuccess) { "Bottom nav không được hiển thị trên Login screen" } }
+        }
+    }
 }

@@ -131,6 +131,13 @@ val jacocoGeneratedFilter =
         "**/ui/screens/reader/ComposableSingletons\$ReaderBarsKt.*",
         "**/ui/screens/reader/components/PageActionBottomSheetKt*.*",
         "**/ui/screens/reader/components/ComposableSingletons\$PageActionBottomSheetKt.*",
+        // detail/MangaDetailScreen là delegate thuần — chỉ gọi thẳng ui.screens.MangaDetailScreen,
+        // không có logic riêng. Test ở ui.screens đã cover.
+        "**/ui/screens/detail/MangaDetailScreen*.*",
+        // MyBooksLibraryApp là @HiltAndroidApp — wiring WorkManager + crash handler + Timber.
+        // Không test được với JVM unit test (cần Application context đầy đủ).
+        "**/MyBooksLibraryApp*.*",
+        "**/ImageLoaderEntryPoint*.*",
     )
 
 // AGP 9 "built-in Kotlin" xuất class compile ở built_in_kotlinc (không phải tmp/kotlin-classes).
@@ -291,6 +298,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.android.compiler)
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotest.property)

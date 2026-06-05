@@ -170,6 +170,8 @@ class AtHomeReportInterceptorTest {
         )
 
         client.newCall(request("https://node.example.net/data/hash/page.png")).execute().use {
+            // contentLength() và source() — cover cả 2 override trong custom ResponseBody
+            it.body.contentLength()
             it.body.string()
         }
         scope.advanceUntilIdle()
@@ -182,15 +184,17 @@ class AtHomeReportInterceptorTest {
     private fun client(
         repository: MangaRepository,
         scope: TestScope,
-        terminalInterceptor: Interceptor
-    ): OkHttpClient {
-        return OkHttpClient.Builder()
+        terminalInterceptor: Interceptor,
+    ): OkHttpClient =
+        OkHttpClient
+            .Builder()
             .addInterceptor(AtHomeReportInterceptor(repository, scope))
             .addInterceptor(terminalInterceptor)
             .build()
-    }
 
-    private fun request(url: String): Request = Request.Builder()
-        .url(url)
-        .build()
+    private fun request(url: String): Request =
+        Request
+            .Builder()
+            .url(url)
+            .build()
 }

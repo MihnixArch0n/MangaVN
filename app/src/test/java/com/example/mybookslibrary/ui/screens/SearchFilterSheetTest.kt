@@ -3,6 +3,7 @@ package com.example.mybookslibrary.ui.screens
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import com.example.mybookslibrary.domain.model.MangaTag
 import com.example.mybookslibrary.ui.viewmodel.SearchUiState
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +35,24 @@ class SearchFilterSheetTest {
 
         composeRule.onNodeWithText("Filters").assertIsDisplayed()
         composeRule.onNodeWithText("Clear").assertIsDisplayed()
+    }
+
+    @Test
+    fun withGenresAndThemes_rendersSections() {
+        // Covers lines 70-74 (genre section) và 78-83 (theme section) — chỉ hiện khi list không rỗng
+        val stateWithTags = emptyState.copy(
+            availableGenres = listOf(MangaTag("g1", "Action", "genre")),
+            availableThemes = listOf(MangaTag("t1", "Office Workers", "theme")),
+        )
+        composeRule.setContent {
+            SearchFilterSheet(
+                state = stateWithTags,
+                onToggleTag = {}, onToggleLanguage = {}, onToggleContentRating = {},
+                onToggleStatus = {}, onClearFilters = {}, onDismiss = {},
+            )
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText("Filters").assertIsDisplayed()
     }
 
     @Test

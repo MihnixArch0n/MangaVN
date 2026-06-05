@@ -294,6 +294,40 @@ class ImageSaverTest {
         assertTrue(capturedFile.captured.name.endsWith(".$expectedExt"))
     }
 
+    @Test
+    fun quickSave_httpErrorResponse_throwsImageSaveException() =
+        // Covers line 145: throw khi response.isSuccessful == false (HTTP 404)
+        runTest {
+            every { okHttpClient.newCall(any()) } returns call
+            every { call.execute() } answers {
+                val req = Request.Builder().url("https://example.com/image").build()
+                Response
+                    .Builder()
+                    .request(req)
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(404)
+                    .message("Not Found")
+                    .build()
+            }
+
+            assertThrows(ImageSaveException::class.java) {
+                ImageSaver(context).quickSave("https://example.com/image", "page_01")
+            }
+        }
+
+    @Test
+    fun quickSave_externalDirNull_throwsImageSaveException() =
+        // Covers line 265: ?: throw khi getExternalFilesDir trả về null
+        runTest {
+            val bytes = pngBytes()
+            stubOkHttpSuccess(bytes)
+            every { context.getExternalFilesDir(any()) } returns null
+
+            assertThrows(ImageSaveException::class.java) {
+                ImageSaver(context).quickSave("https://example.com/image", "page_01")
+            }
+        }
+
     private fun stubOkHttpSuccess(
         bytes: ByteArray,
         mimeType: String = "image/png",
