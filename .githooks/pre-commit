@@ -18,12 +18,36 @@ if echo "$STAGED_KT" | xargs grep -l "junit4\.v2\.createComposeRule" 2>/dev/null
     FAST_FAIL=1
 fi
 
+# junit4.v2.createAndroidComposeRule: v2 dùng StandardTestDispatcher, không generate coverage ổn định
+# Deprecation warning từ Compose khuyến khích migrate lên v2 — KHÔNG làm theo, giữ v1
+if echo "$STAGED_KT" | xargs grep -l "junit4\.v2\.createAndroidComposeRule" 2>/dev/null | grep -q .; then
+    echo "❌ junit4.v2.createAndroidComposeRule — giữ v1: createAndroidComposeRule<ComponentActivity>()"
+    echo "   v2 dùng StandardTestDispatcher, không generate coverage ổn định dù Compose khuyến khích migrate"
+    echo "   Files vi phạm:"
+    echo "$STAGED_KT" | xargs grep -l "junit4\.v2\.createAndroidComposeRule" 2>/dev/null | sed 's/^/     /'
+    FAST_FAIL=1
+fi
+
 # createEmptyComposeRule gây 'No compose hierarchies found' trong HiltAndroidTest
 if echo "$STAGED_KT" | xargs grep -l "createEmptyComposeRule" 2>/dev/null | grep -q .; then
     echo "❌ createEmptyComposeRule — dùng createAndroidComposeRule<ComponentActivity>()"
     echo "   Files vi phạm:"
     echo "$STAGED_KT" | xargs grep -l "createEmptyComposeRule" 2>/dev/null | sed 's/^/     /'
     FAST_FAIL=1
+fi
+
+# Room DB version bump không có Migration → crash app khi user upgrade
+DB_FILE="app/src/main/java/com/example/mybookslibrary/data/local/AppDatabase.kt"
+if echo "$STAGED_KT" | grep -q "AppDatabase.kt"; then
+    OLD_VER=$(git show HEAD:"$DB_FILE" 2>/dev/null | grep -o 'version = [0-9]*' | grep -o '[0-9]*')
+    NEW_VER=$(git diff --cached -- "$DB_FILE" | grep '^+.*version = [0-9]' | grep -o '[0-9]*' | head -1)
+    if [ -n "$OLD_VER" ] && [ -n "$NEW_VER" ] && [ "$OLD_VER" != "$NEW_VER" ]; then
+        if ! grep -r "Migration($OLD_VER, $NEW_VER)" app/src/main/java/ 2>/dev/null | grep -q .; then
+            echo "❌ DB version $OLD_VER → $NEW_VER: không tìm thấy Migration($OLD_VER, $NEW_VER)"
+            echo "   Phải viết migration trước khi bump version, nếu không app sẽ crash khi user upgrade."
+            FAST_FAIL=1
+        fi
+    fi
 fi
 
 if [ $FAST_FAIL -ne 0 ]; then

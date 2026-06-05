@@ -52,6 +52,10 @@ android {
             isIncludeAndroidResources = true
         }
     }
+    // MigrationTestHelper đọc schema JSON từ androidTest assets khi chạy trên emulator.
+    sourceSets {
+        getByName("androidTest").assets.srcDirs("$projectDir/schemas")
+    }
 }
 
 // Toolchain: ép compile/test bằng JDK 21 trên mọi máy, không phụ thuộc JAVA_HOME của contributor.
@@ -271,6 +275,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    androidTestImplementation(libs.androidx.room.testing)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.compose)
