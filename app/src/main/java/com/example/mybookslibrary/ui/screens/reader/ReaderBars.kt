@@ -115,7 +115,7 @@ internal fun BoxScope.ReaderTopBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = {
-                Timber.d("ReaderTopBar back clicked")
+                Timber.v("ReaderTopBar back clicked")
                 onBackClick()
             }) {
                 Box(
@@ -275,7 +275,7 @@ internal fun BoxScope.ReaderBottomBar(
                 modifier = Modifier.padding(end = 8.dp),
             )
             IconButton(onClick = {
-                Timber.d("ReaderBottomBar toggle clicked: currentMode=%s", state.currentReadingMode)
+                Timber.v("ReaderBottomBar toggle clicked: currentMode=%s", state.currentReadingMode)
                 onToggleReadingMode()
             }) {
                 Icon(

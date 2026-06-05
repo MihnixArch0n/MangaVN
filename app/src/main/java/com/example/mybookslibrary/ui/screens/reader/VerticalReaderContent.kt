@@ -43,7 +43,7 @@ internal fun VerticalReaderContent(
         snapshotFlow { zoomableState.zoomFraction }
             .distinctUntilChanged()
             .collect { zoomFraction ->
-                Timber.d("Reader webtoon global zoom changed: zoomFraction=%s", zoomFraction)
+                Timber.v("Reader webtoon global zoom changed: zoomFraction=%s", zoomFraction)
             }
     }
 
@@ -57,7 +57,7 @@ internal fun VerticalReaderContent(
                 }.zoomable(
                     state = zoomableState,
                     onClick = { offset ->
-                        Timber.d("Reader webtoon container tap: x=%.1f y=%.1f", offset.x, offset.y)
+                        Timber.v("Reader webtoon container tap: x=%.1f y=%.1f", offset.x, offset.y)
                         onEvent(
                             ReaderEvent.TapOnScreen(
                                 x = offset.x,
@@ -70,7 +70,7 @@ internal fun VerticalReaderContent(
                     onLongClick = { offset ->
                         val pageIndex = listState.findPageIndexAtViewportOffset(offset.y)
                         val pageUrl = pages.getOrNull(pageIndex)
-                        Timber.d(
+                        Timber.v(
                             "Reader webtoon container long-click: x=%.1f y=%.1f page=%d url=%s",
                             offset.x,
                             offset.y,

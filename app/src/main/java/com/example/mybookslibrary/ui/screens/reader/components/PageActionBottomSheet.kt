@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
-import timber.log.Timber
 
 /**
  * Exhaustive page-action contract emitted by [PageActionBottomSheet].
@@ -69,7 +68,6 @@ fun PageActionBottomSheet(
 
     ModalBottomSheet(
         onDismissRequest = {
-            Timber.d("PageActionBottomSheet dismissed")
             onDismiss()
         },
         sheetState = sheetState,
@@ -86,7 +84,6 @@ fun PageActionBottomSheet(
                 icon = Icons.Outlined.Download,
                 label = appString(R.string.reader_action_quick_save),
                 onClick = {
-                    Timber.d("PageActionBottomSheet action=QuickSave")
                     onAction(PageAction.QuickSave)
                     onDismiss()
                 },
@@ -95,7 +92,6 @@ fun PageActionBottomSheet(
                 icon = Icons.Outlined.Save,
                 label = appString(R.string.reader_action_save_as),
                 onClick = {
-                    Timber.d("PageActionBottomSheet action=SaveAs")
                     onAction(PageAction.SaveAs)
                     onDismiss()
                 },
@@ -104,7 +100,6 @@ fun PageActionBottomSheet(
                 icon = Icons.Outlined.Share,
                 label = appString(R.string.reader_action_share),
                 onClick = {
-                    Timber.d("PageActionBottomSheet action=Share")
                     onAction(PageAction.Share)
                     onDismiss()
                 },

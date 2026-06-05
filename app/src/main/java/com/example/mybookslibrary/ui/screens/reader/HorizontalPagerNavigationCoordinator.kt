@@ -32,7 +32,7 @@ internal class HorizontalPagerNavigationCoordinator(
             )
 
         if (nextTargetPage != null) {
-            Timber.d(
+            Timber.v(
                 "Reader pager queue enqueue: action=%s current=%d pending=%s base=%d nextTarget=%d active=%s",
                 action,
                 currentPage(),
@@ -42,7 +42,7 @@ internal class HorizontalPagerNavigationCoordinator(
                 navigationJob?.isActive == true,
             )
             if (nextTargetPage == basePage) {
-                Timber.d(
+                Timber.v(
                     "Reader pager queue ignored at boundary: page=%d action=%s",
                     basePage,
                     action,
@@ -60,14 +60,14 @@ internal class HorizontalPagerNavigationCoordinator(
             hasQueuedNavigation = true
         }
         if (navigationJob?.isActive == true) {
-            Timber.d("Reader pager queue extended: pending=%d", nextTargetPage)
+            Timber.v("Reader pager queue extended: pending=%d", nextTargetPage)
             return
         }
         launchNavigationWorker()
     }
 
     fun cancelPendingNavigation() {
-        Timber.d(
+        Timber.v(
             "Reader pager queue cleared by drag: current=%d pending=%s active=%s",
             currentPage(),
             pendingTargetPage?.toString() ?: "<none>",
@@ -83,7 +83,7 @@ internal class HorizontalPagerNavigationCoordinator(
     private fun launchNavigationWorker() {
         navigationJob =
             scope.launch {
-                Timber.d(
+                Timber.v(
                     "Reader pager queue worker start: pending=%s",
                     pendingTargetPage?.toString() ?: "<none>",
                 )
@@ -91,7 +91,7 @@ internal class HorizontalPagerNavigationCoordinator(
                 try {
                     animatePendingPages()
                 } finally {
-                    Timber.d(
+                    Timber.v(
                         "Reader pager queue worker end: pending=%s",
                         pendingTargetPage?.toString() ?: "<none>",
                     )
@@ -120,7 +120,7 @@ internal class HorizontalPagerNavigationCoordinator(
     ) {
         val nextPage = if (targetPage > page) page + 1 else page - 1
         val isQueuedNavigation = hasQueuedNavigation
-        Timber.d(
+        Timber.v(
             "Reader pager queue animation start: current=%d next=%d pending=%d queued=%s",
             page,
             nextPage,
@@ -129,14 +129,14 @@ internal class HorizontalPagerNavigationCoordinator(
         )
         try {
             animateToPage(nextPage, targetPage, isQueuedNavigation)
-            Timber.d(
+            Timber.v(
                 "Reader pager queue animation end: current=%d next=%d pending=%s",
                 currentPage(),
                 nextPage,
                 pendingTargetPage?.toString() ?: "<none>",
             )
         } catch (cancellation: CancellationException) {
-            Timber.d(
+            Timber.v(
                 cancellation,
                 "Reader pager queue animation interrupted: current=%d next=%d pending=%s",
                 currentPage(),

@@ -35,7 +35,7 @@ internal fun Modifier.consumeNavigationDuringAnimation(
 
             val downPosition = down.position
             down.consume()
-            Timber.d(
+            Timber.v(
                 "Reader pager animation shield down consumed: x=%.1f y=%.1f time=%d",
                 downPosition.x,
                 downPosition.y,
@@ -66,7 +66,7 @@ internal fun Modifier.consumeNavigationDuringAnimation(
             }
 
             if (!isTap || pointerCount > 1) {
-                Timber.d(
+                Timber.v(
                     "Reader pager animation shield ignored gesture: isTap=%s pointerCount=%d",
                     isTap,
                     pointerCount,
@@ -76,7 +76,7 @@ internal fun Modifier.consumeNavigationDuringAnimation(
 
             val tapPosition = upPosition
             val isEdgeTap = isNavigationTap(tapPosition)
-            Timber.d(
+            Timber.v(
                 "Reader pager animation shield tap: x=%.1f y=%.1f edge=%s",
                 tapPosition.x,
                 tapPosition.y,

@@ -81,7 +81,7 @@ internal fun ReaderEffectHandler(
             val target = pendingSaveAsTarget ?: return@rememberLauncherForActivityResult
             pendingSaveAsTarget = null
             if (uri == null) {
-                Timber.d("Reader save-as cancelled: page=%d url=%s", target.pageIndex + 1, target.pageUrl)
+                Timber.w("Reader save-as cancelled: page=%d url=%s", target.pageIndex + 1, target.pageUrl)
                 return@rememberLauncherForActivityResult
             }
 
@@ -116,13 +116,13 @@ internal fun ReaderEffectHandler(
                         navigationJob?.cancel()
                         navigationJob =
                             launch {
-                                Timber.d(
+                                Timber.v(
                                     "Reader page navigation start: targetPage=%d mode=%s",
                                     effect.pageIndex,
                                     currentReadingMode,
                                 )
                                 pagerState.animateScrollToPage(effect.pageIndex)
-                                Timber.d("Reader page navigation end: targetPage=%d", effect.pageIndex)
+                                Timber.v("Reader page navigation end: targetPage=%d", effect.pageIndex)
                             }
                     }
                 }

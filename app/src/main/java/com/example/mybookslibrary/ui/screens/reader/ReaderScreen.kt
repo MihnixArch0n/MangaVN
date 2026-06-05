@@ -18,7 +18,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
-import timber.log.Timber
 
 /**
  * Main reader route that wires ViewModel state/effects to stateless reader UI.
@@ -44,13 +43,6 @@ fun ReaderScreen(
             initialPage = state.lastReadPageIndex,
             pageCount = { state.pages.size },
         )
-
-    Timber.d(
-        "ReaderScreen composed: chapter=%s mode=%s pages=%d",
-        state.chapterTitle,
-        state.currentReadingMode,
-        state.pages.size,
-    )
 
     ConfigureReaderSystemBars(
         activity = activity,

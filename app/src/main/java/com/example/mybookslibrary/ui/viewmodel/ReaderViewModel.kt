@@ -63,7 +63,7 @@ class ReaderViewModel @Inject constructor(
     val effects: SharedFlow<ReaderUiEffect> = _effects.asSharedFlow()
 
     init {
-        Timber.d(
+        Timber.i(
             "ReaderViewModel init: mangaId=%s chapterId=%s chapterTitle=%s startPageIndex=%d",
             mangaId,
             chapterId,
@@ -192,7 +192,7 @@ class ReaderViewModel @Inject constructor(
         }
 
         if (targetIndex == current.lastReadPageIndex) return
-        Timber.d("navigateToPage: action=%s from=%d to=%d", action, current.lastReadPageIndex, targetIndex)
+        Timber.v("navigateToPage: action=%s from=%d to=%d", action, current.lastReadPageIndex, targetIndex)
         jumpToPage(targetIndex)
     }
 
@@ -201,7 +201,7 @@ class ReaderViewModel @Inject constructor(
         if (pages.isEmpty()) return
         val targetIndex = pageIndex.coerceIn(0, pages.lastIndex)
         if (targetIndex == _state.value.lastReadPageIndex) return
-        Timber.d("jumpToPage: from=%d to=%d", _state.value.lastReadPageIndex, targetIndex)
+        Timber.v("jumpToPage: from=%d to=%d", _state.value.lastReadPageIndex, targetIndex)
         _state.update { it.copy(lastReadPageIndex = targetIndex) }
         _effects.tryEmit(ReaderUiEffect.NavigateToPage(targetIndex))
     }
@@ -213,15 +213,6 @@ class ReaderViewModel @Inject constructor(
             screenWidth = event.width,
             screenHeight = event.height,
             mode = _state.value.currentReadingMode
-        )
-        Timber.d(
-            "handleScreenTap: x=%.1f y=%.1f width=%.1f height=%.1f mode=%s action=%s",
-            event.x,
-            event.y,
-            event.width,
-            event.height,
-            _state.value.currentReadingMode,
-            action
         )
         navigateToPage(action)
     }
@@ -237,7 +228,6 @@ class ReaderViewModel @Inject constructor(
         if (pages.isEmpty()) return
         val boundedIndex = index.coerceIn(0, pages.lastIndex)
         pendingPageIndex = boundedIndex
-        Timber.d("onVisiblePageChanged: index=%d bounded=%d total=%d", index, boundedIndex, pages.size)
         if (boundedIndex == _state.value.lastReadPageIndex) return
         _state.update { it.copy(lastReadPageIndex = boundedIndex) }
         syncProgressToRoom(pageIndexOverride = boundedIndex, force = false)
@@ -254,7 +244,12 @@ class ReaderViewModel @Inject constructor(
         if (pages.isEmpty()) return
         val target = (index ?: pendingPageIndex ?: _state.value.lastReadPageIndex)
             .coerceIn(0, pages.lastIndex)
-        Timber.d("flushProgress: requested=%s pending=%s target=%d", index?.toString() ?: "<none>", pendingPageIndex?.toString() ?: "<none>", target)
+        Timber.v(
+            "flushProgress: requested=%s pending=%s target=%d",
+            index?.toString() ?: "<none>",
+            pendingPageIndex?.toString() ?: "<none>",
+            target
+        )
         if (target != _state.value.lastReadPageIndex) {
             _state.update { it.copy(lastReadPageIndex = target) }
         }
@@ -269,7 +264,6 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun dismissPageActions() {
-        Timber.d("dismissPageActions")
         _state.update { it.copy(selectedPageActionTarget = null) }
     }
 
@@ -323,7 +317,7 @@ class ReaderViewModel @Inject constructor(
         val pageIndex = pageIndexOverride ?: _state.value.lastReadPageIndex
         val totalPages = _state.value.pages.size
         if (!force && lastSyncedPageIndex == pageIndex) {
-            Timber.d("syncProgressToRoom skipped: pageIndex=%d force=%s", pageIndex, force)
+            Timber.v("syncProgressToRoom skipped: pageIndex=%d force=%s", pageIndex, force)
             return
         }
 

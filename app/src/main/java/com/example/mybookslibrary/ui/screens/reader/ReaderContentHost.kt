@@ -25,7 +25,6 @@ import com.example.mybookslibrary.ui.screens.reader.components.PageActionBottomS
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.viewmodel.ReaderState
-import timber.log.Timber
 
 @Composable
 internal fun ReaderContentHost(
@@ -161,7 +160,6 @@ private fun ReaderPageActionSheet(
         PageActionBottomSheet(
             onDismiss = {
                 onEvent(ReaderEvent.DismissPageActions)
-                Timber.d("Reader page action sheet dismissed")
             },
             onAction = { action ->
                 onEvent(ReaderEvent.PageActionSelected(action.toReaderPageAction()))

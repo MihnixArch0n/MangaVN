@@ -92,7 +92,7 @@ private fun rememberHorizontalNavigationController(pagerState: PagerState): Hori
                             nextPage = pendingTargetPage,
                             isQueuedNavigation = isQueuedNavigation,
                         )
-                    Timber.d(
+                    Timber.v(
                         "Reader pager animateScrollToPage: current=%d settled=%d target=%d next=%d duration=%d queued=%s",
                         pagerState.currentPage,
                         pagerState.settledPage,
@@ -107,7 +107,7 @@ private fun rememberHorizontalNavigationController(pagerState: PagerState): Hori
                     )
                 },
                 onNavigationActiveChanged = { active ->
-                    Timber.d(
+                    Timber.v(
                         "Reader pager navigation active changed: active=%s userScrollEnabled=%s current=%d settled=%d target=%d",
                         active,
                         !active,
@@ -204,7 +204,7 @@ private fun queueShieldedNavigationTap(
         ReaderTapAction.NEXT_PAGE,
         ReaderTapAction.PREVIOUS_PAGE,
         -> {
-            Timber.d(
+            Timber.v(
                 "Reader pager animation shield queued tap: action=%s current=%d settled=%d target=%d width=%.1f x=%.1f",
                 action,
                 pagerState.currentPage,
@@ -233,7 +233,7 @@ private fun handleConfirmedPageTap(
         ReaderTapAction.NEXT_PAGE,
         ReaderTapAction.PREVIOUS_PAGE,
         -> {
-            Timber.d(
+            Timber.v(
                 "Reader pager confirmed page tap: action=%s current=%d settled=%d target=%d active=%s width=%.1f x=%.1f",
                 action,
                 pagerState.currentPage,

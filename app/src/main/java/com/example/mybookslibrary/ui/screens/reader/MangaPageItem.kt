@@ -22,13 +22,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,16 +36,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import coil3.decode.DataSource
 import coil3.request.ImageRequest
-import coil3.request.SuccessResult
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
-import kotlinx.coroutines.flow.distinctUntilChanged
 import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.ZoomableImageState
-import me.saket.telephoto.zoomable.ZoomableState
 import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 import me.saket.telephoto.zoomable.rememberZoomableImageState
 import me.saket.telephoto.zoomable.rememberZoomableState
@@ -58,7 +52,7 @@ import timber.log.Timber
  *
  * The composable keeps the page aspect ratio in sync with the loaded image,
  * overlays a retry UI when Coil reports an error, and uses Telephoto to support
- * pinch-to-zoom and double-tap-to-zoom while retaining Coil load-state logging.
+ * pinch-to-zoom and double-tap-to-zoom.
  *
  * @param imageUrl Page image URL loaded by Coil.
  * @param index Zero-based page index used for content description and logs.
@@ -85,7 +79,7 @@ fun MangaPageItem(
     val retryPageLoad =
         remember(imageUrl, index) {
             {
-                Timber.d("Retry tapped for page=%d url=%s", displayPage(index), imageUrl)
+                Timber.v("Retry tapped for page=%d url=%s", displayPage(index), imageUrl)
                 retryHash++
                 isError = false
             }
@@ -100,8 +94,6 @@ fun MangaPageItem(
                 onLoadingChanged = { isError = it },
             )
         }
-
-    LogPageZoomChanges(zoomableState = zoomableState, imageUrl = imageUrl, index = index)
 
     Box(
         modifier =
@@ -139,53 +131,15 @@ private fun buildPageImageRequest(
         .listener(
             onStart = {
                 onLoadingChanged(false)
-                Timber.d("Loading page=%d url=%s retry=%d", displayPage(pageIndex), imageUrl, retryHash)
             },
-            onSuccess = { _, result ->
+            onSuccess = { _, _ ->
                 onLoadingChanged(false)
-                logPageLoadSuccess(pageIndex = pageIndex, imageUrl = imageUrl, result = result)
             },
             onError = { _, result ->
                 onLoadingChanged(true)
-                Timber.e(result.throwable, "Failed to load page=%d url=%s", displayPage(pageIndex), imageUrl)
+                Timber.w(result.throwable, "Failed to load page=%d url=%s", displayPage(pageIndex), imageUrl)
             },
         ).build()
-
-private fun logPageLoadSuccess(
-    pageIndex: Int,
-    imageUrl: String,
-    result: SuccessResult,
-) {
-    val image = result.image
-    if (image.width > 0 && image.height > 0) {
-        Timber.d("Reader page decoded: page=%d width=%d height=%d", displayPage(pageIndex), image.width, image.height)
-    }
-
-    val dataSource = result.dataSource
-    val origin = if (dataSource == DataSource.NETWORK) "internet" else "cache"
-    Timber.d(
-        "Loaded page=%d url=%s origin=%s source=%s",
-        displayPage(pageIndex),
-        imageUrl,
-        origin,
-        dataSource,
-    )
-}
-
-@Composable
-private fun LogPageZoomChanges(
-    zoomableState: ZoomableState,
-    imageUrl: String,
-    index: Int,
-) {
-    LaunchedEffect(zoomableState, imageUrl, index) {
-        snapshotFlow { zoomableState.zoomFraction }
-            .distinctUntilChanged()
-            .collect { zoomFraction ->
-                Timber.d("Reader zoom changed: page=%d zoomFraction=%s", displayPage(index), zoomFraction)
-            }
-    }
-}
 
 @Composable
 private fun MangaPageImage(
@@ -204,18 +158,10 @@ private fun MangaPageImage(
         state = state,
         contentScale = ContentScale.FillWidth,
         onClick = { offset ->
-            Timber.d(
-                "Reader page confirmed tap: page=%d x=%.1f y=%.1f width=%d height=%d",
-                displayPage(index),
-                offset.x,
-                offset.y,
-                pageSize.width,
-                pageSize.height,
-            )
             onConfirmedTap(offset.x, offset.y, pageSize.width.toFloat(), pageSize.height.toFloat())
         },
         onLongClick = {
-            Timber.d("Reader page long-click: page=%d url=%s", displayPage(index), imageUrl)
+            Timber.v("Reader page long-click: page=%d url=%s", displayPage(index), imageUrl)
             onLongPress?.invoke(imageUrl, index)
         },
         modifier = modifier,

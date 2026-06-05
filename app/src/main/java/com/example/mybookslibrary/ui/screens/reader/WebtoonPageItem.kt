@@ -37,7 +37,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import coil3.decode.DataSource
 import coil3.request.ImageRequest
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
@@ -66,7 +65,7 @@ fun WebtoonPageItem(
     val retryPageLoad =
         remember(imageUrl, index) {
             {
-                Timber.d("Retry tapped for webtoon page=%d url=%s", index + 1, imageUrl)
+                Timber.v("Retry tapped for webtoon page=%d url=%s", index + 1, imageUrl)
                 retryHash++
                 isError = false
             }
@@ -79,7 +78,6 @@ fun WebtoonPageItem(
                 .listener(
                     onStart = {
                         isError = false
-                        Timber.d("Loading webtoon page=%d url=%s retry=%d", index + 1, imageUrl, retryHash)
                     },
                     onSuccess = { _, result ->
                         val image = result.image
@@ -89,19 +87,10 @@ fun WebtoonPageItem(
                             aspectRatio = w.toFloat() / h.toFloat()
                         }
                         isError = false
-                        val dataSource = result.dataSource
-                        val origin = if (dataSource == DataSource.NETWORK) "internet" else "cache"
-                        Timber.d(
-                            "Loaded webtoon page=%d url=%s origin=%s source=%s",
-                            index + 1,
-                            imageUrl,
-                            origin,
-                            dataSource,
-                        )
                     },
                     onError = { _, result ->
                         isError = true
-                        Timber.e(result.throwable, "Failed to load webtoon page=%d url=%s", index + 1, imageUrl)
+                        Timber.w(result.throwable, "Failed to load webtoon page=%d url=%s", index + 1, imageUrl)
                     },
                 ).build()
         }
@@ -121,7 +110,7 @@ fun WebtoonPageItem(
                     pageHeightPx = it.height
                 }.combinedClickable(
                     onClick = {
-                        Timber.d(
+                        Timber.v(
                             "Reader webtoon page tap: page=%d width=%d height=%d",
                             index + 1,
                             pageWidthPx,
@@ -135,7 +124,7 @@ fun WebtoonPageItem(
                         )
                     },
                     onLongClick = {
-                        Timber.d("Reader webtoon page long-click: page=%d url=%s", index + 1, imageUrl)
+                        Timber.v("Reader webtoon page long-click: page=%d url=%s", index + 1, imageUrl)
                         onLongPress?.invoke(imageUrl, index)
                     },
                 ),
@@ -156,7 +145,7 @@ fun WebtoonPageItem(
                         .combinedClickable(
                             onClick = retryPageLoad,
                             onLongClick = {
-                                Timber.d("Reader webtoon error long-click: page=%d url=%s", index + 1, imageUrl)
+                                Timber.v("Reader webtoon error long-click: page=%d url=%s", index + 1, imageUrl)
                                 onLongPress?.invoke(imageUrl, index)
                             },
                         ),
