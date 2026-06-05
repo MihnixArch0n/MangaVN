@@ -31,7 +31,7 @@ class ReaderBarsTest {
                 ReaderTopBar(
                     chapterTitle = "Chapter 5",
                     isVisible = true,
-                    onBackClick = {}
+                    onBackClick = {},
                 )
             }
         }
@@ -76,7 +76,7 @@ class ReaderBarsTest {
                     currentPage = 4,
                     totalPages = 20,
                     currentReadingMode = ReadingMode.LTR,
-                    onToggleReadingMode = {}
+                    onToggleReadingMode = {},
                 )
             }
         }
@@ -95,7 +95,7 @@ class ReaderBarsTest {
                     currentPage = 0,
                     totalPages = 10,
                     currentReadingMode = ReadingMode.LTR,
-                    onToggleReadingMode = {}
+                    onToggleReadingMode = {},
                 )
             }
         }
@@ -113,13 +113,14 @@ class ReaderBarsTest {
                     currentPage = 0,
                     totalPages = 5,
                     currentReadingMode = ReadingMode.VERTICAL,
-                    onToggleReadingMode = { toggled = true }
+                    onToggleReadingMode = { toggled = true },
                 )
             }
         }
 
         // content description = "Switch reading mode to Horizontal (LTR)" (VERTICAL → next = LTR)
-        composeRule.onNodeWithContentDescription("Switch reading mode to Horizontal (LTR)")
+        composeRule
+            .onNodeWithContentDescription("Switch reading mode to Horizontal (LTR)")
             .performClick()
         assertTrue(toggled)
     }
@@ -129,8 +130,13 @@ class ReaderBarsTest {
         // page=-1 → clamp → display "1 / 5"
         composeRule.setContent {
             Box(Modifier.fillMaxSize()) {
-                ReaderBottomBar(isVisible = true, currentPage = -1, totalPages = 5,
-                    currentReadingMode = ReadingMode.LTR, onToggleReadingMode = {})
+                ReaderBottomBar(
+                    isVisible = true,
+                    currentPage = -1,
+                    totalPages = 5,
+                    currentReadingMode = ReadingMode.LTR,
+                    onToggleReadingMode = {},
+                )
             }
         }
         composeRule.onNodeWithText("1 / 5").assertIsDisplayed()
@@ -140,8 +146,13 @@ class ReaderBarsTest {
     fun bottomBar_rtlMode_showsPageCount() {
         composeRule.setContent {
             Box(Modifier.fillMaxSize()) {
-                ReaderBottomBar(isVisible = true, currentPage = 0, totalPages = 3,
-                    currentReadingMode = ReadingMode.RTL, onToggleReadingMode = {})
+                ReaderBottomBar(
+                    isVisible = true,
+                    currentPage = 0,
+                    totalPages = 3,
+                    currentReadingMode = ReadingMode.RTL,
+                    onToggleReadingMode = {},
+                )
             }
         }
         composeRule.onNodeWithText("1 / 3").assertIsDisplayed()
@@ -151,8 +162,13 @@ class ReaderBarsTest {
     fun bottomBar_verticalMode_showsPageCount() {
         composeRule.setContent {
             Box(Modifier.fillMaxSize()) {
-                ReaderBottomBar(isVisible = true, currentPage = 1, totalPages = 5,
-                    currentReadingMode = ReadingMode.VERTICAL, onToggleReadingMode = {})
+                ReaderBottomBar(
+                    isVisible = true,
+                    currentPage = 1,
+                    totalPages = 5,
+                    currentReadingMode = ReadingMode.VERTICAL,
+                    onToggleReadingMode = {},
+                )
             }
         }
         composeRule.onNodeWithText("2 / 5").assertIsDisplayed()

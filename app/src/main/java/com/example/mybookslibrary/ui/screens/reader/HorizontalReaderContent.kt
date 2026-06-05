@@ -1,12 +1,19 @@
+@file:Suppress(
+    "CyclomaticComplexMethod",
+    "LongParameterList",
+    "MaxLineLength",
+    "ktlint:standard:function-naming",
+)
+
 package com.example.mybookslibrary.ui.screens.reader
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -23,10 +30,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import com.example.mybookslibrary.domain.model.ReaderTapAction
 import com.example.mybookslibrary.domain.model.ReadingMode
-import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
-import java.util.concurrent.atomic.AtomicBoolean
+import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Horizontal page-by-page reader content using [HorizontalPager].
@@ -49,156 +56,235 @@ fun HorizontalReaderContent(
     pagerState: PagerState,
     readingMode: ReadingMode,
     onEvent: (ReaderEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
+    val navigationController = rememberHorizontalNavigationController(pagerState)
+    val layoutDirection = rememberHorizontalLayoutDirection(readingMode)
+
+    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+        HorizontalReaderPager(
+            pages = pages,
+            pagerState = pagerState,
+            readingMode = readingMode,
+            navigationController = navigationController,
+            onEvent = onEvent,
+            modifier = modifier
+        )
+    }
+}
+
+@Composable
+private fun rememberHorizontalNavigationController(pagerState: PagerState): HorizontalNavigationController {
     val scope = rememberCoroutineScope()
-    val viewConfiguration = LocalViewConfiguration.current
     var isNavigationActive by remember { mutableStateOf(false) }
     val latestNavigationActive = rememberUpdatedState(isNavigationActive)
     val navigationActiveRef = remember { AtomicBoolean(false) }
-    val navigationCoordinator = remember(pagerState, scope) {
-        HorizontalPagerNavigationCoordinator(
-            scope = scope,
-            currentPage = { pagerState.currentPage },
-            lastPageIndex = { pagerState.pageCount - 1 },
-            animateToPage = { nextPage, pendingTargetPage, isQueuedNavigation ->
-                val durationMillis = horizontalPageAnimationDurationMillis(
-                    currentPage = pagerState.currentPage,
-                    nextPage = pendingTargetPage,
-                    isQueuedNavigation = isQueuedNavigation
-                )
-                Timber.d(
-                    "Reader pager animateScrollToPage: current=%d settled=%d target=%d next=%d duration=%d queued=%s",
-                    pagerState.currentPage,
-                    pagerState.settledPage,
-                    pagerState.targetPage,
-                    nextPage,
-                    durationMillis,
-                    isQueuedNavigation
-                )
-                pagerState.animateScrollToPage(
-                    page = nextPage,
-                    animationSpec = tween(durationMillis = durationMillis)
-                )
-            },
-            onNavigationActiveChanged = { active ->
-                Timber.d(
-                    "Reader pager navigation active changed: active=%s userScrollEnabled=%s current=%d settled=%d target=%d",
-                    active,
-                    !active,
-                    pagerState.currentPage,
-                    pagerState.settledPage,
-                    pagerState.targetPage
-                )
-                isNavigationActive = active
-                navigationActiveRef.set(active)
+    val navigationCoordinator =
+        remember(pagerState, scope) {
+            HorizontalPagerNavigationCoordinator(
+                scope = scope,
+                currentPage = { pagerState.currentPage },
+                lastPageIndex = { pagerState.pageCount - 1 },
+                animateToPage = { nextPage, pendingTargetPage, isQueuedNavigation ->
+                    val durationMillis =
+                        horizontalPageAnimationDurationMillis(
+                            currentPage = pagerState.currentPage,
+                            nextPage = pendingTargetPage,
+                            isQueuedNavigation = isQueuedNavigation
+                        )
+                    Timber.d(
+                        "Reader pager animateScrollToPage: current=%d settled=%d target=%d next=%d duration=%d queued=%s",
+                        pagerState.currentPage,
+                        pagerState.settledPage,
+                        pagerState.targetPage,
+                        nextPage,
+                        durationMillis,
+                        isQueuedNavigation
+                    )
+                    pagerState.animateScrollToPage(
+                        page = nextPage,
+                        animationSpec = tween(durationMillis = durationMillis)
+                    )
+                },
+                onNavigationActiveChanged = { active ->
+                    Timber.d(
+                        "Reader pager navigation active changed: active=%s userScrollEnabled=%s current=%d settled=%d target=%d",
+                        active,
+                        !active,
+                        pagerState.currentPage,
+                        pagerState.settledPage,
+                        pagerState.targetPage
+                    )
+                    isNavigationActive = active
+                    navigationActiveRef.set(active)
+                },
+            )
+        }
+
+    return remember(navigationCoordinator, latestNavigationActive, navigationActiveRef) {
+        HorizontalNavigationController(
+            coordinator = navigationCoordinator,
+            isActive = {
+                navigationActiveRef.get() || latestNavigationActive.value
             }
         )
     }
-    // RTL mode: flip layout direction so HorizontalPager swipes right-to-left for "next"
-    val layoutDirection = when (readingMode) {
-        ReadingMode.RTL -> LayoutDirection.Rtl
-        else -> LayoutDirection.Ltr
-    }
-    val onConfirmedPageTap: (Float, Float) -> Unit = { x, width ->
-        when (val action = evaluateHorizontalTap(x, width, readingMode)) {
-            ReaderTapAction.NEXT_PAGE,
-            ReaderTapAction.PREVIOUS_PAGE -> {
-                Timber.d(
-                    "Reader pager confirmed page tap: action=%s current=%d settled=%d target=%d active=%s width=%.1f x=%.1f",
-                    action,
-                    pagerState.currentPage,
-                    pagerState.settledPage,
-                    pagerState.targetPage,
-                    isNavigationActive,
-                    width,
-                    x
-                )
-                if (!isNavigationActive) {
-                    navigationCoordinator.enqueue(action)
-                }
-            }
-            ReaderTapAction.TOGGLE_OVERLAY -> {
-                if (!isNavigationActive) {
-                    onEvent(ReaderEvent.ToggleOverlay)
-                }
-            }
-            ReaderTapAction.NONE -> Unit
-        }
-    }
+}
 
-    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = modifier.consumeNavigationDuringAnimation(
+@Composable
+private fun HorizontalReaderPager(
+    pages: List<String>,
+    pagerState: PagerState,
+    readingMode: ReadingMode,
+    navigationController: HorizontalNavigationController,
+    onEvent: (ReaderEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val viewConfiguration = LocalViewConfiguration.current
+    HorizontalPager(
+        state = pagerState,
+        modifier =
+            modifier.consumeNavigationDuringAnimation(
                 viewConfiguration = viewConfiguration,
-                isNavigationActive = { navigationActiveRef.get() || latestNavigationActive.value },
+                isNavigationActive = navigationController.isActive,
                 isNavigationTap = { offset ->
-                    val width = pagerState.layoutInfo.viewportSize.width.toFloat()
-                    when (evaluateHorizontalTap(offset.x, width, readingMode)) {
-                        ReaderTapAction.NEXT_PAGE,
-                        ReaderTapAction.PREVIOUS_PAGE -> true
-                        ReaderTapAction.TOGGLE_OVERLAY,
-                        ReaderTapAction.NONE -> false
-                    }
+                    val width =
+                        pagerState.layoutInfo.viewportSize.width
+                            .toFloat()
+                    evaluateHorizontalTap(offset.x, width, readingMode).isPageNavigation()
                 },
                 onNavigationTap = { offset ->
-                    val width = pagerState.layoutInfo.viewportSize.width.toFloat()
-                    when (val action = evaluateHorizontalTap(offset.x, width, readingMode)) {
-                        ReaderTapAction.NEXT_PAGE,
-                        ReaderTapAction.PREVIOUS_PAGE -> {
-                            Timber.d(
-                                "Reader pager animation shield queued tap: action=%s current=%d settled=%d target=%d width=%.1f x=%.1f",
-                                action,
-                                pagerState.currentPage,
-                                pagerState.settledPage,
-                                pagerState.targetPage,
-                                width,
-                                offset.x
-                            )
-                            navigationCoordinator.enqueue(action)
-                        }
-                        ReaderTapAction.TOGGLE_OVERLAY,
-                        ReaderTapAction.NONE -> Unit
-                    }
-                }
+                    queueShieldedNavigationTap(
+                        offsetX = offset.x,
+                        width =
+                            pagerState.layoutInfo.viewportSize.width
+                                .toFloat(),
+                        readingMode = readingMode,
+                        pagerState = pagerState,
+                        navigationController = navigationController,
+                    )
+                },
             ),
-            // Giữ 1 trang trước/sau (không phải 2) để giảm số bitmap thường trú → tránh OOM máy RAM thấp
-            beyondViewportPageCount = 1,
-            userScrollEnabled = !isNavigationActive,
-            key = { index -> pages.getOrNull(index) ?: "missing-page-$index" }
-        ) { pageIndex ->
-            pages.getOrNull(pageIndex)?.let { pageUrl ->
-                MangaPageItem(
-                    imageUrl = pageUrl,
-                    index = pageIndex,
-                    onConfirmedTap = { x, _, width, _ ->
-                        onConfirmedPageTap(x, width)
-                    },
-                    onLongPress = { url, index ->
-                        onEvent(ReaderEvent.PageLongPressed(url, index))
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+        // Giữ 1 trang trước/sau (không phải 2) để giảm số bitmap thường trú, tránh OOM máy RAM thấp.
+        beyondViewportPageCount = 1,
+        userScrollEnabled = !navigationController.isActive(),
+        key = { index -> pages.getOrNull(index) ?: "missing-page-$index" },
+    ) { pageIndex ->
+        pages.getOrNull(pageIndex)?.let { pageUrl ->
+            MangaPageItem(
+                imageUrl = pageUrl,
+                index = pageIndex,
+                onConfirmedTap = { x, _, width, _ ->
+                    handleConfirmedPageTap(
+                        x = x,
+                        width = width,
+                        readingMode = readingMode,
+                        pagerState = pagerState,
+                        navigationController = navigationController,
+                        onEvent = onEvent,
+                    )
+                },
+                onLongPress = { url, index ->
+                    onEvent(ReaderEvent.PageLongPressed(url, index))
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }
 
-private val PreviewHorizontalPages = listOf(
-    "https://example.com/reader/page-1.jpg",
-    "https://example.com/reader/page-2.jpg",
-    "https://example.com/reader/page-3.jpg"
+private fun queueShieldedNavigationTap(
+    offsetX: Float,
+    width: Float,
+    readingMode: ReadingMode,
+    pagerState: PagerState,
+    navigationController: HorizontalNavigationController,
+) {
+    when (val action = evaluateHorizontalTap(offsetX, width, readingMode)) {
+        ReaderTapAction.NEXT_PAGE,
+        ReaderTapAction.PREVIOUS_PAGE,
+        -> {
+            Timber.d(
+                "Reader pager animation shield queued tap: action=%s current=%d settled=%d target=%d width=%.1f x=%.1f",
+                action,
+                pagerState.currentPage,
+                pagerState.settledPage,
+                pagerState.targetPage,
+                width,
+                offsetX,
+            )
+            navigationController.coordinator.enqueue(action)
+        }
+        ReaderTapAction.TOGGLE_OVERLAY,
+        ReaderTapAction.NONE,
+        -> Unit
+    }
+}
+
+private fun handleConfirmedPageTap(
+    x: Float,
+    width: Float,
+    readingMode: ReadingMode,
+    pagerState: PagerState,
+    navigationController: HorizontalNavigationController,
+    onEvent: (ReaderEvent) -> Unit,
+) {
+    when (val action = evaluateHorizontalTap(x, width, readingMode)) {
+        ReaderTapAction.NEXT_PAGE,
+        ReaderTapAction.PREVIOUS_PAGE,
+        -> {
+            Timber.d(
+                "Reader pager confirmed page tap: action=%s current=%d settled=%d target=%d active=%s width=%.1f x=%.1f",
+                action,
+                pagerState.currentPage,
+                pagerState.settledPage,
+                pagerState.targetPage,
+                navigationController.isActive(),
+                width,
+                x,
+            )
+            if (!navigationController.isActive()) {
+                navigationController.coordinator.enqueue(action)
+            }
+        }
+        ReaderTapAction.TOGGLE_OVERLAY -> {
+            if (!navigationController.isActive()) {
+                onEvent(ReaderEvent.ToggleOverlay)
+            }
+        }
+        ReaderTapAction.NONE -> Unit
+    }
+}
+
+private fun rememberHorizontalLayoutDirection(readingMode: ReadingMode): LayoutDirection =
+    when (readingMode) {
+        ReadingMode.RTL -> LayoutDirection.Rtl
+        else -> LayoutDirection.Ltr
+    }
+
+private fun ReaderTapAction.isPageNavigation(): Boolean = this == ReaderTapAction.NEXT_PAGE || this == ReaderTapAction.PREVIOUS_PAGE
+
+private data class HorizontalNavigationController(
+    val coordinator: HorizontalPagerNavigationCoordinator,
+    val isActive: () -> Boolean,
 )
+
+private val PreviewHorizontalPages =
+    listOf(
+        "https://example.com/reader/page-1.jpg",
+        "https://example.com/reader/page-2.jpg",
+        "https://example.com/reader/page-3.jpg"
+    )
 
 @Preview(name = "Horizontal Reader - LTR", showBackground = true)
 @Composable
 private fun HorizontalReaderContentLtrPreview() {
     MyBooksLibraryTheme {
-        val pagerState = rememberPagerState(
-            initialPage = 1,
-            pageCount = { PreviewHorizontalPages.size }
-        )
+        val pagerState =
+            rememberPagerState(
+                initialPage = 1,
+                pageCount = { PreviewHorizontalPages.size }
+            )
         Box(
             modifier = Modifier
                 .fillMaxSize()

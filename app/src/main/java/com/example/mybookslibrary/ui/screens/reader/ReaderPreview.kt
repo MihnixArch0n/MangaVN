@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mybookslibrary.ui.screens.reader
 
 import androidx.compose.foundation.background
@@ -12,11 +14,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 
-private val PreviewReaderPages = listOf(
-    "https://example.com/reader/page-1.jpg",
-    "https://example.com/reader/page-2.jpg",
-    "https://example.com/reader/page-3.jpg"
-)
+private val PreviewReaderPages =
+    listOf(
+        "https://example.com/reader/page-1.jpg",
+        "https://example.com/reader/page-2.jpg",
+        "https://example.com/reader/page-3.jpg",
+    )
 
 @Preview(name = "Reader - Horizontal", showBackground = true)
 @Composable
@@ -26,7 +29,7 @@ private fun ReaderHorizontalPreview() {
             chapterTitle = "Chapter 12: Lost Pages",
             pages = PreviewReaderPages,
             currentPage = 1,
-            readingMode = ReadingMode.LTR
+            readingMode = ReadingMode.LTR,
         )
     }
 }
@@ -39,7 +42,7 @@ private fun ReaderVerticalPreview() {
             chapterTitle = "Chapter 12: Lost Pages",
             pages = PreviewReaderPages,
             currentPage = 1,
-            readingMode = ReadingMode.VERTICAL
+            readingMode = ReadingMode.VERTICAL,
         )
     }
 }
@@ -49,18 +52,20 @@ private fun ReaderPreviewLayout(
     chapterTitle: String,
     pages: List<String>,
     currentPage: Int,
-    readingMode: ReadingMode
+    readingMode: ReadingMode,
 ) {
     val listState = rememberLazyListState()
-    val pagerState = rememberPagerState(
-        initialPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0)),
-        pageCount = { pages.size }
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = currentPage.coerceIn(0, pages.lastIndex.coerceAtLeast(0)),
+            pageCount = { pages.size },
+        )
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black),
     ) {
         when (readingMode) {
             ReadingMode.VERTICAL -> {
@@ -68,7 +73,7 @@ private fun ReaderPreviewLayout(
                     pages = pages,
                     listState = listState,
                     onEvent = {},
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
             ReadingMode.LTR, ReadingMode.RTL -> {
@@ -77,7 +82,7 @@ private fun ReaderPreviewLayout(
                     pagerState = pagerState,
                     readingMode = readingMode,
                     onEvent = {},
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }
@@ -85,14 +90,17 @@ private fun ReaderPreviewLayout(
         ReaderTopBar(
             chapterTitle = chapterTitle,
             isVisible = true,
-            onBackClick = { }
+            onBackClick = { },
         )
         ReaderBottomBar(
             isVisible = true,
-            currentPage = currentPage,
-            totalPages = pages.size,
-            currentReadingMode = readingMode,
-            onToggleReadingMode = { }
+            state =
+                ReaderBottomBarState(
+                    currentPage = currentPage,
+                    totalPages = pages.size,
+                    currentReadingMode = readingMode,
+                ),
+            onToggleReadingMode = { },
         )
     }
 }

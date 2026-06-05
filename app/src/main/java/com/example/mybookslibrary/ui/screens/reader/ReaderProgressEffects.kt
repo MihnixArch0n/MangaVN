@@ -1,3 +1,9 @@
+@file:Suppress(
+    "LongMethod",
+    "LongParameterList",
+    "ktlint:standard:function-naming",
+)
+
 package com.example.mybookslibrary.ui.screens.reader
 
 import androidx.compose.foundation.lazy.LazyListState
@@ -27,7 +33,7 @@ internal fun ReaderProgressEffects(
     pagerState: PagerState,
     latestActivePageIndex: MutableState<Int?>,
     hasRestoredInitialPage: MutableState<Boolean>,
-    onEvent: (ReaderEvent) -> Unit
+    onEvent: (ReaderEvent) -> Unit,
 ) {
     LaunchedEffect(listState, state.pages.size, state.currentReadingMode) {
         if (state.currentReadingMode != ReadingMode.VERTICAL) return@LaunchedEffect
@@ -37,15 +43,13 @@ internal fun ReaderProgressEffects(
             .onEach { index ->
                 latestActivePageIndex.value = index
                 Timber.d("Reader vertical active-page candidate: page=%d", index)
-            }
-            .distinctUntilChanged()
+            }.distinctUntilChanged()
             .debounce(300)
             .map { index ->
                 val visiblePage = index.coerceIn(0, state.pages.lastIndex)
                 Timber.d("Reader vertical page active: page=%d mode=%s", visiblePage, state.currentReadingMode)
                 visiblePage
-            }
-            .collect { index ->
+            }.collect { index ->
                 onEvent(ReaderEvent.VisiblePageChanged(index))
             }
     }
@@ -81,8 +85,7 @@ internal fun ReaderProgressEffects(
                 latestActivePageIndex.value = visiblePage
                 Timber.d("Reader horizontal page settled: page=%d mode=%s", visiblePage, state.currentReadingMode)
                 visiblePage
-            }
-            .collect { page ->
+            }.collect { page ->
                 onEvent(ReaderEvent.VisiblePageChanged(page))
             }
     }

@@ -1,3 +1,11 @@
+@file:Suppress(
+    "LongMethod",
+    "LongParameterList",
+    "MagicNumber",
+    "MaxLineLength",
+    "ktlint:standard:function-naming",
+)
+
 package com.example.mybookslibrary.ui.screens.reader
 
 import androidx.compose.animation.AnimatedVisibility
@@ -8,12 +16,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -21,53 +29,57 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.ImportContacts
-import com.example.mybookslibrary.domain.model.ReadingMode
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.mybookslibrary.R
+import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
-import com.example.mybookslibrary.R
-import androidx.compose.runtime.Composable
 import timber.log.Timber
 
-private const val DarkReaderBarContainerAlpha = 0.94f
+private const val DARK_READER_BAR_CONTAINER_ALPHA = 0.94f
 
 internal data class ReaderBarColors(
     val container: Color,
     val content: Color,
     val secondaryContent: Color,
-    val controlContainer: Color
+    val controlContainer: Color,
+)
+
+internal data class ReaderBottomBarState(
+    val currentPage: Int,
+    val totalPages: Int,
+    val currentReadingMode: ReadingMode,
 )
 
 @Composable
-internal fun readerBarColors(
-    isLightTheme: Boolean = MaterialTheme.colorScheme.background.luminance() > 0.5f
-): ReaderBarColors {
+internal fun readerBarColors(isLightTheme: Boolean = MaterialTheme.colorScheme.background.luminance() > 0.5f): ReaderBarColors {
     val colorScheme = MaterialTheme.colorScheme
     if (isLightTheme) {
         return ReaderBarColors(
             container = colorScheme.background,
             content = colorScheme.onBackground,
             secondaryContent = colorScheme.onSurfaceVariant,
-            controlContainer = colorScheme.onBackground.copy(alpha = 0.08f)
+            controlContainer = colorScheme.onBackground.copy(alpha = 0.08f),
         )
     }
 
     return ReaderBarColors(
-        container = colorScheme.surface.copy(alpha = DarkReaderBarContainerAlpha),
+        container = colorScheme.surface.copy(alpha = DARK_READER_BAR_CONTAINER_ALPHA),
         content = colorScheme.onSurface,
         secondaryContent = colorScheme.onSurfaceVariant,
-        controlContainer = colorScheme.onSurface.copy(alpha = 0.12f)
+        controlContainer = colorScheme.onSurface.copy(alpha = 0.12f),
     )
 }
 
@@ -85,36 +97,40 @@ internal fun BoxScope.ReaderTopBar(
     chapterTitle: String,
     isVisible: Boolean,
     colors: ReaderBarColors = readerBarColors(),
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
 ) {
     AnimatedVisibility(
         visible = isVisible,
         enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-        modifier = Modifier.align(Alignment.TopCenter)
+        modifier = Modifier.align(Alignment.TopCenter),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(colors.container)
-                .statusBarsPadding()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(colors.container)
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = {
                 Timber.d("ReaderTopBar back clicked")
                 onBackClick()
             }) {
                 Box(
-                    modifier = Modifier.size(36.dp).clip(CircleShape)
-                        .background(colors.controlContainer),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(colors.controlContainer),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = appString(R.string.cd_back),
                         tint = colors.content,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             }
@@ -124,7 +140,7 @@ internal fun BoxScope.ReaderTopBar(
                 color = colors.content,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(start = 8.dp)
+                modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
         }
     }
@@ -135,14 +151,15 @@ internal fun BoxScope.ReaderTopBar(
 private fun ReaderTopBarPreview() {
     MyBooksLibraryTheme {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black),
         ) {
             ReaderTopBar(
                 chapterTitle = "Chapter 12: Lost Pages",
                 isVisible = true,
-                onBackClick = { }
+                onBackClick = { },
             )
         }
     }
@@ -153,16 +170,20 @@ private fun ReaderTopBarPreview() {
 private fun ReaderBottomBarPreview() {
     MyBooksLibraryTheme {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black),
         ) {
             ReaderBottomBar(
                 isVisible = true,
-                currentPage = 1,
-                totalPages = 18,
-                currentReadingMode = ReadingMode.LTR,
-                onToggleReadingMode = { }
+                state =
+                    ReaderBottomBarState(
+                        currentPage = 1,
+                        totalPages = 18,
+                        currentReadingMode = ReadingMode.LTR,
+                    ),
+                onToggleReadingMode = { },
             )
         }
     }
@@ -187,61 +208,85 @@ internal fun BoxScope.ReaderBottomBar(
     totalPages: Int,
     currentReadingMode: ReadingMode,
     colors: ReaderBarColors = readerBarColors(),
-    onToggleReadingMode: () -> Unit
+    onToggleReadingMode: () -> Unit,
 ) {
-    val safeTotalPages = totalPages.coerceAtLeast(1)
-    val displayPage = (currentPage + 1).coerceIn(1, safeTotalPages)
-    val nextReadingModeRes = when (currentReadingMode) {
-        ReadingMode.VERTICAL -> R.string.reader_mode_ltr
-        ReadingMode.LTR -> R.string.reader_mode_rtl
-        ReadingMode.RTL -> R.string.reader_mode_vertical
-    }
+    ReaderBottomBar(
+        isVisible = isVisible,
+        state =
+            ReaderBottomBarState(
+                currentPage = currentPage,
+                totalPages = totalPages,
+                currentReadingMode = currentReadingMode,
+            ),
+        colors = colors,
+        onToggleReadingMode = onToggleReadingMode,
+    )
+}
+
+@Composable
+internal fun BoxScope.ReaderBottomBar(
+    isVisible: Boolean,
+    state: ReaderBottomBarState,
+    colors: ReaderBarColors = readerBarColors(),
+    onToggleReadingMode: () -> Unit,
+) {
+    val safeTotalPages = state.totalPages.coerceAtLeast(1)
+    val displayPage = (state.currentPage + 1).coerceIn(1, safeTotalPages)
+    val nextReadingModeRes =
+        when (state.currentReadingMode) {
+            ReadingMode.VERTICAL -> R.string.reader_mode_ltr
+            ReadingMode.LTR -> R.string.reader_mode_rtl
+            ReadingMode.RTL -> R.string.reader_mode_vertical
+        }
 
     // Icon and content description cycle: VERTICAL → LTR → RTL
-    val modeIcon = when (currentReadingMode) {
-        ReadingMode.VERTICAL -> Icons.AutoMirrored.Filled.MenuBook
-        ReadingMode.LTR -> Icons.Filled.ImportContacts
-        ReadingMode.RTL -> Icons.Filled.AutoStories
-    }
+    val modeIcon =
+        when (state.currentReadingMode) {
+            ReadingMode.VERTICAL -> Icons.AutoMirrored.Filled.MenuBook
+            ReadingMode.LTR -> Icons.Filled.ImportContacts
+            ReadingMode.RTL -> Icons.Filled.AutoStories
+        }
 
     AnimatedVisibility(
         visible = isVisible,
         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-        modifier = Modifier.align(Alignment.BottomCenter)
+        modifier = Modifier.align(Alignment.BottomCenter),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(colors.container)
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(colors.container)
+                    .navigationBarsPadding()
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "$displayPage / $safeTotalPages",
                 style = MaterialTheme.typography.titleMedium,
                 color = colors.content,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             Text(
                 text = appString(R.string.reader_pages_label),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.secondaryContent,
-                modifier = Modifier.padding(end = 8.dp)
+                modifier = Modifier.padding(end = 8.dp),
             )
             IconButton(onClick = {
-                Timber.d("ReaderBottomBar toggle clicked: currentMode=%s", currentReadingMode)
+                Timber.d("ReaderBottomBar toggle clicked: currentMode=%s", state.currentReadingMode)
                 onToggleReadingMode()
             }) {
                 Icon(
                     imageVector = modeIcon,
-                    contentDescription = appString(
-                        R.string.reader_switch_mode_action,
-                        appString(nextReadingModeRes)
-                    ),
+                    contentDescription =
+                        appString(
+                            R.string.reader_switch_mode_action,
+                            appString(nextReadingModeRes),
+                        ),
                     tint = colors.content,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }

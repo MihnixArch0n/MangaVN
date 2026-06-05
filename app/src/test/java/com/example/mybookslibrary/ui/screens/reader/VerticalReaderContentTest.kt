@@ -1,7 +1,7 @@
 package com.example.mybookslibrary.ui.screens.reader
 
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.example.mybookslibrary.ui.util.FakeImageLoader
@@ -21,6 +21,7 @@ class VerticalReaderContentTest {
     @get:Rule val composeRule = createComposeRule()
 
     @Before fun setUp() = FakeImageLoader.install()
+
     @After fun tearDown() = FakeImageLoader.reset()
 
     @Test
@@ -30,7 +31,7 @@ class VerticalReaderContentTest {
                 pages = listOf("https://x/p0.jpg"),
                 listState = rememberLazyListState(),
                 onEvent = {},
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
         composeRule.waitForIdle()
@@ -43,7 +44,7 @@ class VerticalReaderContentTest {
                 pages = List(5) { "https://x/p$it.jpg" },
                 listState = rememberLazyListState(),
                 onEvent = {},
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
         composeRule.waitForIdle()
@@ -56,7 +57,7 @@ class VerticalReaderContentTest {
                 pages = emptyList(),
                 listState = rememberLazyListState(),
                 onEvent = {},
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
         composeRule.waitForIdle()
@@ -69,7 +70,7 @@ class VerticalReaderContentTest {
             VerticalReaderContent(
                 pages = listOf("https://x/p0.jpg"),
                 listState = rememberLazyListState(),
-                onEvent = { received = it }
+                onEvent = { received = it },
             )
         }
         composeRule.waitForIdle()

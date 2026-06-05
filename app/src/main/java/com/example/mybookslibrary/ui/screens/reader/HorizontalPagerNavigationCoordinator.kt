@@ -16,7 +16,7 @@ internal class HorizontalPagerNavigationCoordinator(
     private val currentPage: () -> Int,
     private val lastPageIndex: () -> Int,
     private val animateToPage: suspend (page: Int, pendingTargetPage: Int, isQueuedNavigation: Boolean) -> Unit,
-    private val onNavigationActiveChanged: (Boolean) -> Unit = {}
+    private val onNavigationActiveChanged: (Boolean) -> Unit = {},
 ) {
     private var pendingTargetPage: Int? = null
     private var navigationJob: Job? = null
@@ -28,21 +28,31 @@ internal class HorizontalPagerNavigationCoordinator(
             targetPage = basePage,
             action = action,
             lastPageIndex = lastPageIndex()
-        ) ?: return
+            )
 
-        Timber.d(
-            "Reader pager queue enqueue: action=%s current=%d pending=%s base=%d nextTarget=%d active=%s",
-            action,
-            currentPage(),
-            pendingTargetPage?.toString() ?: "<none>",
-            basePage,
-            nextTargetPage,
-            navigationJob?.isActive == true
-        )
-        if (nextTargetPage == basePage) {
-            Timber.d("Reader pager queue ignored at boundary: page=%d action=%s", basePage, action)
-            return
+        if (nextTargetPage != null) {
+            Timber.d(
+                "Reader pager queue enqueue: action=%s current=%d pending=%s base=%d nextTarget=%d active=%s",
+                action,
+                currentPage(),
+                pendingTargetPage?.toString() ?: "<none>",
+                basePage,
+                nextTargetPage,
+                navigationJob?.isActive == true
+            )
+            if (nextTargetPage == basePage) {
+                Timber.d(
+                    "Reader pager queue ignored at boundary: page=%d action=%s",
+                    basePage,
+                    action
+                )
+            } else {
+                enqueueTargetPage(nextTargetPage)
+            }
         }
+    }
+
+    private fun enqueueTargetPage(nextTargetPage: Int) {
         val hadPendingTarget = pendingTargetPage != null
         pendingTargetPage = nextTargetPage
         if (navigationJob?.isActive == true || hadPendingTarget) {
@@ -71,12 +81,18 @@ internal class HorizontalPagerNavigationCoordinator(
 
     private fun launchNavigationWorker() {
         navigationJob = scope.launch {
-            Timber.d("Reader pager queue worker start: pending=%s", pendingTargetPage?.toString() ?: "<none>")
+            Timber.d(
+                "Reader pager queue worker start: pending=%s",
+                pendingTargetPage?.toString() ?: "<none>"
+            )
             onNavigationActiveChanged(true)
             try {
                 animatePendingPages()
             } finally {
-                Timber.d("Reader pager queue worker end: pending=%s", pendingTargetPage?.toString() ?: "<none>")
+                Timber.d(
+                    "Reader pager queue worker end: pending=%s",
+                    pendingTargetPage?.toString() ?: "<none>"
+                )
                 navigationJob = null
                 onNavigationActiveChanged(false)
             }
@@ -84,44 +100,49 @@ internal class HorizontalPagerNavigationCoordinator(
     }
 
     private suspend fun animatePendingPages() {
-        while (true) {
-            val targetPage = pendingTargetPage ?: return
+        while (pendingTargetPage != null && lastPageIndex() >= 0) {
+            val targetPage = pendingTargetPage ?: break
             val page = currentPage()
-            if (page == targetPage || lastPageIndex() < 0) {
+            if (page == targetPage) {
                 pendingTargetPage = null
                 hasQueuedNavigation = false
-                return
+            } else {
+                animateNextPage(targetPage = targetPage, page = page)
             }
+        }
+    }
 
-            val nextPage = if (targetPage > page) page + 1 else page - 1
-            val isQueuedNavigation = hasQueuedNavigation
+    private suspend fun animateNextPage(
+        targetPage: Int,
+        page: Int,
+    ) {
+        val nextPage = if (targetPage > page) page + 1 else page - 1
+        val isQueuedNavigation = hasQueuedNavigation
+        Timber.d(
+            "Reader pager queue animation start: current=%d next=%d pending=%d queued=%s",
+            page,
+            nextPage,
+            targetPage,
+            isQueuedNavigation
+        )
+        try {
+            animateToPage(nextPage, targetPage, isQueuedNavigation)
             Timber.d(
-                "Reader pager queue animation start: current=%d next=%d pending=%d queued=%s",
-                page,
+                "Reader pager queue animation end: current=%d next=%d pending=%s",
+                currentPage(),
                 nextPage,
-                targetPage,
-                isQueuedNavigation
+                pendingTargetPage?.toString() ?: "<none>",
             )
-            try {
-                animateToPage(nextPage, targetPage, isQueuedNavigation)
-                Timber.d(
-                    "Reader pager queue animation end: current=%d next=%d pending=%s",
-                    currentPage(),
-                    nextPage,
-                    pendingTargetPage?.toString() ?: "<none>"
-                )
-            } catch (cancellation: CancellationException) {
-                Timber.d(
-                    cancellation,
-                    "Reader pager queue animation interrupted: current=%d next=%d pending=%s",
-                    currentPage(),
-                    nextPage,
-                    pendingTargetPage?.toString() ?: "<none>"
-                )
-                pendingTargetPage = null
-                hasQueuedNavigation = false
-                return
-            }
+        } catch (cancellation: CancellationException) {
+            Timber.d(
+                cancellation,
+                "Reader pager queue animation interrupted: current=%d next=%d pending=%s",
+                currentPage(),
+                nextPage,
+                pendingTargetPage?.toString() ?: "<none>",
+            )
+            pendingTargetPage = null
+            hasQueuedNavigation = false
         }
     }
 }

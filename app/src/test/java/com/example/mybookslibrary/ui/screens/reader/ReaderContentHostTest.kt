@@ -11,7 +11,6 @@ import com.example.mybookslibrary.ui.util.FakeImageLoader
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.viewmodel.ReaderState
 import org.junit.After
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,9 +26,13 @@ class ReaderContentHostTest {
     val composeRule = createComposeRule()
 
     @Before fun setUp() = FakeImageLoader.install()
+
     @After fun tearDown() = FakeImageLoader.reset()
 
-    private fun host(state: ReaderState, onEvent: (ReaderEvent) -> Unit = {}) {
+    private fun host(
+        state: ReaderState,
+        onEvent: (ReaderEvent) -> Unit = {},
+    ) {
         composeRule.setContent {
             val listState = rememberLazyListState()
             val pagerState = rememberPagerState(pageCount = { state.pages.size })
@@ -38,7 +41,7 @@ class ReaderContentHostTest {
                 listState = listState,
                 pagerState = pagerState,
                 onBackClick = {},
-                onEvent = onEvent
+                onEvent = onEvent,
             )
         }
         composeRule.waitForIdle()
@@ -97,7 +100,7 @@ class ReaderContentHostTest {
         var event: ReaderEvent? = null
         host(
             ReaderState(pages = listOf("p0"), isOverlayVisible = true, currentReadingMode = ReadingMode.LTR),
-            onEvent = { event = it }
+            onEvent = { event = it },
         )
         composeRule.onNodeWithText("Pages").assertIsDisplayed()
         // BottomBar toggle → CycleReadingMode

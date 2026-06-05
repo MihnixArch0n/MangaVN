@@ -29,8 +29,9 @@ class ReaderPageActionMappingTest {
     fun allValues_mappedExhaustively() {
         // Đảm bảo mọi PageAction đều có mapping (không bỏ sót khi thêm case mới)
         PageAction::class.sealedSubclasses.forEach { subclass ->
-            val instance = subclass.objectInstance
-                ?: error("PageAction có data class? Cần cập nhật test.")
+            val instance =
+                subclass.objectInstance
+                    ?: error("PageAction có data class? Cần cập nhật test.")
             val result = instance.toReaderPageAction()
             assert(result is ReaderPageAction) {
                 "${subclass.simpleName} không map được sang ReaderPageAction"

@@ -1,3 +1,10 @@
+@file:Suppress(
+    "CyclomaticComplexMethod",
+    "LongMethod",
+    "MaxLineLength",
+    "ktlint:standard:function-naming",
+)
+
 package com.example.mybookslibrary.ui.screens.reader
 
 import android.content.Intent
@@ -30,7 +37,7 @@ import timber.log.Timber
 
 private enum class ReaderToastType {
     SaveFailed,
-    ShareFailed
+    ShareFailed,
 }
 
 @Composable
@@ -38,7 +45,7 @@ internal fun ReaderEffectHandler(
     effects: SharedFlow<ReaderUiEffect>,
     pagerState: PagerState,
     currentReadingMode: ReadingMode,
-    onEvent: (ReaderEvent) -> Unit
+    onEvent: (ReaderEvent) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -56,47 +63,49 @@ internal fun ReaderEffectHandler(
 
     LaunchedEffect(errorMessageEvent, errorToastType) {
         if (errorMessageEvent != null) {
-            val toastText = when (errorToastType) {
-                ReaderToastType.SaveFailed -> saveFailedText
-                ReaderToastType.ShareFailed -> shareFailedText
-            }
+            val toastText =
+                when (errorToastType) {
+                    ReaderToastType.SaveFailed -> saveFailedText
+                    ReaderToastType.ShareFailed -> shareFailedText
+                }
             Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
             errorMessageEvent = null
         }
     }
 
     var pendingSaveAsTarget by remember { mutableStateOf<ReaderPageActionTarget?>(null) }
-    val saveAsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("image/*")
-    ) { uri ->
-        val target = pendingSaveAsTarget ?: return@rememberLauncherForActivityResult
-        pendingSaveAsTarget = null
-        if (uri == null) {
-            Timber.d("Reader save-as cancelled: page=%d url=%s", target.pageIndex + 1, target.pageUrl)
-            return@rememberLauncherForActivityResult
-        }
+    val saveAsLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("image/*"),
+        ) { uri ->
+            val target = pendingSaveAsTarget ?: return@rememberLauncherForActivityResult
+            pendingSaveAsTarget = null
+            if (uri == null) {
+                Timber.d("Reader save-as cancelled: page=%d url=%s", target.pageIndex + 1, target.pageUrl)
+                return@rememberLauncherForActivityResult
+            }
 
-        scope.launch(Dispatchers.IO) {
-            try {
-                Timber.d("Reader save-as start: page=%d url=%s uri=%s", target.pageIndex + 1, target.pageUrl, uri)
-                imageSaver.saveToUri(target.pageUrl, uri)
-                withContext(Dispatchers.Main) {
-                    onEvent(ReaderEvent.PageActionCompleted(ReaderPageAction.SaveAs))
-                }
-                Timber.d("Reader save-as end: page=%d url=%s uri=%s", target.pageIndex + 1, target.pageUrl, uri)
-            } catch (e: Exception) {
-                Timber.e(e, "Reader save-as failed: page=%d url=%s uri=%s", target.pageIndex + 1, target.pageUrl, uri)
-                withContext(Dispatchers.Main) {
-                    onEvent(
-                        ReaderEvent.PageActionFailed(
-                            action = ReaderPageAction.SaveAs,
-                            message = e.message ?: fallbackError
+            scope.launch(Dispatchers.IO) {
+                try {
+                    Timber.d("Reader save-as start: page=%d url=%s uri=%s", target.pageIndex + 1, target.pageUrl, uri)
+                    imageSaver.saveToUri(target.pageUrl, uri)
+                    withContext(Dispatchers.Main) {
+                        onEvent(ReaderEvent.PageActionCompleted(ReaderPageAction.SaveAs))
+                    }
+                    Timber.d("Reader save-as end: page=%d url=%s uri=%s", target.pageIndex + 1, target.pageUrl, uri)
+                } catch (e: Exception) {
+                    Timber.e(e, "Reader save-as failed: page=%d url=%s uri=%s", target.pageIndex + 1, target.pageUrl, uri)
+                    withContext(Dispatchers.Main) {
+                        onEvent(
+                            ReaderEvent.PageActionFailed(
+                                action = ReaderPageAction.SaveAs,
+                                message = e.message ?: fallbackError,
+                            ),
                         )
-                    )
+                    }
                 }
             }
         }
-    }
 
     LaunchedEffect(effects, pagerState, currentReadingMode) {
         var navigationJob: Job? = null
@@ -105,15 +114,16 @@ internal fun ReaderEffectHandler(
                 is ReaderUiEffect.NavigateToPage -> {
                     if (currentReadingMode != ReadingMode.VERTICAL) {
                         navigationJob?.cancel()
-                        navigationJob = launch {
-                            Timber.d(
-                                "Reader page navigation start: targetPage=%d mode=%s",
-                                effect.pageIndex,
-                                currentReadingMode
-                            )
-                            pagerState.animateScrollToPage(effect.pageIndex)
-                            Timber.d("Reader page navigation end: targetPage=%d", effect.pageIndex)
-                        }
+                        navigationJob =
+                            launch {
+                                Timber.d(
+                                    "Reader page navigation start: targetPage=%d mode=%s",
+                                    effect.pageIndex,
+                                    currentReadingMode,
+                                )
+                                pagerState.animateScrollToPage(effect.pageIndex)
+                                Timber.d("Reader page navigation end: targetPage=%d", effect.pageIndex)
+                            }
                     }
                 }
                 is ReaderUiEffect.QuickSavePage -> {
@@ -131,8 +141,8 @@ internal fun ReaderEffectHandler(
                                 onEvent(
                                     ReaderEvent.PageActionFailed(
                                         action = ReaderPageAction.QuickSave,
-                                        message = e.message ?: fallbackError
-                                    )
+                                        message = e.message ?: fallbackError,
+                                    ),
                                 )
                             }
                         }
@@ -159,8 +169,8 @@ internal fun ReaderEffectHandler(
                                 onEvent(
                                     ReaderEvent.PageActionFailed(
                                         action = ReaderPageAction.Share,
-                                        message = e.message ?: fallbackError
-                                    )
+                                        message = e.message ?: fallbackError,
+                                    ),
                                 )
                             }
                         }
@@ -168,18 +178,21 @@ internal fun ReaderEffectHandler(
                 }
                 is ReaderUiEffect.ShowPageActionResult -> {
                     if (effect.errorMessage == null) {
-                        val text = when (effect.action) {
-                            ReaderPageAction.QuickSave -> savedToPicturesText
-                            ReaderPageAction.SaveAs -> savedToFileText
-                            ReaderPageAction.Share -> sharingText
-                        }
+                        val text =
+                            when (effect.action) {
+                                ReaderPageAction.QuickSave -> savedToPicturesText
+                                ReaderPageAction.SaveAs -> savedToFileText
+                                ReaderPageAction.Share -> sharingText
+                            }
                         Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
                     } else {
-                        errorToastType = when (effect.action) {
-                            ReaderPageAction.Share -> ReaderToastType.ShareFailed
-                            ReaderPageAction.QuickSave,
-                            ReaderPageAction.SaveAs -> ReaderToastType.SaveFailed
-                        }
+                        errorToastType =
+                            when (effect.action) {
+                                ReaderPageAction.Share -> ReaderToastType.ShareFailed
+                                ReaderPageAction.QuickSave,
+                                ReaderPageAction.SaveAs,
+                                -> ReaderToastType.SaveFailed
+                            }
                         errorMessageEvent = effect.errorMessage
                     }
                 }

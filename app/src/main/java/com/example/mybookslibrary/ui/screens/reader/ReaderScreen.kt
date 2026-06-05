@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mybookslibrary.ui.screens.reader
 
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,7 +27,7 @@ import timber.log.Timber
 fun ReaderScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReaderViewModel = hiltViewModel()
+    viewModel: ReaderViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val onEvent: (ReaderEvent) -> Unit = viewModel::onEvent
@@ -37,30 +39,31 @@ fun ReaderScreen(
     val listState = rememberLazyListState()
     val hasRestoredInitialPage = remember { mutableStateOf(false) }
     val latestActivePageIndex = remember { mutableStateOf<Int?>(null) }
-    val pagerState = rememberPagerState(
-        initialPage = state.lastReadPageIndex,
-        pageCount = { state.pages.size }
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = state.lastReadPageIndex,
+            pageCount = { state.pages.size },
+        )
 
     Timber.d(
         "ReaderScreen composed: chapter=%s mode=%s pages=%d",
         state.chapterTitle,
         state.currentReadingMode,
-        state.pages.size
+        state.pages.size,
     )
 
     ConfigureReaderSystemBars(
         activity = activity,
         backgroundIsLight = backgroundIsLight,
         overlayIsVisible = state.isOverlayVisible,
-        overlayIsLight = readerBarIsLight
+        overlayIsLight = readerBarIsLight,
     )
 
     ReaderEffectHandler(
         effects = viewModel.effects,
         pagerState = pagerState,
         currentReadingMode = state.currentReadingMode,
-        onEvent = onEvent
+        onEvent = onEvent,
     )
 
     ReaderProgressEffects(
@@ -69,7 +72,7 @@ fun ReaderScreen(
         pagerState = pagerState,
         latestActivePageIndex = latestActivePageIndex,
         hasRestoredInitialPage = hasRestoredInitialPage,
-        onEvent = onEvent
+        onEvent = onEvent,
     )
 
     ReaderContentHost(
@@ -79,6 +82,6 @@ fun ReaderScreen(
         readerBarColors = readerBarColors,
         onBackClick = onBackClick,
         onEvent = onEvent,
-        modifier = modifier
+        modifier = modifier,
     )
 }

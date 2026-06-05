@@ -1,7 +1,7 @@
 package com.example.mybookslibrary.ui.screens.reader
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.lifecycle.SavedStateHandle
 import com.example.mybookslibrary.data.download.DownloadedChapterCache
 import com.example.mybookslibrary.data.download.OfflineDownloadStorage
 import com.example.mybookslibrary.data.repository.LibraryRepository
@@ -33,6 +33,7 @@ class ReaderScreenTest {
     val composeRule = createComposeRule()
 
     @Before fun setUp() = FakeImageLoader.install()
+
     @After fun tearDown() = FakeImageLoader.reset()
 
     private val mangaRepository = mockk<MangaRepository>()
@@ -46,18 +47,21 @@ class ReaderScreenTest {
             Result.success(listOf("page-0.jpg", "page-1.jpg"))
         return ReaderViewModel(
             application = RuntimeEnvironment.getApplication(),
-            savedStateHandle = SavedStateHandle(mapOf(
-                "mangaId" to "m1",
-                "chapterId" to chapterId,
-                "chapterTitle" to "Chapter 1",
-                "startPageIndex" to 0
-            )),
+            savedStateHandle =
+                SavedStateHandle(
+                    mapOf(
+                        "mangaId" to "m1",
+                        "chapterId" to chapterId,
+                        "chapterTitle" to "Chapter 1",
+                        "startPageIndex" to 0,
+                    ),
+                ),
             mangaRepository = mangaRepository,
             libraryRepository = libraryRepository,
             downloadedChapterCache = downloadedChapterCache,
             offlineDownloadStorage = offlineDownloadStorage,
             tapZoneEvaluator = TapZoneEvaluator(),
-            ioDispatcher = UnconfinedTestDispatcher()
+            ioDispatcher = UnconfinedTestDispatcher(),
         )
     }
 
@@ -72,21 +76,25 @@ class ReaderScreenTest {
     @Test
     fun readerScreen_emptyChapterId_showsError() {
         coEvery { downloadedChapterCache.isChapterDownloaded(any()) } returns false
-        val vm = ReaderViewModel(
-            application = RuntimeEnvironment.getApplication(),
-            savedStateHandle = SavedStateHandle(mapOf(
-                "mangaId" to "m1",
-                "chapterId" to "",
-                "chapterTitle" to "",
-                "startPageIndex" to 0
-            )),
-            mangaRepository = mangaRepository,
-            libraryRepository = libraryRepository,
-            downloadedChapterCache = downloadedChapterCache,
-            offlineDownloadStorage = offlineDownloadStorage,
-            tapZoneEvaluator = TapZoneEvaluator(),
-            ioDispatcher = UnconfinedTestDispatcher()
-        )
+        val vm =
+            ReaderViewModel(
+                application = RuntimeEnvironment.getApplication(),
+                savedStateHandle =
+                    SavedStateHandle(
+                        mapOf(
+                            "mangaId" to "m1",
+                            "chapterId" to "",
+                            "chapterTitle" to "",
+                            "startPageIndex" to 0,
+                        ),
+                    ),
+                mangaRepository = mangaRepository,
+                libraryRepository = libraryRepository,
+                downloadedChapterCache = downloadedChapterCache,
+                offlineDownloadStorage = offlineDownloadStorage,
+                tapZoneEvaluator = TapZoneEvaluator(),
+                ioDispatcher = UnconfinedTestDispatcher(),
+            )
 
         composeRule.setContent {
             ReaderScreen(onBackClick = {}, viewModel = vm)
@@ -100,19 +108,25 @@ class ReaderScreenTest {
         coEvery { mangaRepository.getChapterPages("c2") } returns
             Result.failure(IllegalStateException("no network"))
 
-        val vm = ReaderViewModel(
-            application = RuntimeEnvironment.getApplication(),
-            savedStateHandle = SavedStateHandle(mapOf(
-                "mangaId" to "m1", "chapterId" to "c2",
-                "chapterTitle" to "Ch2", "startPageIndex" to 0
-            )),
-            mangaRepository = mangaRepository,
-            libraryRepository = libraryRepository,
-            downloadedChapterCache = downloadedChapterCache,
-            offlineDownloadStorage = offlineDownloadStorage,
-            tapZoneEvaluator = TapZoneEvaluator(),
-            ioDispatcher = UnconfinedTestDispatcher()
-        )
+        val vm =
+            ReaderViewModel(
+                application = RuntimeEnvironment.getApplication(),
+                savedStateHandle =
+                    SavedStateHandle(
+                        mapOf(
+                            "mangaId" to "m1",
+                            "chapterId" to "c2",
+                            "chapterTitle" to "Ch2",
+                            "startPageIndex" to 0,
+                        ),
+                    ),
+                mangaRepository = mangaRepository,
+                libraryRepository = libraryRepository,
+                downloadedChapterCache = downloadedChapterCache,
+                offlineDownloadStorage = offlineDownloadStorage,
+                tapZoneEvaluator = TapZoneEvaluator(),
+                ioDispatcher = UnconfinedTestDispatcher(),
+            )
         composeRule.setContent {
             ReaderScreen(onBackClick = {}, viewModel = vm)
         }

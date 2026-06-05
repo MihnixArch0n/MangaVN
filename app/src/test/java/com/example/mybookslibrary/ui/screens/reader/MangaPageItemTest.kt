@@ -2,9 +2,9 @@ package com.example.mybookslibrary.ui.screens.reader
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import org.junit.After
@@ -23,6 +23,7 @@ class MangaPageItemTest {
     val composeRule = createComposeRule()
 
     @Before fun setUp() = FakeImageLoader.install()
+
     @After fun tearDown() = FakeImageLoader.reset()
 
     @Test
@@ -31,7 +32,7 @@ class MangaPageItemTest {
             MangaPageItem(
                 imageUrl = "https://example.com/page-1.jpg",
                 index = 0,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
         composeRule.waitForIdle()
@@ -45,7 +46,7 @@ class MangaPageItemTest {
             MangaPageItem(
                 imageUrl = "https://example.com/page-2.jpg",
                 index = 1,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
         composeRule.waitForIdle()
@@ -58,7 +59,7 @@ class MangaPageItemTest {
             MangaPageItem(
                 imageUrl = "https://example.com/p.jpg",
                 index = 3,
-                onLongPress = null
+                onLongPress = null,
             )
         }
         composeRule.waitForIdle()

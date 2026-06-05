@@ -7,7 +7,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class HorizontalReaderNavigationTest {
-
     @Test
     fun `LTR edge taps map to previous and next pages`() {
         assertEquals(ReaderTapAction.PREVIOUS_PAGE, evaluateHorizontalTap(100f, 1000f, ReadingMode.LTR))
@@ -64,7 +63,7 @@ class HorizontalReaderNavigationTest {
     fun `animation uses fast duration for queued adjacent page`() {
         assertEquals(
             FAST_PAGE_ANIMATION_DURATION_MILLIS,
-            horizontalPageAnimationDurationMillis(currentPage = 2, nextPage = 3, isQueuedNavigation = true)
+            horizontalPageAnimationDurationMillis(currentPage = 2, nextPage = 3, isQueuedNavigation = true),
         )
     }
 }

@@ -1,8 +1,10 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.example.mybookslibrary.ui.screens.reader.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,12 +25,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.mybookslibrary.R
-import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
+import com.example.mybookslibrary.ui.util.appString
 import timber.log.Timber
 
 /**
@@ -40,8 +42,10 @@ import timber.log.Timber
 sealed interface PageAction {
     /** Request an immediate gallery save through MediaStore. */
     data object QuickSave : PageAction
+
     /** Request a Storage Access Framework destination picker. */
     data object SaveAs : PageAction
+
     /** Request a system share action for the current page image. */
     data object Share : PageAction
 }
@@ -72,9 +76,9 @@ fun PageActionBottomSheet(
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .navigationBarsPadding(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .navigationBarsPadding(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             ActionItem(
@@ -114,8 +118,8 @@ private fun PageActionBottomSheetPreview() {
     MyBooksLibraryTheme {
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
+                    .fillMaxSize()
+                    .background(Color.Black)
         ) {
             PageActionBottomSheet(
                 onDismiss = { },
