@@ -3,12 +3,11 @@
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
-import com.example.mybookslibrary.data.download.DownloadedChapterCache
-import com.example.mybookslibrary.data.download.OfflineDownloadStorage
-import com.example.mybookslibrary.data.repository.LibraryRepository
-import com.example.mybookslibrary.data.repository.MangaRepository
+import com.example.mybookslibrary.domain.usecase.LoadReaderPagesUseCase
+import com.example.mybookslibrary.domain.usecase.SyncReadingProgressUseCase
 import com.example.mybookslibrary.domain.usecase.TapZoneEvaluator
 import com.example.mybookslibrary.ui.util.FakeImageLoader
+import com.example.mybookslibrary.ui.viewmodel.ReaderPageFileBuilder
 import com.example.mybookslibrary.ui.viewmodel.ReaderViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -40,14 +39,11 @@ class ReaderScreenTest {
 
     @After fun tearDown() = FakeImageLoader.reset()
 
-    private val mangaRepository = mockk<MangaRepository>()
-    private val libraryRepository = mockk<LibraryRepository>(relaxed = true)
-    private val downloadedChapterCache = mockk<DownloadedChapterCache>()
-    private val offlineDownloadStorage = mockk<OfflineDownloadStorage>()
+    private val loadReaderPagesUseCase = mockk<LoadReaderPagesUseCase>()
+    private val syncReadingProgressUseCase = mockk<SyncReadingProgressUseCase>(relaxed = true)
 
     private fun viewModel(chapterId: String = "c1"): ReaderViewModel {
-        coEvery { downloadedChapterCache.isChapterDownloaded(chapterId) } returns false
-        coEvery { mangaRepository.getChapterPages(chapterId) } returns
+        coEvery { loadReaderPagesUseCase("m1", chapterId) } returns
             Result.success(listOf("page-0.jpg", "page-1.jpg"))
         return ReaderViewModel(
             application = RuntimeEnvironment.getApplication(),
@@ -60,11 +56,10 @@ class ReaderScreenTest {
                         "startPageIndex" to 0,
                     ),
                 ),
-            mangaRepository = mangaRepository,
-            libraryRepository = libraryRepository,
-            downloadedChapterCache = downloadedChapterCache,
-            offlineDownloadStorage = offlineDownloadStorage,
+            loadReaderPagesUseCase = loadReaderPagesUseCase,
+            syncReadingProgressUseCase = syncReadingProgressUseCase,
             tapZoneEvaluator = TapZoneEvaluator(),
+            pageFileBuilder = ReaderPageFileBuilder(),
             ioDispatcher = UnconfinedTestDispatcher(),
         )
     }
@@ -79,7 +74,6 @@ class ReaderScreenTest {
 
     @Test
     fun readerScreen_emptyChapterId_showsError() {
-        coEvery { downloadedChapterCache.isChapterDownloaded(any()) } returns false
         val vm =
             ReaderViewModel(
                 application = RuntimeEnvironment.getApplication(),
@@ -92,11 +86,10 @@ class ReaderScreenTest {
                             "startPageIndex" to 0,
                         ),
                     ),
-                mangaRepository = mangaRepository,
-                libraryRepository = libraryRepository,
-                downloadedChapterCache = downloadedChapterCache,
-                offlineDownloadStorage = offlineDownloadStorage,
+                loadReaderPagesUseCase = loadReaderPagesUseCase,
+                syncReadingProgressUseCase = syncReadingProgressUseCase,
                 tapZoneEvaluator = TapZoneEvaluator(),
+                pageFileBuilder = ReaderPageFileBuilder(),
                 ioDispatcher = UnconfinedTestDispatcher(),
             )
 
@@ -108,8 +101,7 @@ class ReaderScreenTest {
 
     @Test
     fun readerScreen_networkError_doesNotCrash() {
-        coEvery { downloadedChapterCache.isChapterDownloaded("c2") } returns false
-        coEvery { mangaRepository.getChapterPages("c2") } returns
+        coEvery { loadReaderPagesUseCase("m1", "c2") } returns
             Result.failure(IllegalStateException("no network"))
 
         val vm =
@@ -124,11 +116,10 @@ class ReaderScreenTest {
                             "startPageIndex" to 0,
                         ),
                     ),
-                mangaRepository = mangaRepository,
-                libraryRepository = libraryRepository,
-                downloadedChapterCache = downloadedChapterCache,
-                offlineDownloadStorage = offlineDownloadStorage,
+                loadReaderPagesUseCase = loadReaderPagesUseCase,
+                syncReadingProgressUseCase = syncReadingProgressUseCase,
                 tapZoneEvaluator = TapZoneEvaluator(),
+                pageFileBuilder = ReaderPageFileBuilder(),
                 ioDispatcher = UnconfinedTestDispatcher(),
             )
         composeRule.setContent {

@@ -1,11 +1,9 @@
 package com.example.mybookslibrary.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
-import com.example.mybookslibrary.data.download.DownloadedChapterCache
-import com.example.mybookslibrary.data.download.OfflineDownloadStorage
-import com.example.mybookslibrary.data.repository.LibraryRepository
-import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.ReadingMode
+import com.example.mybookslibrary.domain.usecase.LoadReaderPagesUseCase
+import com.example.mybookslibrary.domain.usecase.SyncReadingProgressUseCase
 import com.example.mybookslibrary.domain.usecase.TapZoneEvaluator
 import com.example.mybookslibrary.test.MainDispatcherRule
 import io.mockk.coEvery
@@ -24,11 +22,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import java.io.File
 
 /**
- * Phủ các nhánh của [ReaderViewModel] mà test gốc bỏ qua: loadChapterPages (offline/network/
- * empty/fail/catch/missing), cycle/jump page, sync tiến độ Room, và page-action effects.
+ * Phủ các nhánh của [ReaderViewModel] mà test gốc bỏ qua: loadChapterPages
+ * (empty/fail/missing), cycle/jump page, sync tiến độ Room, và page-action effects.
  */
 @RunWith(RobolectricTestRunner::class)
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -36,10 +33,8 @@ class ReaderViewModelCoverageTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val mangaRepository = mockk<MangaRepository>()
-    private val libraryRepository = mockk<LibraryRepository>(relaxed = true)
-    private val downloadedChapterCache = mockk<DownloadedChapterCache>()
-    private val offlineDownloadStorage = mockk<OfflineDownloadStorage>()
+    private val loadReaderPagesUseCase = mockk<LoadReaderPagesUseCase>()
+    private val syncReadingProgressUseCase = mockk<SyncReadingProgressUseCase>(relaxed = true)
 
     private fun build(
         chapterId: String = CHAPTER_ID,
@@ -56,11 +51,10 @@ class ReaderViewModelCoverageTest {
         return ReaderViewModel(
             application = RuntimeEnvironment.getApplication(),
             savedStateHandle = SavedStateHandle(args),
-            mangaRepository = mangaRepository,
-            libraryRepository = libraryRepository,
-            downloadedChapterCache = downloadedChapterCache,
-            offlineDownloadStorage = offlineDownloadStorage,
+            loadReaderPagesUseCase = loadReaderPagesUseCase,
+            syncReadingProgressUseCase = syncReadingProgressUseCase,
             tapZoneEvaluator = TapZoneEvaluator(),
+            pageFileBuilder = ReaderPageFileBuilder(),
             ioDispatcher = mainDispatcherRule.dispatcher,
         )
     }
@@ -82,28 +76,9 @@ class ReaderViewModelCoverageTest {
         }
 
     @Test
-    fun load_offlineCoTrang_dungLocalUris() =
-        runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns true
-            coEvery { offlineDownloadStorage.getChapterPages(MANGA_ID, CHAPTER_ID) } returns
-                listOf(File("/data/p0.jpg"), File("/data/p1.jpg"))
-
-            val vm = build()
-            advanceUntilIdle()
-
-            assertEquals(2, vm.state.value.pages.size)
-            assertTrue(
-                vm.state.value.pages
-                    .first()
-                    .startsWith("file:"),
-            )
-        }
-
-    @Test
     fun load_networkRong_baoLoiLoadPages() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns false
-            coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns Result.success(emptyList())
+            coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns Result.success(emptyList())
 
             val vm = build()
             advanceUntilIdle()
@@ -117,8 +92,7 @@ class ReaderViewModelCoverageTest {
     @Test
     fun load_networkLoiCoMessage_dungMessage() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns false
-            coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns
+            coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns
                 Result.failure(IllegalStateException("mạng hỏng"))
 
             val vm = build()
@@ -128,35 +102,9 @@ class ReaderViewModelCoverageTest {
         }
 
     @Test
-    fun load_cacheNem_catchDatError() =
-        runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } throws RuntimeException("cache lỗi")
-
-            val vm = build()
-            advanceUntilIdle()
-
-            assertEquals("cache lỗi", vm.state.value.error)
-        }
-
-    @Test
-    fun load_offlineRong_fallbackNetwork() =
-        runTest(mainDispatcherRule.dispatcher.scheduler) {
-            // Đã đánh dấu downloaded nhưng không còn file local -> fallback At-Home network
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns true
-            coEvery { offlineDownloadStorage.getChapterPages(MANGA_ID, CHAPTER_ID) } returns emptyList()
-            coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns Result.success(listOf("net-0", "net-1"))
-
-            val vm = build()
-            advanceUntilIdle()
-
-            assertEquals(listOf("net-0", "net-1"), vm.state.value.pages)
-        }
-
-    @Test
     fun load_networkLoiNullMessage_dungStringRes() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns false
-            coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns Result.failure(RuntimeException())
+            coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns Result.failure(RuntimeException())
 
             val vm = build()
             advanceUntilIdle()
@@ -169,8 +117,7 @@ class ReaderViewModelCoverageTest {
 
     // ---- helper: build VM đã tải 8 trang network ----
     private fun loadedVm(startPageIndex: Int = 0): ReaderViewModel {
-        coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns false
-        coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns
+        coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns
             Result.success(List(8) { "page-$it" })
         return build(startPageIndex = startPageIndex)
     }
@@ -241,7 +188,7 @@ class ReaderViewModelCoverageTest {
 
             assertEquals(4, vm.state.value.lastReadPageIndex)
             coVerify {
-                libraryRepository.updateReadingProgress(
+                syncReadingProgressUseCase(
                     mangaId = MANGA_ID,
                     chapterId = CHAPTER_ID,
                     pageIndex = 4,
@@ -261,7 +208,7 @@ class ReaderViewModelCoverageTest {
 
             assertEquals(6, vm.state.value.lastReadPageIndex)
             coVerify {
-                libraryRepository.updateReadingProgress(
+                syncReadingProgressUseCase(
                     mangaId = MANGA_ID,
                     chapterId = CHAPTER_ID,
                     pageIndex = 6,
@@ -277,11 +224,7 @@ class ReaderViewModelCoverageTest {
             advanceUntilIdle()
 
             vm.onEvent(ReaderEvent.PageLongPressed("https://x/p1.jpg", 0))
-            assertEquals(
-                "https://x/p1.jpg",
-                vm.state.value.selectedPageActionTarget
-                    ?.pageUrl,
-            )
+            assertEquals("https://x/p1.jpg", vm.state.value.selectedPageActionTarget?.pageUrl)
 
             vm.onEvent(ReaderEvent.DismissPageActions)
             assertNull(vm.state.value.selectedPageActionTarget)
@@ -345,8 +288,7 @@ class ReaderViewModelCoverageTest {
     fun navigateToPage_emptyPages_noop() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             // pages rỗng -> navigateToPage guard `pages.isEmpty()` -> return
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns false
-            coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns Result.success(emptyList())
+            coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns Result.success(emptyList())
             val vm = build()
             advanceUntilIdle()
 
@@ -368,7 +310,7 @@ class ReaderViewModelCoverageTest {
 
             assertEquals(3, vm.state.value.lastReadPageIndex)
             // force=true → sync dù same page
-            coVerify { libraryRepository.updateReadingProgress(MANGA_ID, CHAPTER_ID, 3, 8) }
+            coVerify { syncReadingProgressUseCase(MANGA_ID, CHAPTER_ID, 3, 8) }
         }
 
     @Test
@@ -425,7 +367,7 @@ class ReaderViewModelCoverageTest {
 
             // Page 3 được sync ít nhất 2 lần (visible + flush force)
             coVerify(atLeast = 2) {
-                libraryRepository.updateReadingProgress(MANGA_ID, CHAPTER_ID, 3, 8)
+                syncReadingProgressUseCase(MANGA_ID, CHAPTER_ID, 3, 8)
             }
         }
 
@@ -437,11 +379,10 @@ class ReaderViewModelCoverageTest {
                 ReaderViewModel(
                     application = RuntimeEnvironment.getApplication(),
                     savedStateHandle = SavedStateHandle(emptyMap()),
-                    mangaRepository = mangaRepository,
-                    libraryRepository = libraryRepository,
-                    downloadedChapterCache = downloadedChapterCache,
-                    offlineDownloadStorage = offlineDownloadStorage,
+                    loadReaderPagesUseCase = loadReaderPagesUseCase,
+                    syncReadingProgressUseCase = syncReadingProgressUseCase,
                     tapZoneEvaluator = TapZoneEvaluator(),
+                    pageFileBuilder = ReaderPageFileBuilder(),
                     ioDispatcher = mainDispatcherRule.dispatcher,
                 )
             advanceUntilIdle()
@@ -451,15 +392,15 @@ class ReaderViewModelCoverageTest {
         }
 
     @Test
-    fun load_cacheNemNullMessage_dungUnexpected() =
+    fun load_failureNullMessage_dungLoadPagesFallback() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } throws RuntimeException()
+            coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns Result.failure(RuntimeException())
 
             val vm = build()
             advanceUntilIdle()
 
             assertEquals(
-                RuntimeEnvironment.getApplication().getString(com.example.mybookslibrary.R.string.error_unexpected),
+                RuntimeEnvironment.getApplication().getString(com.example.mybookslibrary.R.string.error_load_pages),
                 vm.state.value.error,
             )
         }
@@ -479,8 +420,7 @@ class ReaderViewModelCoverageTest {
     @Test
     fun emptyPages_tapVaJump_khongDoiTrang() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns false
-            coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns Result.success(emptyList())
+            coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns Result.success(emptyList())
             val vm = build()
             advanceUntilIdle()
 
@@ -511,7 +451,7 @@ class ReaderViewModelCoverageTest {
             advanceUntilIdle()
 
             coVerify(exactly = 0) {
-                libraryRepository.updateReadingProgress(any(), any(), any(), any())
+                syncReadingProgressUseCase(any(), any(), any(), any())
             }
         }
 
@@ -544,8 +484,7 @@ class ReaderViewModelCoverageTest {
     @Test
     fun buildPageFile_titleRong_slugChapter() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { downloadedChapterCache.isChapterDownloaded(CHAPTER_ID) } returns false
-            coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns Result.success(List(8) { "page-$it" })
+            coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns Result.success(List(8) { "page-$it" })
             val vm = build(chapterTitle = "")
             advanceUntilIdle()
             val effect = async { vm.effects.first() as ReaderUiEffect.QuickSavePage }
@@ -573,7 +512,7 @@ class ReaderViewModelCoverageTest {
 
             // index 4 sync 1 lần (lần 2 quay lại 4 vẫn sync vì last=2; nhưng index 2 cũng sync)
             coVerify(atLeast = 1) {
-                libraryRepository.updateReadingProgress(MANGA_ID, CHAPTER_ID, 4, 8)
+                syncReadingProgressUseCase(MANGA_ID, CHAPTER_ID, 4, 8)
             }
         }
 
@@ -591,7 +530,7 @@ class ReaderViewModelCoverageTest {
             advanceUntilIdle()
 
             coVerify(exactly = 1) {
-                libraryRepository.updateReadingProgress(MANGA_ID, CHAPTER_ID, 2, 8)
+                syncReadingProgressUseCase(MANGA_ID, CHAPTER_ID, 2, 8)
             }
         }
 
