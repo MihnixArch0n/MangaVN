@@ -1,7 +1,5 @@
-# CI — unit test (matrix 3 OS) + static analysis (chỉ ubuntu) trên mỗi push vào main và mỗi PR.
-# Static analysis (lint/detekt/ktlint) phân tích TĨNH → kết quả không phụ thuộc OS, chạy 1 lần
-# trên ubuntu là đủ. Unit test chạy CẢ 3 OS để bắt bug runtime phụ thuộc nền tảng
-# (path separator, line-ending, encoding, locale...).
+# CI — static analysis, unit test, emulator test chỉ chạy trên ubuntu-latest
+# trên mỗi push vào main và mỗi PR.
 # AuthSecrets.kt bị .gitignore (chứa secret Google Sign-In) nên CI tự ghi file stub
 # với giá trị test để compile được — KHÔNG dùng cho production.
 name: CI
@@ -10,6 +8,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 # Hủy run cũ khi có commit mới trên CÙNG PR để tiết kiệm runner.
 # KHÔNG hủy run trên push main → mỗi commit main giữ được check đầy đủ
@@ -19,8 +18,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Phân tích tĩnh chỉ chạy 1 lần trên ubuntu — kết quả giống nhau mọi OS,
-  # chạy lại trên windows/macOS chỉ tốn thời gian mà không thêm tín hiệu.
+  # Phân tích tĩnh chỉ chạy 1 lần trên ubuntu.
   static-analysis:
     runs-on: ubuntu-latest
     defaults:
@@ -28,17 +26,6 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-
-      # Windows: loại trừ Defender real-time scan cho thư mục build + Gradle home.
-      # Defender quét hàng nghìn file Gradle/KSP sinh ra → chậm I/O; exclusion tăng tốc đáng kể.
-      # Chỉ exclude 2 path (không tắt toàn bộ AV) + continue-on-error để không chặn CI nếu thiếu quyền.
-      - name: Loại trừ Defender cho thư mục build (Windows)
-        if: runner.os == 'Windows'
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          Add-MpPreference -ExclusionPath "${{ github.workspace }}"
-          Add-MpPreference -ExclusionPath "$env:USERPROFILE\.gradle"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -66,30 +53,12 @@ jobs:
         run: ./gradlew lintDebug detekt ktlintCheck --console=plain
 
   build-test:
-    strategy:
-      # Không hủy các OS khác khi một OS fail → thấy kết quả đầy đủ.
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-2025-vs2026, macos-latest]
-    runs-on: ${{ matrix.os }}
-    # Dùng bash trên cả 3 OS để heredoc (stub) và ./gradlew chạy đồng nhất
-    # (windows runner mặc định pwsh — có sẵn git bash).
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-
-      # Windows: loại trừ Defender real-time scan cho thư mục build + Gradle home.
-      # Defender quét hàng nghìn file Gradle/KSP sinh ra → chậm I/O; exclusion tăng tốc đáng kể.
-      # Chỉ exclude 2 path (không tắt toàn bộ AV) + continue-on-error để không chặn CI nếu thiếu quyền.
-      - name: Loại trừ Defender cho thư mục build (Windows)
-        if: runner.os == 'Windows'
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          Add-MpPreference -ExclusionPath "${{ github.workspace }}"
-          Add-MpPreference -ExclusionPath "$env:USERPROFILE\.gradle"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -117,7 +86,6 @@ jobs:
         run: ./gradlew :app:testDebugUnitTest --console=plain
 
       - name: Upload unit test exec (ubuntu — dùng bởi emulator-test cho combined report)
-        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v7
         with:
           name: unit-exec
@@ -128,8 +96,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          # Tên artifact phải khác nhau theo OS — upload-artifact@v4 cấm trùng tên trong cùng run.
-          name: test-report-${{ matrix.os }}
+          name: test-report
           path: app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: ignore
 
