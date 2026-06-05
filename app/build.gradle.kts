@@ -142,6 +142,18 @@ fun jacocoClassTree() =
 // Trỏ đúng file .exec (không quét cả build/) để tránh implicit-dependency với task ktlint.
 fun jacocoExec() = files(layout.buildDirectory.file("jacoco/testDebugUnitTest.exec"))
 
+// Gộp .exec (unit test) + .ec (instrumented/emulator test) để đo coverage thật sau khi
+// cả hai loại test đã chạy. Dùng bởi CI job emulator-test sau khi connected test xong.
+fun jacocoExecCombined() =
+    fileTree(layout.buildDirectory.get()) {
+        include(
+            "jacoco/testDebugUnitTest.exec", // unit test (JVM)
+            "outputs/code_coverage/**/*.ec", // instrumented test (emulator, AGP path)
+            "**/*.ec", // fallback nếu AGP thay đổi path
+        )
+        exclude("tmp/**", "generated/**")
+    }
+
 tasks.register<JacocoReport>("jacocoTestReport") {
     dependsOn("testDebugUnitTest")
     reports {
@@ -151,6 +163,18 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     classDirectories.setFrom(jacocoClassTree())
     sourceDirectories.setFrom(files("src/main/java"))
     executionData.setFrom(jacocoExec())
+}
+
+// Report gộp unit test + instrumented test: dùng sau khi cả hai đã chạy trên CI.
+// Không dependsOn task test để CI tự quyết định thứ tự chạy.
+tasks.register<JacocoReport>("jacocoCombinedReport") {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    classDirectories.setFrom(jacocoClassTree())
+    sourceDirectories.setFrom(files("src/main/java"))
+    executionData.setFrom(jacocoExecCombined())
 }
 
 // Ngưỡng coverage RATCHET: sàn = mức hiện tại (~10%), chỉ chặn khi coverage TỤT. Siết dần đợt sau.

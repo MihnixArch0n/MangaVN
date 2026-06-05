@@ -28,6 +28,12 @@
             </intent-filter>
         </activity>
 
+        <!--
+            WorkManager library (AAR) tự merge WorkManagerInitializer vào manifest.
+            MyBooksLibraryApp dùng Configuration.Provider (manual init) → phải xóa
+            WorkManagerInitializer để tránh double-init và lint error RemoveWorkManagerInitializer.
+            Đây là pattern chính thức: https://developer.android.com/topic/libraries/architecture/workmanager/advanced/custom-configuration
+        -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"

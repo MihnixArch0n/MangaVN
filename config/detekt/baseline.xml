@@ -234,7 +234,7 @@
     <ID>ReturnCount:ReaderViewModel.kt$ReaderViewModel$private fun navigateToPage(action: ReaderTapAction)</ID>
     <ID>ReturnCount:TapZoneEvaluator.kt$TapZoneEvaluator$operator fun invoke( x: Float, y: Float, screenWidth: Float, screenHeight: Float, mode: ReadingMode ): ReaderTapAction</ID>
     <ID>SwallowedException:AppDatabaseDestructiveMigrationTest.kt$AppDatabaseDestructiveMigrationTest$e: Exception</ID>
-    <ID>ThrowsCount:ImageSaver.kt$ImageSaver$@Suppress("NewApi") private fun saveViaMediaStore( bytes: ByteArray, filename: String, mimeType: String ): Uri</ID>
+    <ID>ThrowsCount:ImageSaver.kt$ImageSaver$@Suppress("NewApi") private fun saveViaMediaStore( bytes: ByteArray, filename: String, mimeType: String, ): Uri</ID>
     <ID>ThrowsCount:ImageSaver.kt$ImageSaver$private fun downloadImage(url: String): DownloadedImage</ID>
     <ID>TooGenericExceptionCaught:ChapterDownloadWorker.kt$ChapterDownloadWorker$e: Exception</ID>
     <ID>TooGenericExceptionCaught:ChapterDownloadWorker.kt$ChapterDownloadWorker$t: Throwable</ID>

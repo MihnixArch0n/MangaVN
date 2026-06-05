@@ -3,7 +3,7 @@ package com.example.mybookslibrary.ui.screens.reader
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import org.junit.After
@@ -74,7 +74,6 @@ class VerticalReaderContentTest {
             )
         }
         composeRule.waitForIdle()
-        // onEvent callback khởi tạo đúng
-        assert(received == null || received is ReaderEvent)
+        // Test chỉ verify không crash — received luôn null vì chưa trigger event
     }
 }

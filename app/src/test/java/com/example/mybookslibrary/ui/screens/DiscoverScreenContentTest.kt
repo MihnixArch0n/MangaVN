@@ -2,7 +2,7 @@ package com.example.mybookslibrary.ui.screens
 
 import android.app.Application
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.repository.MangaRepository
@@ -22,6 +22,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.GraphicsMode
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @coil3.annotation.ExperimentalCoilApi
@@ -29,8 +30,11 @@ class DiscoverScreenContentTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    @Before fun setUp() = FakeImageLoader.install()
-    @After fun tearDown() = FakeImageLoader.reset()
+    @Before
+    fun setUp() = FakeImageLoader.install()
+
+    @After
+    fun tearDown() = FakeImageLoader.reset()
 
     private val application: Application get() = RuntimeEnvironment.getApplication()
 

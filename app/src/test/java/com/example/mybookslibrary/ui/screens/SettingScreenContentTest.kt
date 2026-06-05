@@ -1,7 +1,7 @@
 package com.example.mybookslibrary.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import coil3.ImageLoader
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
@@ -20,9 +20,12 @@ import org.robolectric.annotation.GraphicsMode
  * UI test cho [SettingScreenContent] qua Robolectric + Compose (JVM, không cần Hilt):
  * kiểm tra các row setting hiển thị đúng dựa trên trạng thái ViewModel.
  */
+@OptIn(
+    kotlinx.coroutines.ExperimentalCoroutinesApi::class,
+    coil3.annotation.ExperimentalCoilApi::class,
+)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-@OptIn(coil3.annotation.ExperimentalCoilApi::class)
 class SettingScreenContentTest {
     @get:Rule
     val composeRule = createComposeRule()

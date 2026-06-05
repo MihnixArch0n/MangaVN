@@ -48,11 +48,12 @@ class ImageSaver(private val context: Context) {
             val safeName = displayName.replace(Regex("[^a-zA-Z0-9_\\-]"), "_")
             val filename = "$safeName.${image.format.extension}"
 
-            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                saveViaMediaStore(image.bytes, filename, image.format.mimeType)
-            } else {
-                saveToAppExternalPictures(image.bytes, filename, image.format.mimeType)
-            }
+            val uri =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    saveViaMediaStore(image.bytes, filename, image.format.mimeType)
+                } else {
+                    saveToAppExternalPictures(image.bytes, filename, image.format.mimeType)
+                }
 
             Timber.d("quickSave end: displayName=%s, uri=%s", displayName, uri)
             uri
@@ -69,7 +70,10 @@ class ImageSaver(private val context: Context) {
      * @param uri Destination document [Uri] returned by the Storage Access Framework.
      * @throws Exception when downloading or writing to [uri] fails.
      */
-    fun saveToUri(imageUrl: String, uri: Uri) {
+    fun saveToUri(
+        imageUrl: String,
+        uri: Uri,
+    ) {
         Timber.d("saveToUri start: uri=%s, imageUrl=%s", uri, imageUrl)
         try {
             val bytes = downloadImage(imageUrl).bytes
@@ -94,7 +98,10 @@ class ImageSaver(private val context: Context) {
      * @return An `ACTION_SEND` [Intent] with read permission granted for the file.
      * @throws Exception when downloading, writing, or URI creation fails.
      */
-    fun shareImage(imageUrl: String, displayName: String): Intent {
+    fun shareImage(
+        imageUrl: String,
+        displayName: String,
+    ): Intent {
         Timber.d("shareImage start: displayName=%s, imageUrl=%s", displayName, imageUrl)
         try {
             val image = downloadImage(imageUrl)
@@ -105,17 +112,19 @@ class ImageSaver(private val context: Context) {
             val file = File(shareDir, filename)
             file.writeBytes(image.bytes)
 
-            val contentUri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.provider",
-                file
-            )
+            val contentUri =
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    file,
+                )
 
-            val intent = Intent(Intent.ACTION_SEND).apply {
-                type = image.format.mimeType
-                putExtra(Intent.EXTRA_STREAM, contentUri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+            val intent =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = image.format.mimeType
+                    putExtra(Intent.EXTRA_STREAM, contentUri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
 
             Timber.d("shareImage end: displayName=%s, contentUri=%s", displayName, contentUri)
             return intent
@@ -135,13 +144,16 @@ class ImageSaver(private val context: Context) {
             if (!response.isSuccessful) {
                 throw ImageSaveException("Download failed (HTTP ${response.code}): $url")
             }
-            val responseBody = response.body ?: throw ImageSaveException("Download response body was empty: $url")
+            @Suppress("USELESS_ELVIS") // OkHttp body là nullable ở runtime dù annotation nói khác
+            val responseBody =
+                response.body ?: throw ImageSaveException("Download response body was empty: $url")
             val bytes = responseBody.bytes()
             if (bytes.isEmpty()) {
                 throw ImageSaveException("Downloaded content was empty: $url")
             }
-            val format = detectFormat(bytes)
-                ?: throw ImageSaveException("Downloaded content is not a supported image: $url")
+            val format =
+                detectFormat(bytes)
+                    ?: throw ImageSaveException("Downloaded content is not a supported image: $url")
             return DownloadedImage(bytes, format)
         }
     }
@@ -154,18 +166,26 @@ class ImageSaver(private val context: Context) {
 
         return when {
             // PNG: 89 50 4E 47
-            data[0] == 0x89.toByte() && data[1] == 0x50.toByte() &&
-                data[2] == 0x4E.toByte() && data[3] == 0x47.toByte() -> ImageFormat.PNG
+            data[0] == 0x89.toByte() &&
+                data[1] == 0x50.toByte() &&
+                data[2] == 0x4E.toByte() &&
+                data[3] == 0x47.toByte() -> ImageFormat.PNG
             // WebP: RIFF....WEBP
             data.size >= 12 &&
-                data[0] == 0x52.toByte() && data[1] == 0x49.toByte() &&
-                data[2] == 0x46.toByte() && data[3] == 0x46.toByte() &&
-                data[8] == 0x57.toByte() && data[9] == 0x45.toByte() &&
-                data[10] == 0x42.toByte() && data[11] == 0x50.toByte() -> ImageFormat.WEBP
+                data[0] == 0x52.toByte() &&
+                data[1] == 0x49.toByte() &&
+                data[2] == 0x46.toByte() &&
+                data[3] == 0x46.toByte() &&
+                data[8] == 0x57.toByte() &&
+                data[9] == 0x45.toByte() &&
+                data[10] == 0x42.toByte() &&
+                data[11] == 0x50.toByte() -> ImageFormat.WEBP
             // JPEG: FF D8 FF
-            data[0] == 0xFF.toByte() && data[1] == 0xD8.toByte() -> ImageFormat.JPEG
+            data[0] == 0xFF.toByte() &&
+                data[1] == 0xD8.toByte() -> ImageFormat.JPEG
             // GIF: 47 49 46
-            data[0] == 0x47.toByte() && data[1] == 0x49.toByte() &&
+            data[0] == 0x47.toByte() &&
+                data[1] == 0x49.toByte() &&
                 data[2] == 0x46.toByte() -> ImageFormat.GIF
             else -> null
         }
@@ -176,40 +196,22 @@ class ImageSaver(private val context: Context) {
     private fun saveViaMediaStore(
         bytes: ByteArray,
         filename: String,
-        mimeType: String
+        mimeType: String,
     ): Uri {
         var uri: Uri? = null
         try {
-            val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(
-                        MediaStore.MediaColumns.RELATIVE_PATH,
-                        "${Environment.DIRECTORY_PICTURES}/MyBooksLibrary"
-                    )
-                    put(MediaStore.MediaColumns.IS_PENDING, 1)
-                }
-            }
-
-            val collection = MediaStore.Images.Media.getContentUri(
-                MediaStore.VOLUME_EXTERNAL_PRIMARY
-            )
-
-            uri = context.contentResolver.insert(collection, values)
-                ?: throw ImageSaveException("MediaStore insert returned null")
-
-            context.contentResolver.openOutputStream(uri)?.use { out ->
-                out.write(bytes)
-            } ?: throw ImageSaveException("Cannot open MediaStore output stream")
-
+            val values = buildMediaStoreValues(filename, mimeType)
+            val collection =
+                MediaStore.Images.Media.getContentUri(
+                    MediaStore.VOLUME_EXTERNAL_PRIMARY,
+                )
+            uri = insertAndWriteToMediaStore(collection, values, bytes)
             // Clear IS_PENDING so the image becomes visible
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 values.clear()
                 values.put(MediaStore.MediaColumns.IS_PENDING, 0)
                 context.contentResolver.update(uri, values, null, null)
             }
-
             return uri
         } catch (e: Exception) {
             Timber.e(e, "saveViaMediaStore failed: filename=%s, mimeType=%s", filename, mimeType)
@@ -224,14 +226,43 @@ class ImageSaver(private val context: Context) {
         }
     }
 
+    @Suppress("NewApi")
+    private fun buildMediaStoreValues(filename: String, mimeType: String): ContentValues =
+        ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/MyBooksLibrary",
+                )
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+        }
+
+    private fun insertAndWriteToMediaStore(
+        collection: Uri,
+        values: ContentValues,
+        bytes: ByteArray,
+    ): Uri {
+        val uri =
+            context.contentResolver.insert(collection, values)
+                ?: throw ImageSaveException("MediaStore insert returned null")
+        context.contentResolver.openOutputStream(uri)?.use { out ->
+            out.write(bytes)
+        } ?: throw ImageSaveException("Cannot open MediaStore output stream")
+        return uri
+    }
+
     /** Legacy save for Android 9 and below using app-scoped external storage. */
     private fun saveToAppExternalPictures(
         bytes: ByteArray,
         filename: String,
-        mimeType: String
+        mimeType: String,
     ): Uri {
-        val baseDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-            ?: throw ImageSaveException("External pictures directory unavailable")
+        val baseDir =
+            context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                ?: throw ImageSaveException("External pictures directory unavailable")
         val dir = File(baseDir, "MyBooksLibrary").apply { mkdirs() }
         if (!dir.exists()) throw ImageSaveException("Cannot create pictures directory: ${dir.absolutePath}")
 
@@ -240,22 +271,26 @@ class ImageSaver(private val context: Context) {
         MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf(mimeType), null)
         return Uri.fromFile(file)
     }
-
 }
 
 private data class DownloadedImage(
     val bytes: ByteArray,
-    val format: ImageFormat
+    val format: ImageFormat,
 )
 
 /** Image format with associated MIME type and file extension. */
-enum class ImageFormat(val mimeType: String, val extension: String) {
+enum class ImageFormat(
+    val mimeType: String,
+    val extension: String,
+) {
     JPEG("image/jpeg", "jpg"),
     PNG("image/png", "png"),
     WEBP("image/webp", "webp"),
-    GIF("image/gif", "gif")
+    GIF("image/gif", "gif"),
 }
 
 /** Exception thrown by [ImageSaver] operations. */
-class ImageSaveException(message: String, cause: Throwable? = null) :
-    RuntimeException(message, cause)
+class ImageSaveException(
+    message: String,
+    cause: Throwable? = null,
+) : RuntimeException(message, cause)

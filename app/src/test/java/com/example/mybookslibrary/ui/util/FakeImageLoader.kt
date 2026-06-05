@@ -53,6 +53,7 @@ object FakeImageLoader {
         }
     }
 
+    @coil3.annotation.DelicateCoilApi
     fun reset() {
         SingletonImageLoader.reset()
     }

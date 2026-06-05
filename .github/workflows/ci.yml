@@ -156,6 +156,17 @@ jobs:
           }
           EOF
 
+      # Giải phóng disk space trước khi chạy emulator (SDK + system image ~3-4 GB).
+      # Không có bước này, runner có thể bị canceled khi compressAssets hết chỗ.
+      - name: Giải phóng disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android/sdk/platforms/android-2* \
+                      /usr/local/lib/android/sdk/platforms/android-3[0-2] \
+                      /usr/local/lib/android/sdk/build-tools/3[0-2]* \
+                      /usr/share/dotnet /usr/local/share/powershell \
+                      /opt/hostedtoolcache/CodeQL || true
+          df -h
+
       # KVM acceleration cần thiết cho emulator x86_64 chạy nhanh trên Linux runner.
       - name: Enable KVM
         run: |
@@ -174,6 +185,21 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
           script: ./gradlew connectedDebugAndroidTest --console=plain
+
+      # Tạo combined coverage report (unit .exec + emulator .ec).
+      # continue-on-error: unit .exec không có trong job này → jacocoCombinedReport
+      # vẫn chạy với .ec only, không fail toàn bộ job nếu thiếu file.
+      - name: Tạo combined coverage report (instrumented)
+        continue-on-error: true
+        run: ./gradlew :app:jacocoCombinedReport --console=plain
+
+      - name: Upload combined coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: combined-coverage-report
+          path: app/build/reports/jacoco/jacocoCombinedReport/
+          if-no-files-found: ignore
 
       - name: Upload instrumented test report
         if: always()

@@ -1,7 +1,7 @@
 package com.example.mybookslibrary.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.repository.LibraryRepository
@@ -27,6 +27,7 @@ import org.robolectric.annotation.GraphicsMode
  * Test cho các wrapper screen trong MainScreens.kt (SearchScreen, SettingScreen).
  * Truyền ViewModel trực tiếp vì wrapper có default hiltViewModel().
  */
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @coil3.annotation.ExperimentalCoilApi

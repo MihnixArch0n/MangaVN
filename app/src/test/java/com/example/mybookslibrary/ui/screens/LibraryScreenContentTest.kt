@@ -1,7 +1,7 @@
 package com.example.mybookslibrary.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
@@ -20,6 +20,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @coil3.annotation.ExperimentalCoilApi
@@ -27,8 +28,11 @@ class LibraryScreenContentTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    @Before fun setUp() = FakeImageLoader.install()
-    @After fun tearDown() = FakeImageLoader.reset()
+    @Before
+    fun setUp() = FakeImageLoader.install()
+
+    @After
+    fun tearDown() = FakeImageLoader.reset()
 
     private fun emptyVm(): LibraryViewModel {
         val repo = mockk<LibraryRepository>()
@@ -38,14 +42,18 @@ class LibraryScreenContentTest {
 
     private fun vmWithItems(vararg titles: String): LibraryViewModel {
         val repo = mockk<LibraryRepository>()
-        every { repo.observeLibraryItems() } returns flowOf(
-            titles.mapIndexed { i, t ->
-                LibraryItemEntity(
-                    manga_id = "m$i", title = t, cover_url = "",
-                    status = LibraryStatus.READING, updated_at = 1000L + i
-                )
-            }
-        )
+        every { repo.observeLibraryItems() } returns
+            flowOf(
+                titles.mapIndexed { i, t ->
+                    LibraryItemEntity(
+                        manga_id = "m$i",
+                        title = t,
+                        cover_url = "",
+                        status = LibraryStatus.READING,
+                        updated_at = 1000L + i,
+                    )
+                },
+            )
         return LibraryViewModel(repo, UnconfinedTestDispatcher())
     }
 

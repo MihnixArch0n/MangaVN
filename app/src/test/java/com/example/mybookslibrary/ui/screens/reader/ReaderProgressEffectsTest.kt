@@ -4,7 +4,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.viewmodel.ReaderState

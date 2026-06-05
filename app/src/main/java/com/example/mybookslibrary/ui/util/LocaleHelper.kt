@@ -33,6 +33,6 @@ fun appString(@StringRes id: Int, vararg args: Any): String {
 }
 
 private fun Context.localizedResources(language: String): android.content.res.Resources {
-    val config = resources.configuration.apply { setLocale(Locale(language)) }
+    val config = resources.configuration.apply { setLocale(Locale.forLanguageTag(language)) }
     return createConfigurationContext(config).resources
 }

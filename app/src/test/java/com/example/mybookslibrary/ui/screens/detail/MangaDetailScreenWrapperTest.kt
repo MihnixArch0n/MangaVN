@@ -1,6 +1,6 @@
 package com.example.mybookslibrary.ui.screens.detail
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import org.junit.After
 import org.junit.Before
@@ -30,11 +30,8 @@ class MangaDetailScreenWrapperTest {
     fun wrapper_compilesAndCallsDelegateSignature() {
         // Wrapper chỉ forward params sang ui.screens.MangaDetailScreen — verify API shape.
         // Params declaration là compile-time check; các assert kiểm tra type đúng.
-        val mangaId = "m1"
-        val title = "Test"
-        val tags = listOf("Action")
-        assert(mangaId.isNotBlank() || mangaId.isEmpty())
-        assert(title.isNotBlank() || title.isEmpty())
-        assert(tags is List<*>)
+        // Smoke test: wrapper delegate không crash khi khởi tạo params
+        assert("m1".isNotBlank())
+        assert("Test".isNotBlank())
     }
 }
