@@ -222,15 +222,15 @@ jobs:
       # ngay cả trên emulator → diff bị kéo xuống bởi MainNavGraph.kt (63%).
       # Threshold diff 65%: thực tế đo được; overall 84%: ratchet tại mức hiện tại.
       # Diff coverage chỉ có ý nghĩa trên PR (cần base SHA để tính diff).
-      - name: Gate combined coverage (code mới ≥ 60%, overall ≥ 84%)
+      - name: Gate combined coverage (code mới ≥ 85%, overall ≥ 85%)
         id: combined-coverage
         if: github.event_name == 'pull_request'
         uses: madrapps/jacoco-report@v1.8.0
         with:
           paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-changed-files: 60
-          min-coverage-overall: 84
+          min-coverage-changed-files: 85
+          min-coverage-overall: 85
           title: Combined Coverage (unit + emulator)
           update-comment: true
 
@@ -241,20 +241,20 @@ jobs:
         with:
           paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 84
+          min-coverage-overall: 85
           title: Combined Coverage (unit + emulator)
           update-comment: false
 
       - name: Fail nếu combined coverage vi phạm ngưỡng
         if: >
           ${{ (github.event_name == 'pull_request' &&
-               (steps.combined-coverage.outputs.coverage-changed-files < 60.0 ||
-                steps.combined-coverage.outputs.coverage-overall < 84.0)) ||
+               (steps.combined-coverage.outputs.coverage-changed-files < 85.0 ||
+                steps.combined-coverage.outputs.coverage-overall < 85.0)) ||
               (github.event_name != 'pull_request' &&
-               steps.combined-overall.outputs.coverage-overall < 84.0) }}
+               steps.combined-overall.outputs.coverage-overall < 85.0) }}
         run: |
-          echo "Combined coverage code mới: ${{ steps.combined-coverage.outputs.coverage-changed-files }}% (ngưỡng 60%)"
-          echo "Combined coverage tổng: ${{ steps.combined-coverage.outputs.coverage-overall }}% (ngưỡng 84%)"
+          echo "Combined coverage code mới: ${{ steps.combined-coverage.outputs.coverage-changed-files }}% (ngưỡng 85%)"
+          echo "Combined coverage tổng: ${{ steps.combined-coverage.outputs.coverage-overall }}% (ngưỡng 85%)"
           exit 1
 
       - name: Upload combined coverage report

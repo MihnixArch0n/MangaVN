@@ -62,13 +62,13 @@ jobs:
 
       # Chỉ check overall — đủ để phát hiện regression sớm (< 5 phút).
       # Diff-coverage (code mới) dùng combined report trong ci.yml sau emulator.
-      - name: JVM overall coverage ≥ 82% (early check)
+      - name: JVM overall coverage ≥ 85% (early check)
         id: coverage-report
         uses: madrapps/jacoco-report@v1.8.0
         with:
           paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 82
+          min-coverage-overall: 85
           title: JVM Coverage (early check)
           update-comment: true
 
@@ -82,7 +82,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Fail nếu overall JVM coverage tụt dưới 82%
-        if: ${{ steps.coverage-report.outputs.coverage-overall < 82.0 }}
+        if: ${{ steps.coverage-report.outputs.coverage-overall < 85.0 }}
         run: |
-          echo "JVM coverage tổng: ${{ steps.coverage-report.outputs.coverage-overall }}% (ngưỡng 82%)"
+          echo "JVM coverage tổng: ${{ steps.coverage-report.outputs.coverage-overall }}% (ngưỡng 85%)"
           exit 1

@@ -83,8 +83,46 @@ comments:
     searchInProtectedClass: false
     ignoreDefaultCompanionObject: false
   UndocumentedPublicFunction:
-    active: false
-    excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
+    active: true
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/commonTest/**'
+      - '**/jvmTest/**'
+      - '**/androidUnitTest/**'
+      - '**/androidInstrumentedTest/**'
+      - '**/jsTest/**'
+      - '**/iosTest/**'
+      # Composable UI: tên hàm đủ rõ nghĩa, không expose API ra ngoài
+      - '**/ui/screens/**'
+      - '**/ui/navigation/**'
+      - '**/ui/theme/**'
+      # Room DAO: SQL annotations đã tự document
+      - '**/data/local/dao/**'
+      # DI modules: Hilt annotations đã tự document
+      - '**/di/**'
+      # Entity companion helpers (fromStatus/toStatus): tên đủ rõ
+      - '**/data/local/**Entity.kt'
+      - '**/data/local/AppDatabase.kt'
+      # DataStore getter/setter: tên đủ rõ (getReaderQuality, setLanguage...)
+      - '**/data/local/UserPreferencesDataStore.kt'
+      # Retrofit interface: HTTP annotations đã tự document
+      - '**/data/remote/MangaDexApi.kt'
+      # DTO mappers: toDomainModel là convention rõ ràng
+      - '**/data/remote/models/**'
+      # Network DI providers (tương tự DataModule)
+      - '**/data/remote/NetworkModule.kt'
+      # ViewModel public methods: tên đủ rõ (onQueryChange, toggleQuality...)
+      - '**/ui/viewmodel/**'
+      # App-level utilities
+      - '**/MyBooksLibraryApp.kt'
+      - '**/ui/util/**'
+      # Domain model helpers (isEmpty trên data class)
+      - '**/domain/model/**'
+      # OfflineDownloadRepository: CRUD operations, tên đủ rõ
+      - '**/repository/OfflineDownloadRepository.kt'
+      # GoogleSignInClient: wrapper đơn giản
+      - '**/repository/GoogleSignInClient.kt'
     searchProtectedFunction: false
   UndocumentedPublicProperty:
     active: false

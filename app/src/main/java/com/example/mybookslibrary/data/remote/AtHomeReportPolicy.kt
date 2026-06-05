@@ -13,10 +13,18 @@ import kotlin.math.min
 object AtHomeReportPolicy {
     const val SKIP_REPORT_HEADER = "X-MyBooksLibrary-Skip-AtHome-Report"
 
-    fun isReportableImageUrl(rawUrl: String): Boolean {
-        return rawUrl.toHttpUrlOrNull()?.let(::isReportableImageUrl) == true
-    }
+    /**
+     * Trả về `true` nếu [rawUrl] là URL ảnh chapter cần báo cáo về MangaDex@Home.
+     * URL không parse được → `false`.
+     */
+    fun isReportableImageUrl(rawUrl: String): Boolean = rawUrl.toHttpUrlOrNull()?.let(::isReportableImageUrl) == true
 
+    /**
+     * Trả về `true` nếu [url] cần được report về MangaDex@Home server.
+     *
+     * Skip `mangadex.org` (CDN chính thức). Chỉ report URL có path segment
+     * `data` hoặc `data-saver` — dấu hiệu của At-Home node.
+     */
     fun isReportableImageUrl(url: HttpUrl): Boolean {
         val lowerHost = url.host.lowercase()
         if (lowerHost.contains("mangadex.org")) return false
@@ -26,7 +34,9 @@ object AtHomeReportPolicy {
         }
     }
 
-    fun bytesToInt(bytes: Long): Int {
-        return min(bytes.coerceAtLeast(0L), Int.MAX_VALUE.toLong()).toInt()
-    }
+    /**
+     * Chuyển byte count sang Int an toàn — clamp về [Int.MAX_VALUE] nếu vượt quá,
+     * clamp về 0 nếu âm. Dùng cho At-Home report field `bytes`.
+     */
+    fun bytesToInt(bytes: Long): Int = min(bytes.coerceAtLeast(0L), Int.MAX_VALUE.toLong()).toInt()
 }

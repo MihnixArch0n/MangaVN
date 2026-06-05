@@ -11,3 +11,5 @@
 local.properties
 HANDOFF.md
 app/src/main/java/com/example/mybookslibrary/util/AuthSecrets.kt
+# Track file templates được chia sẻ với team
+!/.idea/fileTemplates/

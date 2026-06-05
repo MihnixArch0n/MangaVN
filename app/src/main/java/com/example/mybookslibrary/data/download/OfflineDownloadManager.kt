@@ -17,69 +17,84 @@ import javax.inject.Singleton
  * Facade used by presentation code to enqueue or cancel offline chapter downloads.
  */
 @Singleton
-class OfflineDownloadManager @Inject constructor(
-    @param:ApplicationContext private val context: Context,
-    private val repository: OfflineDownloadRepository,
-    private val storage: OfflineDownloadStorage
-) {
+class OfflineDownloadManager
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        private val repository: OfflineDownloadRepository,
+        private val storage: OfflineDownloadStorage,
+    ) {
+        private val workManager: WorkManager
+            get() = WorkManager.getInstance(context)
 
-    private val workManager: WorkManager
-        get() = WorkManager.getInstance(context)
+        /**
+         * Enqueue tải chapter về offline. Network constraint (wifi-only hay bất kỳ) lấy từ
+         * preference người dùng. WorkManager dedup bằng [uniqueWorkName] — gọi lại khi chapter
+         * đang tải sẽ REPLACE request cũ.
+         */
+        suspend fun enqueueDownload(
+            mangaId: String,
+            chapterId: String,
+        ) {
+            val downloadOnlyOnWifi = repository.getDownloadOnlyOnWifi()
+            val networkType = if (downloadOnlyOnWifi) NetworkType.UNMETERED else NetworkType.CONNECTED
 
-    suspend fun enqueueDownload(mangaId: String, chapterId: String) {
-        val downloadOnlyOnWifi = repository.getDownloadOnlyOnWifi()
-        val networkType = if (downloadOnlyOnWifi) NetworkType.UNMETERED else NetworkType.CONNECTED
-
-        Timber.d(
-            "enqueueDownload: mangaId=%s chapterId=%s networkType=%s",
-            mangaId,
-            chapterId,
-            networkType
-        )
-        repository.enqueueChapter(mangaId, chapterId)
-
-        val request = buildDownloadRequest(mangaId, chapterId, networkType)
-        workManager.enqueueUniqueWork(uniqueWorkName(chapterId), ExistingWorkPolicy.REPLACE, request)
-    }
-
-    internal fun buildDownloadRequest(
-        mangaId: String,
-        chapterId: String,
-        networkType: NetworkType
-    ) = OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
-        .setConstraints(
-            Constraints.Builder()
-                .setRequiredNetworkType(networkType)
-                .build()
-        )
-        .setInputData(
-            workDataOf(
-                ChapterDownloadWorker.KEY_MANGA_ID to mangaId,
-                ChapterDownloadWorker.KEY_CHAPTER_ID to chapterId
+            Timber.d(
+                "enqueueDownload: mangaId=%s chapterId=%s networkType=%s",
+                mangaId,
+                chapterId,
+                networkType,
             )
-        )
-        .addTag(CHAPTER_DOWNLOAD_TAG)
-        .addTag(chapterTag(chapterId))
-        .build()
+            repository.enqueueChapter(mangaId, chapterId)
 
-    suspend fun cancelDownload(chapterId: String) {
-        Timber.d("cancelDownload: chapterId=%s", chapterId)
-        workManager.cancelUniqueWork(uniqueWorkName(chapterId))
-        repository.removeQueuedChapter(chapterId)
+            val request = buildDownloadRequest(mangaId, chapterId, networkType)
+            workManager.enqueueUniqueWork(uniqueWorkName(chapterId), ExistingWorkPolicy.REPLACE, request)
+        }
+
+        internal fun buildDownloadRequest(
+            mangaId: String,
+            chapterId: String,
+            networkType: NetworkType,
+        ) = OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
+            .setConstraints(
+                Constraints
+                    .Builder()
+                    .setRequiredNetworkType(networkType)
+                    .build(),
+            ).setInputData(
+                workDataOf(
+                    ChapterDownloadWorker.KEY_MANGA_ID to mangaId,
+                    ChapterDownloadWorker.KEY_CHAPTER_ID to chapterId,
+                ),
+            ).addTag(CHAPTER_DOWNLOAD_TAG)
+            .addTag(chapterTag(chapterId))
+            .build()
+
+        /** Hủy download đang chạy và xóa chapter khỏi queue. */
+        suspend fun cancelDownload(chapterId: String) {
+            Timber.d("cancelDownload: chapterId=%s", chapterId)
+            workManager.cancelUniqueWork(uniqueWorkName(chapterId))
+            repository.removeQueuedChapter(chapterId)
+        }
+
+        /** Hủy download, xóa files đã tải và đánh dấu chapter chưa download. */
+        suspend fun deleteDownload(
+            mangaId: String,
+            chapterId: String,
+        ) {
+            Timber.d("deleteDownload: mangaId=%s chapterId=%s", mangaId, chapterId)
+            workManager.cancelUniqueWork(uniqueWorkName(chapterId))
+            storage.deleteChapter(mangaId, chapterId)
+            repository.markChapterNotDownloaded(chapterId)
+        }
+
+        companion object {
+            const val CHAPTER_DOWNLOAD_TAG = "offline_chapter_download"
+
+            /** WorkManager work name duy nhất cho chapter — dùng để dedup và cancel theo chapterId. */
+            fun uniqueWorkName(chapterId: String): String = "offline_chapter_download_$chapterId"
+
+            /** WorkManager tag để cancel tất cả work của một chapter cụ thể. */
+            fun chapterTag(chapterId: String): String = "offline_chapter_download_chapter_$chapterId"
+        }
     }
-
-    suspend fun deleteDownload(mangaId: String, chapterId: String) {
-        Timber.d("deleteDownload: mangaId=%s chapterId=%s", mangaId, chapterId)
-        workManager.cancelUniqueWork(uniqueWorkName(chapterId))
-        storage.deleteChapter(mangaId, chapterId)
-        repository.markChapterNotDownloaded(chapterId)
-    }
-
-    companion object {
-        const val CHAPTER_DOWNLOAD_TAG = "offline_chapter_download"
-
-        fun uniqueWorkName(chapterId: String): String = "offline_chapter_download_$chapterId"
-
-        fun chapterTag(chapterId: String): String = "offline_chapter_download_chapter_$chapterId"
-    }
-}

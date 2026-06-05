@@ -25,7 +25,6 @@
     <ID>CyclomaticComplexMethod:MainNavGraph.kt$@OptIn(ExperimentalSharedTransitionApi::class) @Composable fun MainNavHost(loggedInUserId: String?)</ID>
     <ID>CyclomaticComplexMethod:MangaDetailScreen.kt$@OptIn(ExperimentalFoundationApi::class) @Composable fun MangaDetailScreen( mangaId: String, title: String, coverArt: String, description: String, tags: List&lt;String&gt;, onBackClick: () -&gt; Unit, onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -&gt; Unit, onReviewClick: (mangaId: String) -&gt; Unit = {}, viewModel: MangaDetailViewModel = hiltViewModel(), )</ID>
     <ID>CyclomaticComplexMethod:SettingScreen.kt$@Suppress("unused") @Composable fun SettingScreenContent(viewModel: SettingsViewModel = hiltViewModel())</ID>
-    <ID>CyclomaticComplexMethod:TapZoneEvaluator.kt$TapZoneEvaluator$operator fun invoke( x: Float, y: Float, screenWidth: Float, screenHeight: Float, mode: ReadingMode ): ReaderTapAction</ID>
     <ID>InstanceOfCheckForException:ImageSaver.kt$ImageSaver$e is ImageSaveException</ID>
     <ID>LongMethod:ChapterComponents.kt$@Composable fun ChapterRow( chapter: ChapterWithProgressModel, chapterTitle: String, onClick: () -&gt; Unit, onMarkCompleted: () -&gt; Unit, onMarkUnread: () -&gt; Unit, onStartDownload: () -&gt; Unit, onCancelDownload: () -&gt; Unit, onDeleteDownload: () -&gt; Unit, )</ID>
     <ID>LongMethod:ChapterDownloadWorker.kt$ChapterDownloadWorker$@OptIn(ExperimentalCoroutinesApi::class) override suspend fun doWork(): Result</ID>
@@ -180,7 +179,7 @@
     <ID>ReturnCount:GetChapterListWithProgressUseCase.kt$private fun DownloadQueueEntity?.toDownloadState(isDownloaded: Boolean): ChapterDownloadState</ID>
     <ID>ReturnCount:LazyListLayoutInfoExt.kt$fun LazyListLayoutInfo.findActivePageIndex(): Int</ID>
     <ID>ReturnCount:ReaderViewModel.kt$ReaderViewModel$private fun navigateToPage(action: ReaderTapAction)</ID>
-    <ID>ReturnCount:TapZoneEvaluator.kt$TapZoneEvaluator$operator fun invoke( x: Float, y: Float, screenWidth: Float, screenHeight: Float, mode: ReadingMode ): ReaderTapAction</ID>
+    <ID>ReturnCount:TapZoneEvaluator.kt$TapZoneEvaluator$operator fun invoke( x: Float, y: Float, screenWidth: Float, screenHeight: Float, mode: ReadingMode, ): ReaderTapAction</ID>
     <ID>SwallowedException:AppDatabaseDestructiveMigrationTest.kt$AppDatabaseDestructiveMigrationTest$e: Exception</ID>
     <ID>ThrowsCount:ImageSaver.kt$ImageSaver$private fun downloadImage(url: String): DownloadedImage</ID>
     <ID>TooGenericExceptionCaught:ChapterDownloadWorker.kt$ChapterDownloadWorker$e: Exception</ID>
@@ -215,7 +214,7 @@
     <ID>UnusedPrivateMember:WebtoonPageItem.kt$@Preview(name = "Webtoon Page Item", showBackground = true) @Composable private fun WebtoonPageItemPreview()</ID>
     <ID>UseCheckOrError:ChapterDownloadWorker.kt$ChapterDownloadWorker$throw IllegalStateException("Chapter has no pages")</ID>
     <ID>UseCheckOrError:ChapterDownloadWorker.kt$ChapterDownloadWorker$throw IllegalStateException("Page download failed: HTTP ${response.code}")</ID>
-    <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException( "Phản hồi At-Home không hợp lệ cho chapter $chapterId (result=${atHomeResponse.result})" )</ID>
+    <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException( "Phản hồi At-Home không hợp lệ cho chapter $chapterId (result=${atHomeResponse.result})", )</ID>
     <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException("Phản hồi At-Home thiếu baseUrl cho chapter $chapterId")</ID>
     <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException("Phản hồi At-Home thiếu chapter cho chapter $chapterId")</ID>
     <ID>UseCheckOrError:MangaRepository.kt$MangaRepository$throw IllegalStateException("Phản hồi At-Home thiếu hash cho chapter $chapterId")</ID>

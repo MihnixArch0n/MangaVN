@@ -25,14 +25,21 @@ class AuthRepository
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
         private val googleSignInClient: GoogleSignInClient,
     ) {
+        /** Reactive stream ID người dùng đang đăng nhập; emit `null` khi chưa đăng nhập. */
         fun observeLoggedInUserId(): Flow<String?> = preferencesDataStore.observeLoggedInUserId()
 
+        /** Lấy ID người dùng đang đăng nhập một lần; `null` nếu chưa đăng nhập. */
         suspend fun getLoggedInUserId(): String? = preferencesDataStore.getLoggedInUserId()
 
+        /** Xóa session đăng nhập hiện tại. */
         suspend fun logout() {
             preferencesDataStore.setLoggedInUserId(null)
         }
 
+        /**
+         * Đăng ký tài khoản mới. Password hash bằng PBKDF2 + salt ngẫu nhiên.
+         * Thất bại nếu username đã tồn tại.
+         */
         suspend fun register(
             username: String,
             password: String,
@@ -52,6 +59,10 @@ class AuthRepository
                 Result.success(Unit)
             }
 
+        /**
+         * Đăng nhập bằng username/password. Tự migrate hash SHA-256 cũ sang PBKDF2
+         * khi xác thực thành công lần đầu.
+         */
         suspend fun login(
             username: String,
             password: String,
@@ -74,6 +85,9 @@ class AuthRepository
                 Result.success(Unit)
             }
 
+        /**
+         * Đăng nhập bằng Google. Tự tạo [UserEntity] mới nếu Google ID chưa có trong DB.
+         */
         suspend fun googleSignIn(context: Context): Result<Unit> {
             val account =
                 googleSignInClient
