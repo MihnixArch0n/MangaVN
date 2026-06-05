@@ -1,10 +1,10 @@
-package com.example.mybookslibrary.ui.screens
+﻿package com.example.mybookslibrary.ui.screens
 
-import androidx.lifecycle.SavedStateHandle
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.lifecycle.SavedStateHandle
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -40,10 +40,13 @@ import org.robolectric.annotation.GraphicsMode
 @coil3.annotation.ExperimentalCoilApi
 class MangaDetailScreenTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    @Before fun setUp() = FakeImageLoader.install()
-    @After fun tearDown() = FakeImageLoader.reset()
+    @Before
+    fun setUp() = FakeImageLoader.install()
+
+    @After
+    fun tearDown() = FakeImageLoader.reset()
 
     private val mangaRepo = mockk<MangaRepository>()
     private val libraryRepo = mockk<LibraryRepository>(relaxed = true)
@@ -58,9 +61,8 @@ class MangaDetailScreenTest {
         if (detailError) {
             coEvery { mangaRepo.getMangaDetail(any()) } returns Result.failure(IllegalStateException("lỗi"))
         } else {
-            coEvery { mangaRepo.getMangaDetail(any()) } returns Result.success(
-                MangaModel("m1", "Test Manga", "Desc", null, emptyList())
-            )
+            coEvery { mangaRepo.getMangaDetail(any()) } returns
+                Result.success(MangaModel("m1", "Test Manga", "Desc", null, emptyList()))
         }
         every { useCase(any()) } returns flowOf(chapters)
         coEvery { libraryRepo.isInLibrary(any()) } returns inLibrary
@@ -76,7 +78,9 @@ class MangaDetailScreenTest {
     }
 
     // MangaDetailScreen có nhiều scrollable — swipeUp() nhiều lần để reveal content
-    private fun scrollTo(@Suppress("UNUSED_PARAMETER") text: String = "") {
+    private fun scrollTo(
+        @Suppress("UNUSED_PARAMETER") text: String = "",
+    ) {
         repeat(6) {
             composeRule.onRoot().performTouchInput { swipeUp() }
         }
@@ -98,7 +102,7 @@ class MangaDetailScreenTest {
                 tags = listOf("Action"),
                 onBackClick = {},
                 onReadChapter = { _, _, _, _ -> },
-                viewModel = viewModel(inLibrary = inLibrary, chapters = chapters, detailError = detailError)
+                viewModel = viewModel(inLibrary = inLibrary, chapters = chapters, detailError = detailError),
             )
         }
         composeRule.waitForIdle()
@@ -228,15 +232,17 @@ class MangaDetailScreenTest {
         composeRule.waitForIdle()
     }
 
-    private fun chapter(id: String, num: String) =
-        ChapterWithProgressModel(
-            chapterId = id,
-            mangaId = "m1",
-            volume = null,
-            chapterNumber = num,
-            title = null,
-            status = ChapterReadingStatus.UNREAD,
-            lastReadPage = 0,
-            totalPages = 20,
-        )
+    private fun chapter(
+        id: String,
+        num: String,
+    ) = ChapterWithProgressModel(
+        chapterId = id,
+        mangaId = "m1",
+        volume = null,
+        chapterNumber = num,
+        title = null,
+        status = ChapterReadingStatus.UNREAD,
+        lastReadPage = 0,
+        totalPages = 20,
+    )
 }

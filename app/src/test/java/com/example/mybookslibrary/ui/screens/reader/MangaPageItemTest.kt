@@ -1,9 +1,10 @@
-package com.example.mybookslibrary.ui.screens.reader
+﻿package com.example.mybookslibrary.ui.screens.reader
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.ui.util.FakeImageLoader
@@ -22,7 +23,7 @@ import org.robolectric.annotation.GraphicsMode
 @coil3.annotation.ExperimentalCoilApi
 class MangaPageItemTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Before fun setUp() = FakeImageLoader.install()
 

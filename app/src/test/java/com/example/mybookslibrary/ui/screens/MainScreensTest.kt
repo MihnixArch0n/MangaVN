@@ -1,15 +1,17 @@
-package com.example.mybookslibrary.ui.screens
+﻿package com.example.mybookslibrary.ui.screens
 
+import android.annotation.SuppressLint
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import com.example.mybookslibrary.ui.viewmodel.SearchViewModel
-import com.example.mybookslibrary.ui.viewmodel.SettingsViewModel
 import coil3.ImageLoader
+import com.example.mybookslibrary.ui.viewmodel.SettingsViewModel
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -27,15 +29,19 @@ import org.robolectric.annotation.GraphicsMode
  * Test cho các wrapper screen trong MainScreens.kt (SearchScreen, SettingScreen).
  * Truyền ViewModel trực tiếp vì wrapper có default hiltViewModel().
  */
+@SuppressLint("ViewModelConstructorInComposable")
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @coil3.annotation.ExperimentalCoilApi
 class MainScreensTest {
-    @get:Rule val composeRule = createComposeRule()
+    @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    @Before fun setUp() = FakeImageLoader.install()
-    @After fun tearDown() = FakeImageLoader.reset()
+    @Before
+    fun setUp() = FakeImageLoader.install()
+
+    @After
+    fun tearDown() = FakeImageLoader.reset()
 
     @Test
     fun searchScreen_rendersWithoutCrash() {
@@ -55,12 +61,15 @@ class MainScreensTest {
         coEvery { prefs.getThemeMode() } returns "system"
         coEvery { prefs.getLanguage() } returns "en"
         composeRule.setContent {
-            SettingScreen(viewModel = SettingsViewModel(
-                preferencesDataStore = prefs,
-                libraryRepository = mockk<LibraryRepository>(relaxed = true),
-                imageLoader = mockk<ImageLoader>(relaxed = true),
-                ioDispatcher = UnconfinedTestDispatcher()
-            ))
+            SettingScreen(
+                viewModel =
+                    SettingsViewModel(
+                        preferencesDataStore = prefs,
+                        libraryRepository = mockk<LibraryRepository>(relaxed = true),
+                        imageLoader = mockk<ImageLoader>(relaxed = true),
+                        ioDispatcher = UnconfinedTestDispatcher(),
+                    ),
+            )
         }
         composeRule.onNodeWithText("Settings").assertIsDisplayed()
     }

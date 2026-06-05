@@ -1,7 +1,8 @@
-package com.example.mybookslibrary.ui.navigation
+﻿package com.example.mybookslibrary.ui.navigation
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.navigation.NavDestination
@@ -24,7 +25,7 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class FloatingPillNavBarTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun floatingPillNavBar_withNullDestination_displaysAllFourTabs() {

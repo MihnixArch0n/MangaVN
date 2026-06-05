@@ -1,12 +1,12 @@
-package com.example.mybookslibrary.ui.screens
+﻿package com.example.mybookslibrary.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.example.mybookslibrary.data.local.LibraryItemEntity
-import io.mockk.coEvery
 import coil3.ImageLoader
+import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.ui.viewmodel.SettingsViewModel
@@ -33,7 +33,7 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SettingScreenContentTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private val prefs = mockk<UserPreferencesDataStore>(relaxed = true)
     private val libraryRepo = mockk<LibraryRepository>(relaxed = true)
@@ -124,10 +124,11 @@ class SettingScreenContentTest {
     @Test
     fun backupSuccess_rendersWithResultState() {
         // backupResult = Success(2) → when branch covered: settings_backup_success
-        val items = listOf(
-            LibraryItemEntity(manga_id = "m1", title = "T1", cover_url = ""),
-            LibraryItemEntity(manga_id = "m2", title = "T2", cover_url = ""),
-        )
+        val items =
+            listOf(
+                LibraryItemEntity(manga_id = "m1", title = "T1", cover_url = ""),
+                LibraryItemEntity(manga_id = "m2", title = "T2", cover_url = ""),
+            )
         coEvery { libraryRepo.getAllItems() } returns items
         val vm = viewModel()
         vm.backupLibrary(java.io.ByteArrayOutputStream())

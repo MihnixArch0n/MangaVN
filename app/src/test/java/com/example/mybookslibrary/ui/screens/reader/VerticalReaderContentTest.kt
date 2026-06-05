@@ -1,9 +1,10 @@
-package com.example.mybookslibrary.ui.screens.reader
+﻿package com.example.mybookslibrary.ui.screens.reader
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import org.junit.After
@@ -20,7 +21,7 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @coil3.annotation.ExperimentalCoilApi
 class VerticalReaderContentTest {
-    @get:Rule val composeRule = createComposeRule()
+    @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Before fun setUp() = FakeImageLoader.install()
 

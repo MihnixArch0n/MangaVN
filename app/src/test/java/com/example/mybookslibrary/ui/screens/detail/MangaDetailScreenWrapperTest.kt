@@ -1,6 +1,7 @@
-package com.example.mybookslibrary.ui.screens.detail
+﻿package com.example.mybookslibrary.ui.screens.detail
 
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import org.junit.After
 import org.junit.Before
@@ -21,10 +22,13 @@ import org.robolectric.annotation.GraphicsMode
 @coil3.annotation.ExperimentalCoilApi
 class MangaDetailScreenWrapperTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    @Before fun setUp() = FakeImageLoader.install()
-    @After fun tearDown() = FakeImageLoader.reset()
+    @Before
+    fun setUp() = FakeImageLoader.install()
+
+    @After
+    fun tearDown() = FakeImageLoader.reset()
 
     @Test
     fun wrapper_compilesAndCallsDelegateSignature() {

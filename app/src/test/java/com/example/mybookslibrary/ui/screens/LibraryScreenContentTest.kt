@@ -1,7 +1,8 @@
-package com.example.mybookslibrary.ui.screens
+﻿package com.example.mybookslibrary.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -31,7 +32,7 @@ import org.robolectric.annotation.GraphicsMode
 @coil3.annotation.ExperimentalCoilApi
 class LibraryScreenContentTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Before
     fun setUp() = FakeImageLoader.install()

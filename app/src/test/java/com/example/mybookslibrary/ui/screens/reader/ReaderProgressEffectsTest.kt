@@ -1,10 +1,11 @@
-package com.example.mybookslibrary.ui.screens.reader
+﻿package com.example.mybookslibrary.ui.screens.reader
 
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.viewmodel.ReaderState
@@ -19,7 +20,7 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ReaderProgressEffectsTest {
-    @get:Rule val composeRule = createComposeRule()
+    @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun ltrMode_doesNotCrash() {
@@ -122,10 +123,11 @@ class ReaderProgressEffectsTest {
             val listState = rememberLazyListState()
             val pagerState = rememberPagerState(pageCount = { 2 })
             ReaderProgressEffects(
-                state = ReaderState(
-                    pages = listOf("p0", "p1"),
-                    currentReadingMode = ReadingMode.RTL,
-                ),
+                state =
+                    ReaderState(
+                        pages = listOf("p0", "p1"),
+                        currentReadingMode = ReadingMode.RTL,
+                    ),
                 listState = listState,
                 pagerState = pagerState,
                 latestActivePageIndex = remember { mutableStateOf(null) },

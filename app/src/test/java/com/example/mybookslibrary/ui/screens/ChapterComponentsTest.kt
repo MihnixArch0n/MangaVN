@@ -1,7 +1,8 @@
 package com.example.mybookslibrary.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -22,7 +23,7 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ChapterComponentsTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private fun chapter(
         id: String = "c1",
@@ -61,8 +62,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(status = ChapterReadingStatus.UNREAD),
                 chapterTitle = "Chapter 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithText("Unread").assertIsDisplayed()
@@ -74,8 +79,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(status = ChapterReadingStatus.READING, lastReadPage = 4, totalPages = 20),
                 chapterTitle = "Chapter 2",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithText("Chapter 2").assertIsDisplayed()
@@ -89,8 +98,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(status = ChapterReadingStatus.COMPLETED),
                 chapterTitle = "Chapter 3",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithText("Completed").assertIsDisplayed()
@@ -102,8 +115,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(title = "The Beginning"),
                 chapterTitle = "Chapter 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithText("Chapter 1").assertIsDisplayed()
@@ -116,8 +133,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(totalPages = 42),
                 chapterTitle = "Ch 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         // "42p" (detail_pages_suffix = "%1$dp")
@@ -130,8 +151,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(downloadStatus = ChapterDownloadStatus.NOT_DOWNLOADED),
                 chapterTitle = "Ch 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithContentDescription("Download chapter").assertIsDisplayed()
@@ -143,8 +168,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(downloadStatus = ChapterDownloadStatus.DOWNLOADED),
                 chapterTitle = "Ch 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithContentDescription("Delete download").assertIsDisplayed()
@@ -156,8 +185,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(downloadStatus = ChapterDownloadStatus.ERROR),
                 chapterTitle = "Ch 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithContentDescription("Download failed").assertIsDisplayed()
@@ -169,8 +202,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(downloadStatus = ChapterDownloadStatus.PENDING),
                 chapterTitle = "Ch 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         // PENDING: IconButton có CircularProgressIndicator — không có text, không crash
@@ -183,8 +220,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(downloadStatus = ChapterDownloadStatus.DOWNLOADING),
                 chapterTitle = "Ch 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {}
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithContentDescription("Cancel download").assertIsDisplayed()
@@ -198,8 +239,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(status = ChapterReadingStatus.UNREAD),
                 chapterTitle = "Ch 1",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {},
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithText("Ch 1").performTouchInput { longClick() }
@@ -213,8 +258,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(status = ChapterReadingStatus.COMPLETED),
                 chapterTitle = "Ch 2",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {},
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithText("Ch 2").performTouchInput { longClick() }
@@ -228,8 +277,12 @@ class ChapterComponentsTest {
             ChapterRow(
                 chapter = chapter(status = ChapterReadingStatus.READING),
                 chapterTitle = "Ch 3",
-                onClick = {}, onMarkCompleted = {}, onMarkUnread = {},
-                onStartDownload = {}, onCancelDownload = {}, onDeleteDownload = {},
+                onClick = {},
+                onMarkCompleted = {},
+                onMarkUnread = {},
+                onStartDownload = {},
+                onCancelDownload = {},
+                onDeleteDownload = {},
             )
         }
         composeRule.onNodeWithText("Ch 3").performTouchInput { longClick() }

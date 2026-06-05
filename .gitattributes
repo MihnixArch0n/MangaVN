@@ -1,3 +1,7 @@
 # Shell scripts phải giữ LF — CRLF làm script fail trên Linux/macOS.
 .githooks/pre-commit text eol=lf
 .githooks/pre-push    text eol=lf
+
+# Kotlin files giữ LF để ktlintFormat hoạt động đúng trên mọi OS (kể cả Windows).
+*.kt  text eol=lf
+*.kts text eol=lf

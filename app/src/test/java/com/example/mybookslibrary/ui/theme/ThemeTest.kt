@@ -1,11 +1,12 @@
-package com.example.mybookslibrary.ui.theme
+﻿package com.example.mybookslibrary.ui.theme
 
+import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
@@ -21,7 +22,7 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class ThemeTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Test
     fun myBooksLibraryTheme_lightMode_appliesLightColors() {

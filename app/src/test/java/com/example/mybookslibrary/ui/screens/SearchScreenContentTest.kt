@@ -1,7 +1,8 @@
-package com.example.mybookslibrary.ui.screens
+﻿package com.example.mybookslibrary.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onNodeWithText
@@ -30,15 +31,21 @@ import java.util.concurrent.TimeUnit
 @coil3.annotation.ExperimentalCoilApi
 class SearchScreenContentTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    @Before fun setUp() = FakeImageLoader.install()
-    @After fun tearDown() = FakeImageLoader.reset()
+    @Before
+    fun setUp() = FakeImageLoader.install()
 
-    private fun vm(repository: MangaRepository = mockk<MangaRepository>().also {
-        coEvery { it.getTags() } returns Result.success(emptyList())
-        every { it.searchManga(any(), any()) } returns flowOf(Result.success(emptyList()))
-    }) = SearchViewModel(repository)
+    @After
+    fun tearDown() = FakeImageLoader.reset()
+
+    private fun vm(
+        repository: MangaRepository =
+            mockk<MangaRepository>().also {
+                coEvery { it.getTags() } returns Result.success(emptyList())
+                every { it.searchManga(any(), any()) } returns flowOf(Result.success(emptyList()))
+            },
+    ) = SearchViewModel(repository)
 
     @Test
     fun rendersTitleAndFilterButton() {
@@ -177,17 +184,20 @@ class SearchScreenContentTest {
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Bleach").performClick()
         composeRule.waitForIdle()
-        assert(clicked == "m1") { "onMangaClick phải được gọi khi click result item" }
+        assert(clicked == "m1") {
+            "onMangaClick phải được gọi khi click result item"
+        }
     }
 
     @Test
     fun withMultipleResults_advanceLooper_rendersAll() {
         // 5 items với tags → covers SearchResultItem với/không có tags
-        val mangas = listOf(
-            MangaModel("m1", "Naruto", "Ninja", null, listOf("Action", "Shounen")),
-            MangaModel("m2", "Bleach", "Hollow", null, emptyList()),
-            MangaModel("m3", "One Piece", "Pirates", null, listOf("Adventure")),
-        )
+        val mangas =
+            listOf(
+                MangaModel("m1", "Naruto", "Ninja", null, listOf("Action", "Shounen")),
+                MangaModel("m2", "Bleach", "Hollow", null, emptyList()),
+                MangaModel("m3", "One Piece", "Pirates", null, listOf("Adventure")),
+            )
         val repo = mockk<MangaRepository>()
         coEvery { repo.getTags() } returns Result.success(emptyList())
         every { repo.searchManga(any(), any()) } returns flowOf(Result.success(mangas))

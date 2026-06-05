@@ -1,8 +1,9 @@
-package com.example.mybookslibrary.ui.screens
+﻿package com.example.mybookslibrary.ui.screens
 
 import android.app.Application
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.mybookslibrary.data.repository.MangaRepository
@@ -31,7 +32,7 @@ import org.robolectric.annotation.GraphicsMode
 @coil3.annotation.ExperimentalCoilApi
 class DiscoverScreenContentTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Before
     fun setUp() = FakeImageLoader.install()
@@ -171,10 +172,11 @@ class DiscoverScreenContentTest {
         // Error state → reload → success: recomposition transition covers restart group instructions
         val repo = mockk<MangaRepository>()
         val items = List(3) { MangaModel("m$it", "Item $it", "", null, emptyList()) }
-        every { repo.getDiscoverManga(any(), any()) } returnsMany listOf(
-            flowOf(Result.failure(RuntimeException("network err"))),
-            flowOf(Result.success(items)),
-        )
+        every { repo.getDiscoverManga(any(), any()) } returnsMany
+            listOf(
+                flowOf(Result.failure(RuntimeException("network err"))),
+                flowOf(Result.success(items)),
+            )
         val vm = DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
 
         composeRule.setContent { DiscoverScreenContent(vm = vm) }
@@ -191,10 +193,11 @@ class DiscoverScreenContentTest {
         // Click retry button trong error state → loadDiscover() → items appear
         val repo = mockk<MangaRepository>()
         val items = List(6) { MangaModel("m$it", "Manga $it", "", null, emptyList()) }
-        every { repo.getDiscoverManga(any(), any()) } returnsMany listOf(
-            flowOf(Result.failure(RuntimeException("fail"))),
-            flowOf(Result.success(items)),
-        )
+        every { repo.getDiscoverManga(any(), any()) } returnsMany
+            listOf(
+                flowOf(Result.failure(RuntimeException("fail"))),
+                flowOf(Result.success(items)),
+            )
         val vm = DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
 
         composeRule.setContent { DiscoverScreenContent(vm = vm) }

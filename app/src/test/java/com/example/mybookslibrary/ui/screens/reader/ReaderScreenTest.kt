@@ -1,6 +1,7 @@
-package com.example.mybookslibrary.ui.screens.reader
+﻿package com.example.mybookslibrary.ui.screens.reader
 
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
 import com.example.mybookslibrary.data.download.DownloadedChapterCache
 import com.example.mybookslibrary.data.download.OfflineDownloadStorage
@@ -33,7 +34,7 @@ import org.robolectric.annotation.GraphicsMode
 @coil3.annotation.ExperimentalCoilApi
 class ReaderScreenTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     @Before fun setUp() = FakeImageLoader.install()
 

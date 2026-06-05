@@ -1,7 +1,8 @@
-package com.example.mybookslibrary.ui.screens
+﻿package com.example.mybookslibrary.ui.screens
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.example.mybookslibrary.domain.model.MangaTag
 import com.example.mybookslibrary.ui.viewmodel.SearchUiState
@@ -17,7 +18,7 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SearchFilterSheetTest {
     @get:Rule
-    val composeRule = createComposeRule()
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private val emptyState = SearchUiState()
 
@@ -31,7 +32,7 @@ class SearchFilterSheetTest {
                 onToggleContentRating = {},
                 onToggleStatus = {},
                 onClearFilters = {},
-                onDismiss = {}
+                onDismiss = {},
             )
         }
 
@@ -42,15 +43,20 @@ class SearchFilterSheetTest {
     @Test
     fun withGenresAndThemes_rendersSections() {
         // Covers lines 70-74 (genre section) và 78-83 (theme section) — chỉ hiện khi list không rỗng
-        val stateWithTags = emptyState.copy(
-            availableGenres = listOf(MangaTag("g1", "Action", "genre")),
-            availableThemes = listOf(MangaTag("t1", "Office Workers", "theme")),
-        )
+        val stateWithTags =
+            emptyState.copy(
+                availableGenres = listOf(MangaTag("g1", "Action", "genre")),
+                availableThemes = listOf(MangaTag("t1", "Office Workers", "theme")),
+            )
         composeRule.setContent {
             SearchFilterSheet(
                 state = stateWithTags,
-                onToggleTag = {}, onToggleLanguage = {}, onToggleContentRating = {},
-                onToggleStatus = {}, onClearFilters = {}, onDismiss = {},
+                onToggleTag = {},
+                onToggleLanguage = {},
+                onToggleContentRating = {},
+                onToggleStatus = {},
+                onClearFilters = {},
+                onDismiss = {},
             )
         }
         composeRule.waitForIdle()
@@ -67,7 +73,7 @@ class SearchFilterSheetTest {
                 onToggleContentRating = {},
                 onToggleStatus = {},
                 onClearFilters = {},
-                onDismiss = {}
+                onDismiss = {},
             )
         }
         composeRule.waitForIdle()

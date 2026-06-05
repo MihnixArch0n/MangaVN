@@ -7,6 +7,30 @@ if [ -z "$STAGED_KT" ]; then
     exit 0
 fi
 
+# --- Fast-fail: phát hiện pattern sai trước khi chạy Gradle (~1 giây) ---
+FAST_FAIL=0
+
+# junit4.v2.createComposeRule không generate coverage ổn định — dùng createAndroidComposeRule
+if echo "$STAGED_KT" | xargs grep -l "junit4\.v2\.createComposeRule" 2>/dev/null | grep -q .; then
+    echo "❌ junit4.v2.createComposeRule — đổi sang createAndroidComposeRule<ComponentActivity>()"
+    echo "   Files vi phạm:"
+    echo "$STAGED_KT" | xargs grep -l "junit4\.v2\.createComposeRule" 2>/dev/null | sed 's/^/     /'
+    FAST_FAIL=1
+fi
+
+# createEmptyComposeRule gây 'No compose hierarchies found' trong HiltAndroidTest
+if echo "$STAGED_KT" | xargs grep -l "createEmptyComposeRule" 2>/dev/null | grep -q .; then
+    echo "❌ createEmptyComposeRule — dùng createAndroidComposeRule<ComponentActivity>()"
+    echo "   Files vi phạm:"
+    echo "$STAGED_KT" | xargs grep -l "createEmptyComposeRule" 2>/dev/null | sed 's/^/     /'
+    FAST_FAIL=1
+fi
+
+if [ $FAST_FAIL -ne 0 ]; then
+    exit 1
+fi
+# --- End fast-fail ---
+
 if [ -f "./gradlew" ]; then
     GRADLEW="./gradlew"
 else
@@ -38,7 +62,7 @@ if [ $STATUS -ne 0 ]; then
     echo ""
     echo "FAILED — sửa violations rồi commit lại."
     echo "  lint:   app/build/reports/lint-results-debug.html"
-    echo "  ktlint: Linux/macOS dùng './gradlew ktlintFormat' để auto-fix (không dùng trên Windows)."
+    echo "  ktlint: chạy './gradlew ktlintFormat' để auto-fix (*.kt đã có eol=lf, hoạt động trên mọi OS)."
     echo "  detekt: app/build/reports/detekt/detekt.html"
 fi
 exit $STATUS
