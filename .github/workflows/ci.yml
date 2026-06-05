@@ -18,8 +18,17 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Xác minh gradle-wrapper.jar không bị tamper (supply chain protection).
+  # Chạy riêng trước mọi job khác để fail nhanh nếu wrapper bị giả mạo.
+  wrapper-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: gradle/actions/wrapper-validation@v4
+
   # Phân tích tĩnh chỉ chạy 1 lần trên ubuntu.
   static-analysis:
+    needs: wrapper-validation
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,10 +59,14 @@ jobs:
           EOF
 
       - name: Lint + detekt + ktlint
-        run: ./gradlew lintDebug detekt ktlintCheck --console=plain
+        run: ./gradlew lintDebug lintRelease detekt ktlintCheck --console=plain
 
   build-test:
+    needs: wrapper-validation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      checks: write
     defaults:
       run:
         shell: bash
@@ -99,6 +112,36 @@ jobs:
           name: test-report
           path: app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: ignore
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: Unit Test Results
+          path: app/build/test-results/testDebugUnitTest/*.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Build debug APK và báo cáo kích thước
+        run: ./gradlew :app:assembleDebug --console=plain
+
+      - name: APK size report
+        run: |
+          APK=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
+          SIZE_BYTES=$(stat -c%s "$APK")
+          SIZE_MB=$(echo "scale=2; $SIZE_BYTES / 1048576" | bc)
+          echo "## APK Size" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| \`$(basename $APK)\` | ${SIZE_MB} MB (${SIZE_BYTES} bytes) |" >> $GITHUB_STEP_SUMMARY
+          # Cảnh báo nếu APK vượt 50 MB
+          if [ "$SIZE_BYTES" -gt 52428800 ]; then
+            echo "::warning::APK size ${SIZE_MB} MB vượt ngưỡng 50 MB"
+          fi
+
+      - name: Submit dependency graph
+        uses: gradle/actions/dependency-submission@v4
+        continue-on-error: true
 
   # Instrumented test chạy trên Android emulator (API 34, x86_64) — chỉ ubuntu.
   # Bắt bug runtime không test được JVM: navigation, Hilt DI graph, Activity lifecycle.

@@ -1,0 +1,12 @@
+# Default owner cho toàn bộ repo
+* @phan-tho
+
+# CI/CD và config
+.github/ @phan-tho
+.githooks/ @phan-tho
+*.gradle.kts @phan-tho
+gradle/ @phan-tho
+
+# Core architecture
+app/src/main/java/ @phan-tho
+app/src/main/res/ @phan-tho
