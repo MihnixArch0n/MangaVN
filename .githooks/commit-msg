@@ -1,0 +1,31 @@
+#!/bin/sh
+# commit-msg hook: validate Conventional Commits format.
+# Cài tự động qua settings.gradle.kts (chạy bất kỳ lệnh Gradle nào).
+
+COMMIT_MSG=$(cat "$1")
+
+# Bỏ qua merge commit và fixup/squash
+case "$COMMIT_MSG" in
+  Merge*|Revert*|fixup\!*|squash\!*) exit 0 ;;
+esac
+
+PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+'
+
+if ! echo "$COMMIT_MSG" | grep -qE "$PATTERN"; then
+  echo ""
+  echo "❌ Commit message không đúng Conventional Commits format."
+  echo ""
+  echo "   Format : <type>(<scope>): <mô tả tiếng Việt>"
+  echo "   Types  : feat fix docs style refactor perf test build ci chore revert"
+  echo ""
+  echo "   Ví dụ  :"
+  echo "     feat(auth): thêm đăng nhập Google OAuth"
+  echo "     fix(api): sửa lỗi 500 khi user không có avatar"
+  echo "     test(coverage): thêm unit test cho LibraryRepository"
+  echo ""
+  echo "   Nhận được: \"$COMMIT_MSG\""
+  echo ""
+  exit 1
+fi
+
+exit 0
