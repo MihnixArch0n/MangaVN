@@ -47,9 +47,10 @@ class NavigationTest {
     @Test
     fun loginScreen_hasNavigationToRegister() {
         composeRule.waitForIdle()
-        val isLoginScreen = runCatching {
-            composeRule.onNodeWithText("Don't have an account? Register").assertIsDisplayed()
-        }.isSuccess
+        val isLoginScreen =
+            runCatching {
+                composeRule.onNodeWithText("Don't have an account? Register").assertIsDisplayed()
+            }.isSuccess
         if (isLoginScreen) {
             composeRule.onNodeWithText("Don't have an account? Register").performClick()
             composeRule.waitForIdle()
@@ -60,9 +61,10 @@ class NavigationTest {
     @Test
     fun registerScreen_hasNavigationBackToLogin() {
         composeRule.waitForIdle()
-        val isLoginScreen = runCatching {
-            composeRule.onNodeWithText("Don't have an account? Register").assertIsDisplayed()
-        }.isSuccess
+        val isLoginScreen =
+            runCatching {
+                composeRule.onNodeWithText("Don't have an account? Register").assertIsDisplayed()
+            }.isSuccess
         if (isLoginScreen) {
             composeRule.onNodeWithText("Don't have an account? Register").performClick()
             composeRule.waitForIdle()
