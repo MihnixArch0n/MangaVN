@@ -81,6 +81,12 @@
     <string name="detail_add_to_library">THÊM VÀO THƯ VIỆN</string>
     <string name="detail_pages_suffix">%1$d trang</string>
     <string name="detail_error">Không tải được chi tiết truyện</string>
+    <string name="detail_from_publisher">Từ nhà xuất bản</string>
+    <string name="detail_from_book">Trích từ truyện</string>
+    <string name="detail_customer_reviews">Đánh giá của độc giả &gt;</string>
+    <string name="action_more">Xem thêm</string>
+    <string name="cd_page_preview">Xem trước trang truyện</string>
+    <string name="cd_expand_chapters">Mở rộng danh sách chương</string>
 
     <!-- Chapter -->
     <string name="chapter_vol_prefix">Tập %1$s </string>
