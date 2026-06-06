@@ -21,7 +21,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.mybookslibrary"
-        minSdk = 24
+        minSdk = 30
+        //noinspection OldTargetApi
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -264,61 +265,74 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    // Shared dependencies are added to each required source set from one declaration
+    // so IDE inspections do not report them as declared multiple times.
+    val composeBom = platform(libs.androidx.compose.bom)
+    listOf("implementation", "androidTestImplementation").forEach { add(it, composeBom) }
+    listOf("ksp", "kspTest", "kspAndroidTest").forEach { add(it, libs.hilt.android.compiler) }
+    listOf("testImplementation", "androidTestImplementation").forEach { add(it, libs.hilt.android.testing) }
+    listOf("testImplementation", "androidTestImplementation").forEach { add(it, libs.androidx.compose.ui.test.junit4) }
+    listOf("testImplementation", "debugImplementation").forEach { add(it, libs.androidx.compose.ui.test.manifest) }
+
+    // Android core and lifecycle
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.appcompat)
-    implementation(platform(libs.androidx.compose.bom))
+
+    // Compose UI and navigation
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.telephoto.zoomable.image.coil3)
+
+    // Local data and background work
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-    androidTestImplementation(libs.androidx.room.testing)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.work.runtime.ktx)
+
+    // Network and image loading
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
-    implementation(libs.telephoto.zoomable.image.coil3)
     implementation(libs.timber)
+
+    // Dependency injection
     implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.compose.material.icons.extended)
+
+    // Authentication
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
+    // JVM tests
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.robolectric)
-    testImplementation(libs.hilt.android.testing)
-    kspTest(libs.hilt.android.compiler)
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotest.property)
-    testImplementation(libs.androidx.compose.ui.test.junit4)
-    testImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // Instrumented tests
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.android.compiler)
+    androidTestImplementation(libs.androidx.room.testing)
+
+    // Debug tooling
     debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
 // Cài git hooks từ .githooks/ khi build lần đầu sau khi clone.
