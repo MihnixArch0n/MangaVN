@@ -635,8 +635,17 @@ style:
         value: 'TODO:'
     allowedPatterns: ''
   ForbiddenImport:
-    active: false
-    imports: []
+    active: true
+    imports:
+      - value: 'androidx.compose.**'
+        reason: '@Composable trong ViewModel/Repository → không test được trên JVM, kéo coverage xuống. Tách sang ui/util/ hoặc ui/screens/'
+    excludes:
+      - '**/ui/screens/**'
+      - '**/ui/navigation/**'
+      - '**/ui/theme/**'
+      - '**/ui/util/**'
+      - '**/MainActivity*'
+      - '**/MyBooksLibraryApp*'
     forbiddenPatterns: ''
   ForbiddenMethodCall:
     active: false

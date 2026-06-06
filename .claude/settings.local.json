@@ -1,4 +1,29 @@
 {
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c '[ -f /tmp/auto-build.disabled ] && exit 0; echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\.(kt|xml|gradle)\" && cd \"${CLAUDE_PROJECT_DIR:-.}\" && export JAVA_HOME=\"C:/Program Files/Java/jdk-21.0.10\" && ./gradlew assembleDebug --console=plain -q 2>&1 | tail -2 && \"C:/Android/Sdk/platform-tools/adb.exe\" push app/build/outputs/apk/debug/app-debug.apk /data/local/tmp/app.apk 2>/dev/null && \"C:/Android/Sdk/platform-tools/adb.exe\" shell \"pm install -r /data/local/tmp/app.apk\" 2>/dev/null && echo \">>> Auto-install OK\" || true'",
+            "shell": "bash"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'PIDFILE=/tmp/watch-build.pid; if [ -f \"$PIDFILE\" ] && kill -0 $(cat \"$PIDFILE\") 2>/dev/null; then echo \"watch-build: đang chạy (PID $(cat $PIDFILE))\"; else cd \"${CLAUDE_PROJECT_DIR:-.}\" && nohup bash scripts/watch-build.sh >/tmp/watch-build.log 2>&1 & echo $! > \"$PIDFILE\"; echo \"watch-build: đã khởi động (PID $!), log: /tmp/watch-build.log\"; fi'",
+            "shell": "bash"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(./gradlew *)",

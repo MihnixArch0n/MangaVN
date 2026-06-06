@@ -142,6 +142,8 @@ val jacocoGeneratedFilter =
         // Không test được với JVM unit test (cần Application context đầy đủ).
         "**/MyBooksLibraryApp*.*",
         "**/ImageLoaderEntryPoint*.*",
+        // UiText.asString() là @Composable — không chạy được trên JVM unit test.
+        "**/ui/util/UiText*.*",
     )
 
 // AGP 9 "built-in Kotlin" xuất class compile ở built_in_kotlinc (không phải tmp/kotlin-classes).

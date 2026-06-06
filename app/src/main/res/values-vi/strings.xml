@@ -152,4 +152,25 @@
     <string name="error_load_pages">Không tải được trang truyện</string>
     <string name="error_load_discover">Không tải được danh sách truyện</string>
     <string name="error_unexpected">Lỗi không mong muốn</string>
+
+    <!-- Màn hình đăng nhập / đăng ký -->
+    <string name="auth_login_title">Đăng nhập</string>
+    <string name="auth_welcome_back">Chào mừng trở lại!</string>
+    <string name="auth_username">Tên đăng nhập</string>
+    <string name="auth_password">Mật khẩu</string>
+    <string name="auth_login_button">Đăng nhập</string>
+    <string name="auth_google_signin">Đăng nhập bằng Google</string>
+    <string name="auth_no_account_register">Chưa có tài khoản? Đăng ký</string>
+    <string name="auth_register_title">Đăng ký</string>
+    <string name="auth_create_account">Tạo tài khoản</string>
+    <string name="auth_confirm_password">Xác nhận mật khẩu</string>
+    <string name="auth_passwords_no_match">Mật khẩu không khớp</string>
+    <string name="auth_have_account_login">Đã có tài khoản? Đăng nhập</string>
+    <string name="auth_error_empty_fields">Tên đăng nhập và mật khẩu không được để trống</string>
+    <string name="auth_error_login_failed">Đăng nhập thất bại</string>
+    <string name="auth_error_register_failed">Đăng ký thất bại</string>
+    <string name="auth_error_google_signin_failed">Đăng nhập Google thất bại</string>
+    <string name="auth_error_username_exists">Tên đăng nhập đã tồn tại</string>
+    <string name="auth_error_invalid_credentials">Tên đăng nhập hoặc mật khẩu không đúng</string>
+    <string name="auth_error_google_save_failed">Không thể lưu tài khoản Google</string>
 </resources>

@@ -10,11 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.viewmodel.AuthState
 import com.example.mybookslibrary.ui.viewmodel.AuthViewModel
 
@@ -42,7 +44,7 @@ fun LoginScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Login") },
+                title = { Text(stringResource(R.string.auth_login_title)) },
             )
         },
     ) { innerPadding ->
@@ -56,7 +58,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = "Welcome Back!",
+                text = stringResource(R.string.auth_welcome_back),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 32.dp),
@@ -65,7 +67,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.auth_username)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
@@ -75,7 +77,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.auth_password)) },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
@@ -92,7 +94,7 @@ fun LoginScreen(
 
             if (uiState is AuthState.Error) {
                 Text(
-                    text = (uiState as AuthState.Error).message,
+                    text = (uiState as AuthState.Error).message.asString(),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(bottom = 16.dp),
                 )
@@ -106,7 +108,7 @@ fun LoginScreen(
                 if (uiState is AuthState.Loading) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text("Login")
+                    Text(stringResource(R.string.auth_login_button))
                 }
             }
 
@@ -117,13 +119,13 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = uiState !is AuthState.Loading,
             ) {
-                Text("Sign in with Google")
+                Text(stringResource(R.string.auth_google_signin))
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             TextButton(onClick = onNavigateToRegister) {
-                Text("Don't have an account? Register")
+                Text(stringResource(R.string.auth_no_account_register))
             }
         }
     }

@@ -9,11 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.viewmodel.AuthState
 import com.example.mybookslibrary.ui.viewmodel.AuthViewModel
 
@@ -34,14 +36,14 @@ fun RegisterScreen(
     LaunchedEffect(uiState) {
         if (uiState is AuthState.Success) {
             viewModel.resetState()
-            onRegisterSuccess() // In a real app we might auto-login, but for now we go back to login
+            onRegisterSuccess()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Register") },
+                title = { Text(stringResource(R.string.auth_register_title)) },
             )
         },
     ) { innerPadding ->
@@ -55,7 +57,7 @@ fun RegisterScreen(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = "Create an Account",
+                text = stringResource(R.string.auth_create_account),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 32.dp),
@@ -64,7 +66,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.auth_username)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
@@ -74,7 +76,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.auth_password)) },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 trailingIcon = {
@@ -92,7 +94,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
+                label = { Text(stringResource(R.string.auth_confirm_password)) },
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
@@ -103,13 +105,13 @@ fun RegisterScreen(
 
             if (uiState is AuthState.Error) {
                 Text(
-                    text = (uiState as AuthState.Error).message,
+                    text = (uiState as AuthState.Error).message.asString(),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(bottom = 16.dp),
                 )
             } else if (password != confirmPassword && confirmPassword.isNotEmpty()) {
                 Text(
-                    text = "Passwords do not match",
+                    text = stringResource(R.string.auth_passwords_no_match),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(bottom = 16.dp),
                 )
@@ -127,14 +129,14 @@ fun RegisterScreen(
                 if (uiState is AuthState.Loading) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                 } else {
-                    Text("Register")
+                    Text(stringResource(R.string.auth_register_title))
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             TextButton(onClick = onNavigateToLogin) {
-                Text("Already have an account? Login")
+                Text(stringResource(R.string.auth_have_account_login))
             }
         }
     }

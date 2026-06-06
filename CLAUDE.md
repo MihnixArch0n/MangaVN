@@ -38,6 +38,12 @@ JAVA_HOME="C:/Program Files/Java/jdk-21.0.10" ./gradlew assembleDebug
 - HiltAndroidTest: `@UninstallModules` để swap fake repository.
 - Mỗi test file Compose cần `@HiltAndroidTest` + `@RunWith(AndroidJUnit4::class)`.
 
+## Convention: @Composable không được ở ViewModel/Repository
+**ViewModel và data layer không được import `androidx.compose.**`** — `@Composable` function không chạy được trên JVM unit test, kéo coverage xuống.
+
+- `@Composable` helper (vd `UiText.asString()`) → đặt trong `ui/util/` hoặc `ui/screens/`
+- Detekt rule `ForbiddenImport` đang enforce: bất kỳ file nào ngoài `ui/screens/`, `ui/navigation/`, `ui/theme/`, `ui/util/` mà import `androidx.compose.**` sẽ bị block.
+
 ## Detekt — UndocumentedPublicFunction
 Rule đang **bật**. KDoc bắt buộc cho public function, **ngoại trừ** các path sau (tên đã tự document):
 - `ui/screens/**`, `ui/navigation/**`, `ui/theme/**`, `ui/viewmodel/**`, `ui/util/**` — Composable/ViewModel
