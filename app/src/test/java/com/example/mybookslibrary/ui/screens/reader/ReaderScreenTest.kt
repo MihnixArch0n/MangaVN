@@ -48,14 +48,14 @@ class ReaderScreenTest {
         return ReaderViewModel(
             application = RuntimeEnvironment.getApplication(),
             savedStateHandle =
-                SavedStateHandle(
-                    mapOf(
-                        "mangaId" to "m1",
-                        "chapterId" to chapterId,
-                        "chapterTitle" to "Chapter 1",
-                        "startPageIndex" to 0,
-                    ),
+            SavedStateHandle(
+                mapOf(
+                    "mangaId" to "m1",
+                    "chapterId" to chapterId,
+                    "chapterTitle" to "Chapter 1",
+                    "startPageIndex" to 0,
                 ),
+            ),
             loadReaderPagesUseCase = loadReaderPagesUseCase,
             syncReadingProgressUseCase = syncReadingProgressUseCase,
             tapZoneEvaluator = TapZoneEvaluator(),
@@ -78,14 +78,14 @@ class ReaderScreenTest {
             ReaderViewModel(
                 application = RuntimeEnvironment.getApplication(),
                 savedStateHandle =
-                    SavedStateHandle(
-                        mapOf(
-                            "mangaId" to "m1",
-                            "chapterId" to "",
-                            "chapterTitle" to "",
-                            "startPageIndex" to 0,
-                        ),
+                SavedStateHandle(
+                    mapOf(
+                        "mangaId" to "m1",
+                        "chapterId" to "",
+                        "chapterTitle" to "",
+                        "startPageIndex" to 0,
                     ),
+                ),
                 loadReaderPagesUseCase = loadReaderPagesUseCase,
                 syncReadingProgressUseCase = syncReadingProgressUseCase,
                 tapZoneEvaluator = TapZoneEvaluator(),
@@ -108,14 +108,14 @@ class ReaderScreenTest {
             ReaderViewModel(
                 application = RuntimeEnvironment.getApplication(),
                 savedStateHandle =
-                    SavedStateHandle(
-                        mapOf(
-                            "mangaId" to "m1",
-                            "chapterId" to "c2",
-                            "chapterTitle" to "Ch2",
-                            "startPageIndex" to 0,
-                        ),
+                SavedStateHandle(
+                    mapOf(
+                        "mangaId" to "m1",
+                        "chapterId" to "c2",
+                        "chapterTitle" to "Ch2",
+                        "startPageIndex" to 0,
                     ),
+                ),
                 loadReaderPagesUseCase = loadReaderPagesUseCase,
                 syncReadingProgressUseCase = syncReadingProgressUseCase,
                 tapZoneEvaluator = TapZoneEvaluator(),

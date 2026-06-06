@@ -134,11 +134,7 @@ internal fun CustomerReviewsSection(onReviewClick: () -> Unit) {
 }
 
 @Composable
-private fun ReviewCard(
-    review: DummyReview,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
+private fun ReviewCard(review: DummyReview, modifier: Modifier = Modifier, onClick: () -> Unit,) {
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -178,10 +174,7 @@ private fun ReviewCard(
 }
 
 @Composable
-internal fun ChaptersHeader(
-    expanded: Boolean,
-    modifier: Modifier = Modifier,
-) {
+internal fun ChaptersHeader(expanded: Boolean, modifier: Modifier = Modifier,) {
     Column(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -212,12 +205,7 @@ internal fun DetailMessage(message: String) {
     )
 }
 
-data class DummyReview(
-    val title: String,
-    val body: String,
-    val date: String,
-    val username: String,
-)
+data class DummyReview(val title: String, val body: String, val date: String, val username: String,)
 
 private val dummyReviews =
     listOf(

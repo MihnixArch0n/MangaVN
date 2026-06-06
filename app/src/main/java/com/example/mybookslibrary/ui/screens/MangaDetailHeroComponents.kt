@@ -47,10 +47,7 @@ import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
 import com.example.mybookslibrary.ui.util.appString
 
 @Composable
-internal fun MangaDetailBackdrop(
-    mangaId: String,
-    coverUrl: String?,
-) {
+internal fun MangaDetailBackdrop(mangaId: String, coverUrl: String?,) {
     Box(modifier = Modifier.fillMaxWidth().height(DetailDimensions.BackdropHeight)) {
         AsyncImage(
             model = coverRequest(mangaId, coverUrl),
@@ -60,35 +57,30 @@ internal fun MangaDetailBackdrop(
         )
         Box(
             modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors =
-                                listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                    MaterialTheme.colorScheme.background,
-                                ),
-                            startY = 120f,
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors =
+                        listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            MaterialTheme.colorScheme.background,
                         ),
+                        startY = 120f,
                     ),
+                ),
         )
     }
 }
 
 @Composable
-internal fun MangaDetailHeader(
-    mangaId: String,
-    title: String,
-    coverUrl: String?,
-    tags: List<String>,
-) {
+internal fun MangaDetailHeader(mangaId: String, title: String, coverUrl: String?, tags: List<String>,) {
     Row(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .offset(y = DetailDimensions.CoverRowOffset),
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .offset(y = DetailDimensions.CoverRowOffset),
         verticalAlignment = Alignment.Bottom,
     ) {
         Card(
@@ -110,10 +102,10 @@ internal fun MangaDetailHeader(
                     tags.take(2).forEach { tag ->
                         Box(
                             modifier =
-                                Modifier
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                            Modifier
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
+                                .padding(horizontal = 10.dp, vertical = 4.dp),
                         ) {
                             Text(
                                 tag,
@@ -150,10 +142,10 @@ internal fun MangaDetailActions(
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(16.dp),
             colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
         ) {
             Text(
                 if (firstChapter != null) appString(R.string.detail_read_now) else appString(R.string.detail_loading),
@@ -166,23 +158,23 @@ internal fun MangaDetailActions(
             modifier = Modifier.fillMaxWidth().height(52.dp),
             shape = RoundedCornerShape(16.dp),
             border =
-                BorderStroke(
-                    1.dp,
-                    if (isInLibrary) {
-                        MaterialTheme.colorScheme.tertiary
-                    } else {
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                    },
-                ),
+            BorderStroke(
+                1.dp,
+                if (isInLibrary) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                },
+            ),
             colors =
-                ButtonDefaults.outlinedButtonColors(
-                    contentColor =
-                        if (isInLibrary) {
-                            MaterialTheme.colorScheme.tertiary
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                ),
+            ButtonDefaults.outlinedButtonColors(
+                contentColor =
+                if (isInLibrary) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            ),
         ) {
             Icon(
                 if (isInLibrary) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
@@ -199,20 +191,17 @@ internal fun MangaDetailActions(
 }
 
 @Composable
-internal fun DetailBackButton(
-    onBackClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+internal fun DetailBackButton(onBackClick: () -> Unit, modifier: Modifier = Modifier,) {
     IconButton(
         onClick = onBackClick,
         modifier = modifier.statusBarsPadding().padding(8.dp),
     ) {
         Box(
             modifier =
-                Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
+            Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -226,13 +215,9 @@ internal fun DetailBackButton(
 }
 
 @Composable
-private fun coverRequest(
-    mangaId: String,
-    coverUrl: String?,
-): ImageRequest =
-    ImageRequest
-        .Builder(LocalContext.current)
-        .data(coverUrl)
-        .placeholderMemoryCacheKey("cover_$mangaId")
-        .memoryCacheKey("cover_$mangaId")
-        .build()
+private fun coverRequest(mangaId: String, coverUrl: String?,): ImageRequest = ImageRequest
+    .Builder(LocalContext.current)
+    .data(coverUrl)
+    .placeholderMemoryCacheKey("cover_$mangaId")
+    .memoryCacheKey("cover_$mangaId")
+    .build()

@@ -11,9 +11,6 @@ import dagger.hilt.android.testing.HiltTestApplication
  * Khai báo trong build.gradle.kts: testInstrumentationRunner = "...HiltTestRunner"
  */
 class HiltTestRunner : AndroidJUnitRunner() {
-    override fun newApplication(
-        cl: ClassLoader,
-        className: String,
-        context: Context,
-    ): Application = super.newApplication(cl, HiltTestApplication::class.java.name, context)
+    override fun newApplication(cl: ClassLoader, className: String, context: Context): Application =
+        super.newApplication(cl, HiltTestApplication::class.java.name, context)
 }

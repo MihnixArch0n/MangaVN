@@ -140,10 +140,10 @@ fun MangaDetailScreen(
                 ChaptersHeader(
                     expanded = chaptersExpanded,
                     modifier =
-                        Modifier
-                            .padding(horizontal = 24.dp)
-                            .offset(y = DetailDimensions.ChaptersOffset)
-                            .clickable { chaptersExpanded = !chaptersExpanded },
+                    Modifier
+                        .padding(horizontal = 24.dp)
+                        .offset(y = DetailDimensions.ChaptersOffset)
+                        .clickable { chaptersExpanded = !chaptersExpanded },
                 )
             }
             if (chaptersExpanded) {

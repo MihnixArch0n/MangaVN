@@ -11,22 +11,21 @@ class SyncReadingProgressUseCaseTest {
     private val useCase = SyncReadingProgressUseCase(libraryRepository)
 
     @Test
-    fun invoke_delegatesToLibraryRepository() =
-        runTest {
-            useCase(
+    fun invoke_delegatesToLibraryRepository() = runTest {
+        useCase(
+            mangaId = "manga-1",
+            chapterId = "chapter-1",
+            pageIndex = 4,
+            totalPages = 8,
+        )
+
+        coVerify {
+            libraryRepository.updateReadingProgress(
                 mangaId = "manga-1",
                 chapterId = "chapter-1",
                 pageIndex = 4,
                 totalPages = 8,
             )
-
-            coVerify {
-                libraryRepository.updateReadingProgress(
-                    mangaId = "manga-1",
-                    chapterId = "chapter-1",
-                    pageIndex = 4,
-                    totalPages = 8,
-                )
-            }
         }
+    }
 }

@@ -44,13 +44,13 @@ internal fun NavGraphBuilder.mangaDetailGraph(navController: NavHostController) 
     composable(
         route = MangaDetailDestination.routePattern,
         arguments =
-            listOf(
-                navArgument(MangaDetailDestination.mangaIdArgumentName) { type = NavType.StringType },
-                navArgument(MangaDetailDestination.titleArgumentName) { type = NavType.StringType },
-                navArgument(MangaDetailDestination.coverArtArgumentName) { type = NavType.StringType },
-                navArgument(MangaDetailDestination.descriptionArgumentName) { type = NavType.StringType },
-                navArgument(MangaDetailDestination.tagsArgumentName) { type = NavType.StringType },
-            ),
+        listOf(
+            navArgument(MangaDetailDestination.mangaIdArgumentName) { type = NavType.StringType },
+            navArgument(MangaDetailDestination.titleArgumentName) { type = NavType.StringType },
+            navArgument(MangaDetailDestination.coverArtArgumentName) { type = NavType.StringType },
+            navArgument(MangaDetailDestination.descriptionArgumentName) { type = NavType.StringType },
+            navArgument(MangaDetailDestination.tagsArgumentName) { type = NavType.StringType },
+        ),
         enterTransition = {
             scaleIn(initialScale = 0.9f, animationSpec = navTween()) + fadeIn(animationSpec = navTween())
         },
@@ -86,9 +86,9 @@ internal fun NavGraphBuilder.reviewGraph(navController: NavHostController) {
     composable(
         route = MangaReviewDestination.routePattern,
         arguments =
-            listOf(
-                navArgument(MangaReviewDestination.mangaIdArgumentName) { type = NavType.StringType },
-            ),
+        listOf(
+            navArgument(MangaReviewDestination.mangaIdArgumentName) { type = NavType.StringType },
+        ),
     ) {
         MangaReviewScreen(onBackClick = { navController.popBackStack() })
     }
@@ -98,12 +98,12 @@ internal fun NavGraphBuilder.readerGraph(navController: NavHostController) {
     composable(
         route = ReaderDestination.routePattern,
         arguments =
-            listOf(
-                navArgument(ReaderDestination.mangaIdArgumentName) { type = NavType.StringType },
-                navArgument(ReaderDestination.chapterIdArgumentName) { type = NavType.StringType },
-                navArgument(ReaderDestination.chapterTitleArgumentName) { type = NavType.StringType },
-                navArgument(ReaderDestination.startPageIndexArgumentName) { type = NavType.IntType },
-            ),
+        listOf(
+            navArgument(ReaderDestination.mangaIdArgumentName) { type = NavType.StringType },
+            navArgument(ReaderDestination.chapterIdArgumentName) { type = NavType.StringType },
+            navArgument(ReaderDestination.chapterTitleArgumentName) { type = NavType.StringType },
+            navArgument(ReaderDestination.startPageIndexArgumentName) { type = NavType.IntType },
+        ),
         enterTransition = {
             slideIntoContainer(
                 towards = AnimatedContentTransitionScope.SlideDirection.Left,

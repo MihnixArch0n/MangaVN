@@ -26,17 +26,14 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import com.example.mybookslibrary.ui.util.appString
 
 @Composable
-internal fun FloatingPillNavBar(
-    currentDestination: NavDestination?,
-    onNavigate: (BottomNavDestination) -> Unit,
-) {
+internal fun FloatingPillNavBar(currentDestination: NavDestination?, onNavigate: (BottomNavDestination) -> Unit,) {
     Box(
         modifier =
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 32.dp, vertical = 16.dp)
-                .background(Color.Transparent),
+        Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 32.dp, vertical = 16.dp)
+            .background(Color.Transparent),
         contentAlignment = Alignment.Center,
     ) {
         Card(
@@ -64,12 +61,7 @@ internal fun FloatingPillNavBar(
 }
 
 @Composable
-private fun PillNavItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
+private fun PillNavItem(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit,) {
     val containerColor =
         if (selected) {
             MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
@@ -79,22 +71,22 @@ private fun PillNavItem(
 
     Box(
         modifier =
-            Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(containerColor)
-                .clickable(onClick = onClick)
-                .padding(horizontal = 20.dp, vertical = 10.dp),
+        Modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(containerColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             tint =
-                if (selected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+            if (selected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
             modifier = Modifier.size(24.dp),
         )
     }

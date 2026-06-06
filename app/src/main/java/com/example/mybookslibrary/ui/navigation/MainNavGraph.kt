@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:property-naming")
+
 package com.example.mybookslibrary.ui.navigation
 
 import android.net.Uri
@@ -37,11 +39,7 @@ import com.example.mybookslibrary.R
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
 
-sealed class BottomNavDestination(
-    val route: String,
-    @param:StringRes val labelRes: Int,
-    val icon: ImageVector,
-) {
+sealed class BottomNavDestination(val route: String, @param:StringRes val labelRes: Int, val icon: ImageVector,) {
     data object Discover : BottomNavDestination("discover", R.string.nav_discover, Icons.Filled.Home)
 
     data object Search : BottomNavDestination("search", R.string.nav_search, Icons.Filled.Search)
@@ -72,12 +70,8 @@ object ReaderDestination {
     private const val startPageIndexArg = "startPageIndex"
     const val routePattern = "$route/{$mangaIdArg}/{$chapterIdArg}/{$chapterTitleArg}/{$startPageIndexArg}"
 
-    fun createRoute(
-        mangaId: String,
-        chapterId: String,
-        chapterTitle: String,
-        startPageIndex: Int,
-    ) = "$route/${Uri.encode(mangaId)}/${Uri.encode(chapterId)}/${Uri.encode(chapterTitle)}/$startPageIndex"
+    fun createRoute(mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int,) =
+        "$route/${Uri.encode(mangaId)}/${Uri.encode(chapterId)}/${Uri.encode(chapterTitle)}/$startPageIndex"
 
     const val mangaIdArgumentName = mangaIdArg
     const val chapterIdArgumentName = chapterIdArg
@@ -182,16 +176,16 @@ fun MainNavHost(loggedInUserId: String?) {
                 NavHost(
                     navController = navController,
                     startDestination =
-                        if (loggedInUserId == null) {
-                            AuthDestination.Login
-                        } else {
-                            BottomNavDestination.Discover.route
-                        },
+                    if (loggedInUserId == null) {
+                        AuthDestination.Login
+                    } else {
+                        BottomNavDestination.Discover.route
+                    },
                     modifier =
-                        Modifier.padding(
-                            top = if (isReaderDestination) 0.dp else innerPadding.calculateTopPadding(),
-                            bottom = 0.dp,
-                        ),
+                    Modifier.padding(
+                        top = if (isReaderDestination) 0.dp else innerPadding.calculateTopPadding(),
+                        bottom = 0.dp,
+                    ),
                     enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
                     exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
                     popEnterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },

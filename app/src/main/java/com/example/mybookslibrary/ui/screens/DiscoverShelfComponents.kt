@@ -112,11 +112,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.shelfSection(
 }
 
 @Composable
-private fun SectionHeader(
-    title: String,
-    expanded: Boolean = false,
-    onToggle: (() -> Unit)? = null,
-) {
+private fun SectionHeader(title: String, expanded: Boolean = false, onToggle: (() -> Unit)? = null,) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -139,11 +135,7 @@ private fun SectionHeader(
 }
 
 @Composable
-private fun SpotlightCard(
-    manga: MangaModel,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun SpotlightCard(manga: MangaModel, onClick: () -> Unit, modifier: Modifier = Modifier,) {
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().height(340.dp),
@@ -171,10 +163,10 @@ private fun SpotlightCard(
                 if (manga.tags.isNotEmpty()) {
                     Box(
                         modifier =
-                            Modifier
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(MaterialTheme.colorScheme.tertiary)
-                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                        Modifier
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(MaterialTheme.colorScheme.tertiary)
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
                     ) {
                         Text(
                             manga.tags.first().uppercase(),
@@ -197,10 +189,7 @@ private fun SpotlightCard(
 }
 
 @Composable
-private fun HorizontalBookScroll(
-    items: List<MangaModel>,
-    onItemClick: (MangaModel) -> Unit,
-) {
+private fun HorizontalBookScroll(items: List<MangaModel>, onItemClick: (MangaModel) -> Unit,) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -212,10 +201,7 @@ private fun HorizontalBookScroll(
 }
 
 @Composable
-private fun ExpandedBookGrid(
-    items: List<MangaModel>,
-    onItemClick: (MangaModel) -> Unit,
-) {
+private fun ExpandedBookGrid(items: List<MangaModel>, onItemClick: (MangaModel) -> Unit,) {
     val chunked = remember(items) { items.chunked(GRID_COLUMNS) }
     Column(
         modifier = Modifier.padding(horizontal = 24.dp),
@@ -238,11 +224,7 @@ private fun ExpandedBookGrid(
 private const val GRID_COLUMNS = 3
 
 @Composable
-private fun MangaCardItem(
-    manga: MangaModel,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun MangaCardItem(manga: MangaModel, onClick: () -> Unit, modifier: Modifier = Modifier,) {
     Column(modifier = modifier.width(120.dp).clickable(onClick = onClick)) {
         Card(
             modifier = Modifier.fillMaxWidth().height(180.dp),

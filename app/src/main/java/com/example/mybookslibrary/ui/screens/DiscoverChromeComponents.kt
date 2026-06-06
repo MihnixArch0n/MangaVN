@@ -68,10 +68,10 @@ internal fun EditorialTopBar(
             )
         },
         colors =
-            TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background,
-                scrolledContainerColor = MaterialTheme.colorScheme.background,
-            ),
+        TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            scrolledContainerColor = MaterialTheme.colorScheme.background,
+        ),
     )
 }
 
@@ -120,11 +120,7 @@ private fun DiscoverNavigationMenu(
 }
 
 @Composable
-private fun DiscoverMenuItem(
-    text: String,
-    icon: @Composable () -> Unit,
-    onClick: () -> Unit,
-) {
+private fun DiscoverMenuItem(text: String, icon: @Composable () -> Unit, onClick: () -> Unit,) {
     DropdownMenuItem(
         text = { Text(text, style = MaterialTheme.typography.bodyLarge) },
         onClick = onClick,
@@ -133,20 +129,17 @@ private fun DiscoverMenuItem(
 }
 
 @Composable
-private fun DiscoverTopBarActions(
-    onSearchClick: () -> Unit,
-    onProfileClick: () -> Unit,
-) {
+private fun DiscoverTopBarActions(onSearchClick: () -> Unit, onProfileClick: () -> Unit,) {
     IconButton(onClick = onSearchClick) {
         Icon(Icons.Filled.Search, appString(R.string.cd_search), tint = MaterialTheme.colorScheme.primary)
     }
     IconButton(onClick = onProfileClick) {
         Box(
             modifier =
-                Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+            Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -167,10 +160,7 @@ internal fun DiscoverLoadingState(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun DiscoverErrorState(
-    modifier: Modifier = Modifier,
-    onRetry: () -> Unit,
-) {
+internal fun DiscoverErrorState(modifier: Modifier = Modifier, onRetry: () -> Unit,) {
     Box(
         modifier = modifier.padding(horizontal = 32.dp),
         contentAlignment = Alignment.Center,
@@ -204,10 +194,10 @@ internal fun DiscoverErrorState(
                 onClick = onRetry,
                 shape = RoundedCornerShape(16.dp),
                 colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
                 modifier = Modifier.height(48.dp).padding(horizontal = 16.dp),
             ) {
                 Text(
