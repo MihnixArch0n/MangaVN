@@ -5,8 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -104,5 +106,18 @@ class MainNavHostTest {
         userId = null
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Welcome Back!").assertIsDisplayed()
+    }
+
+    @Test
+    fun mainNavHost_mainTabNavigation_displaysDestinationContent() {
+        composeRule.setContent {
+            MainNavHost(loggedInUserId = "test-user-123")
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onAllNodesWithContentDescription("Search")[1].performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Search").assertIsDisplayed()
     }
 }

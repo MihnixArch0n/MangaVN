@@ -50,7 +50,7 @@ import com.example.mybookslibrary.ui.theme.KansoWarning
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.LibraryViewModel
 
-@Suppress("unused")
+@Suppress("unused", "LongMethod")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreenContent(
@@ -68,10 +68,10 @@ fun LibraryScreenContent(
         if (items.isEmpty()) {
             Box(
                 modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .consumeWindowInsets(innerPadding),
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -91,10 +91,10 @@ fun LibraryScreenContent(
         } else {
             LazyColumn(
                 modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .consumeWindowInsets(innerPadding),
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
                 contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 100.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -122,7 +122,10 @@ fun LibraryScreenContent(
             ModalBottomSheet(onDismissRequest = { pendingRemoval = null }) {
                 val item = pendingRemoval ?: return@ModalBottomSheet
                 Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-                    Text(text = appString(R.string.library_remove_bookmark), style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        text = appString(R.string.library_remove_bookmark),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = appString(R.string.library_remove_bookmark_confirm, item.title),
@@ -207,9 +210,9 @@ private fun StatusChip(status: LibraryStatus) {
         }
     Box(
         modifier =
-            Modifier
-                .background(color.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
-                .padding(horizontal = 10.dp, vertical = 4.dp),
+        Modifier
+            .background(color.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = color)
     }

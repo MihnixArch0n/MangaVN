@@ -32,12 +32,9 @@ import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.BackupRestoreResult
 import com.example.mybookslibrary.ui.viewmodel.SettingsViewModel
 
-@Suppress("unused")
+@Suppress("unused", "CyclomaticComplexMethod", "LongMethod")
 @Composable
-fun SettingScreenContent(
-    modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = hiltViewModel(),
-) {
+fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel(),) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -62,10 +59,10 @@ fun SettingScreenContent(
     ) { innerPadding ->
         androidx.compose.foundation.lazy.LazyColumn(
             modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding),
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .consumeWindowInsets(innerPadding),
             contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
         ) {
             item {
@@ -150,16 +147,25 @@ fun SettingScreenContent(
                         null -> appString(R.string.settings_restore_subtitle)
                     }
                 SettingsCard {
-                    SettingsRow(appString(R.string.settings_backup), backupSub) { backupLauncher.launch("kanso_library_backup.json") }
+                    SettingsRow(appString(R.string.settings_backup), backupSub) {
+                        backupLauncher.launch("kanso_library_backup.json")
+                    }
                     SettingsDivider()
-                    SettingsRow(appString(R.string.settings_restore), restoreSub) { restoreLauncher.launch(arrayOf("application/json")) }
+                    SettingsRow(appString(R.string.settings_restore), restoreSub) {
+                        restoreLauncher.launch(arrayOf("application/json"))
+                    }
                 }
                 Spacer(Modifier.height(24.dp))
             }
 
             item { SettingsSectionLabel(appString(R.string.settings_section_account)) }
             item {
-                val signOutTitle = if (uiState.signedOut) appString(R.string.settings_signed_out) else appString(R.string.settings_sign_out)
+                val signOutTitle =
+                    if (uiState.signedOut) {
+                        appString(R.string.settings_signed_out)
+                    } else {
+                        appString(R.string.settings_sign_out)
+                    }
                 val signOutSub =
                     if (uiState.signedOut) {
                         appString(
@@ -169,7 +175,12 @@ fun SettingScreenContent(
                         appString(R.string.settings_sign_out_subtitle)
                     }
                 SettingsCard {
-                    SettingsRow(signOutTitle, signOutSub, MaterialTheme.colorScheme.tertiary) { viewModel.signOut() }
+                    SettingsRow(
+                        title = signOutTitle,
+                        subtitle = signOutSub,
+                        titleColor = MaterialTheme.colorScheme.tertiary,
+                        onClick = viewModel::signOut,
+                    )
                 }
                 Spacer(Modifier.height(80.dp))
             }
@@ -191,8 +202,8 @@ private fun SettingsSectionLabel(title: String) {
 private fun SettingsCard(content: @Composable () -> Unit) {
     Card(
         shape =
-            androidx.compose.foundation.shape
-                .RoundedCornerShape(16.dp),
+        androidx.compose.foundation.shape
+            .RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth(),
@@ -209,14 +220,22 @@ private fun SettingsRow(
     onClick: () -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 16.dp),
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = titleColor)
             Spacer(Modifier.height(2.dp))
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

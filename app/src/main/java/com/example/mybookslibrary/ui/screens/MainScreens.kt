@@ -22,10 +22,7 @@ fun DiscoverScreen(
 }
 
 @Composable
-fun SearchScreen(
-    onMangaClick: (MangaModel) -> Unit = {},
-    viewModel: SearchViewModel = hiltViewModel(),
-) {
+fun SearchScreen(onMangaClick: (MangaModel) -> Unit = {}, viewModel: SearchViewModel = hiltViewModel(),) {
     SearchScreenContent(
         onMangaClick = onMangaClick,
         viewModel = viewModel,

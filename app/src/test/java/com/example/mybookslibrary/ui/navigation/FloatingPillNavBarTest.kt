@@ -1,9 +1,12 @@
 ﻿package com.example.mybookslibrary.ui.navigation
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.navigation.NavDestination
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
@@ -94,5 +97,20 @@ class FloatingPillNavBarTest {
         }
         composeRule.waitForIdle()
         composeRule.onNodeWithContentDescription("Discover").assertIsDisplayed()
+    }
+
+    @Test
+    fun floatingPillNavBar_appliesModifierToRoot() {
+        composeRule.setContent {
+            MyBooksLibraryTheme {
+                FloatingPillNavBar(
+                    currentDestination = null,
+                    onNavigate = {},
+                    modifier = Modifier.testTag("floating-pill-root"),
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag("floating-pill-root").assertIsDisplayed()
     }
 }

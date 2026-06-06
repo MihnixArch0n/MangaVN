@@ -17,7 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModel
 
-@Suppress("unused")
+@Suppress("unused", "LongMethod", "LongParameterList")
 @Composable
 fun DiscoverScreenContent(
     onMangaClick: (MangaModel) -> Unit = {},
@@ -59,19 +59,19 @@ fun DiscoverScreenContent(
             uiState.error != null ->
                 DiscoverErrorState(
                     modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .consumeWindowInsets(innerPadding),
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding),
                     onRetry = vm::loadDiscover,
                 )
             else ->
                 DiscoverContentList(
                     modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                            .consumeWindowInsets(innerPadding),
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding),
                     contentPadding = PaddingValues(bottom = 100.dp),
                     spotlight = items.firstOrNull(),
                     popularItems = popularItems,
