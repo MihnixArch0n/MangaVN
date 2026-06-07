@@ -14,6 +14,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -39,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -64,7 +66,9 @@ internal data class ReaderBottomBarState(
 )
 
 @Composable
-internal fun readerBarColors(isLightTheme: Boolean = MaterialTheme.colorScheme.background.luminance() > 0.5f): ReaderBarColors {
+internal fun readerBarColors(
+    isLightTheme: Boolean = MaterialTheme.colorScheme.background.luminance() > 0.5f
+): ReaderBarColors {
     val colorScheme = MaterialTheme.colorScheme
     if (isLightTheme) {
         return ReaderBarColors(
@@ -110,6 +114,7 @@ internal fun BoxScope.ReaderTopBar(
                 Modifier
                     .fillMaxWidth()
                     .background(colors.container)
+                    .consumeReaderOverlayGestures()
                     .statusBarsPadding()
                     .padding(horizontal = 8.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -258,6 +263,7 @@ internal fun BoxScope.ReaderBottomBar(
                 Modifier
                     .fillMaxWidth()
                     .background(colors.container)
+                    .consumeReaderOverlayGestures()
                     .navigationBarsPadding()
                     .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -292,3 +298,8 @@ internal fun BoxScope.ReaderBottomBar(
         }
     }
 }
+
+private fun Modifier.consumeReaderOverlayGestures(): Modifier =
+    pointerInput(Unit) {
+        detectTapGestures(onTap = {})
+    }
