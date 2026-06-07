@@ -3,7 +3,8 @@ package com.example.mybookslibrary.data.remote.models
 import com.example.mybookslibrary.domain.model.ChapterModel
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.domain.model.MangaTag
-import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 object MangaDexConstants {
     const val QUALITY_ORIGINAL = "data"
@@ -29,39 +30,46 @@ object MangaDexConstants {
     const val STATUS_CANCELLED = "cancelled"
 }
 
+@Serializable
 data class MangaListResponseDto(
-    @SerializedName("data") val data: List<MangaDataDto> = emptyList(),
+    @SerialName("data") val data: List<MangaDataDto> = emptyList(),
 )
 
+@Serializable
 data class MangaDataDto(
-    @SerializedName("id") val id: String,
-    @SerializedName("attributes") val attributes: MangaAttributesDto,
-    @SerializedName("relationships") val relationships: List<RelationshipDto> = emptyList(),
+    @SerialName("id") val id: String = "",
+    @SerialName("attributes") val attributes: MangaAttributesDto = MangaAttributesDto(),
+    @SerialName("relationships") val relationships: List<RelationshipDto> = emptyList(),
 )
 
+@Serializable
 data class MangaAttributesDto(
-    @SerializedName("title") val title: Map<String, String> = emptyMap(),
-    @SerializedName("description") val description: Map<String, String> = emptyMap(),
-    @SerializedName("contentRating") val contentRating: String? = null,
-    @SerializedName("tags") val tags: List<TagDto> = emptyList(),
+    @SerialName("title") val title: Map<String, String> = emptyMap(),
+    @SerialName("description") val description: Map<String, String> = emptyMap(),
+    @SerialName("contentRating") val contentRating: String? = null,
+    @SerialName("tags") val tags: List<TagDto> = emptyList(),
 )
 
+@Serializable
 data class TagDto(
-    @SerializedName("attributes") val attributes: TagAttributesDto? = null,
+    @SerialName("attributes") val attributes: TagAttributesDto? = null,
 )
 
+@Serializable
 data class TagAttributesDto(
-    @SerializedName("name") val name: Map<String, String> = emptyMap(),
+    @SerialName("name") val name: Map<String, String> = emptyMap(),
 )
 
+@Serializable
 data class RelationshipDto(
-    @SerializedName("id") val id: String,
-    @SerializedName("type") val type: String,
-    @SerializedName("attributes") val attributes: RelationshipAttributesDto? = null,
+    @SerialName("id") val id: String = "",
+    @SerialName("type") val type: String = "",
+    @SerialName("attributes") val attributes: RelationshipAttributesDto? = null,
 )
 
+@Serializable
 data class RelationshipAttributesDto(
-    @SerializedName("fileName") val fileName: String? = null,
+    @SerialName("fileName") val fileName: String? = null,
 )
 
 fun MangaDataDto.toDomainModel(preferredLang: String = MangaDexConstants.LANG_EN): MangaModel {
@@ -111,18 +119,21 @@ fun MangaDataDto.extractCoverUrl(): String? {
 }
 
 // Response của /manga/tag — danh sách tag để dựng bộ lọc Search
+@Serializable
 data class TagListResponseDto(
-    @SerializedName("data") val data: List<TagItemDto> = emptyList(),
+    @SerialName("data") val data: List<TagItemDto> = emptyList(),
 )
 
+@Serializable
 data class TagItemDto(
-    @SerializedName("id") val id: String,
-    @SerializedName("attributes") val attributes: TagItemAttributesDto = TagItemAttributesDto(),
+    @SerialName("id") val id: String = "",
+    @SerialName("attributes") val attributes: TagItemAttributesDto = TagItemAttributesDto(),
 )
 
+@Serializable
 data class TagItemAttributesDto(
-    @SerializedName("name") val name: Map<String, String> = emptyMap(),
-    @SerializedName("group") val group: String = "",
+    @SerialName("name") val name: Map<String, String> = emptyMap(),
+    @SerialName("group") val group: String = "",
 )
 
 fun TagItemDto.toDomainModel(preferredLang: String = MangaDexConstants.LANG_EN): MangaTag {
@@ -136,31 +147,35 @@ fun TagItemDto.toDomainModel(preferredLang: String = MangaDexConstants.LANG_EN):
     return MangaTag(id = id, name = displayName, group = attributes.group)
 }
 
+@Serializable
 data class ChapterListDto(
-    @SerializedName("data") val data: List<ChapterDto> = emptyList(),
-    @SerializedName("total") val total: Int = 0,
-    @SerializedName("limit") val limit: Int = 0,
-    @SerializedName("offset") val offset: Int = 0,
+    @SerialName("data") val data: List<ChapterDto> = emptyList(),
+    @SerialName("total") val total: Int = 0,
+    @SerialName("limit") val limit: Int = 0,
+    @SerialName("offset") val offset: Int = 0,
 )
 
+@Serializable
 data class ChapterDto(
-    @SerializedName("id") val id: String,
-    @SerializedName("attributes") val attributes: ChapterAttributesDto? = null,
-    @SerializedName("relationships") val relationships: List<RelationshipDto> = emptyList(),
+    @SerialName("id") val id: String = "",
+    @SerialName("attributes") val attributes: ChapterAttributesDto? = null,
+    @SerialName("relationships") val relationships: List<RelationshipDto> = emptyList(),
 )
 
 // Response chi tiết 1 manga
+@Serializable
 data class MangaDetailResponseDto(
-    @SerializedName("data") val data: MangaDataDto,
+    @SerialName("data") val data: MangaDataDto = MangaDataDto(),
 )
 
+@Serializable
 data class ChapterAttributesDto(
-    @SerializedName("volume") val volume: String? = null,
-    @SerializedName("chapter") val chapter: String? = null,
-    @SerializedName("title") val title: String? = null,
-    @SerializedName("translatedLanguage") val translatedLanguage: String? = null,
-    @SerializedName("pages") val pages: Int? = null,
-    @SerializedName("isUnavailable") val isUnavailable: Boolean? = null,
+    @SerialName("volume") val volume: String? = null,
+    @SerialName("chapter") val chapter: String? = null,
+    @SerialName("title") val title: String? = null,
+    @SerialName("translatedLanguage") val translatedLanguage: String? = null,
+    @SerialName("pages") val pages: Int? = null,
+    @SerialName("isUnavailable") val isUnavailable: Boolean? = null,
 )
 
 fun ChapterDto.toDomainModel(fallbackMangaId: String): ChapterModel {
@@ -182,24 +197,27 @@ fun ChapterDto.toDomainModel(fallbackMangaId: String): ChapterModel {
 }
 
 // At-Home Server DTOs for Reader
+@Serializable
 data class AtHomeResponseDto(
     // Nullable + default: MangaDex có thể trả error-envelope (HTTP 200) thiếu các field này;
-    // Gson dùng Unsafe nên khai non-null vẫn ra null → validate ở getChapterDelivery.
-    @SerializedName("result") val result: String? = null,
-    @SerializedName("baseUrl") val baseUrl: String? = null,
-    @SerializedName("chapter") val chapter: AtHomeChapterDto? = null,
+    // validate ở getChapterDelivery trước khi dựng URL.
+    @SerialName("result") val result: String? = null,
+    @SerialName("baseUrl") val baseUrl: String? = null,
+    @SerialName("chapter") val chapter: AtHomeChapterDto? = null,
 )
 
+@Serializable
 data class AtHomeChapterDto(
-    @SerializedName("hash") val hash: String? = null,
-    @SerializedName("data") val data: List<String> = emptyList(),
-    @SerializedName("dataSaver") val dataSaver: List<String> = emptyList(),
+    @SerialName("hash") val hash: String? = null,
+    @SerialName("data") val data: List<String> = emptyList(),
+    @SerialName("dataSaver") val dataSaver: List<String> = emptyList(),
 )
 
+@Serializable
 data class AtHomeReportRequest(
-    @SerializedName("url") val url: String,
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("bytes") val bytes: Int,
-    @SerializedName("duration") val duration: Long,
-    @SerializedName("cached") val cached: Boolean,
+    @SerialName("url") val url: String,
+    @SerialName("success") val success: Boolean,
+    @SerialName("bytes") val bytes: Int,
+    @SerialName("duration") val duration: Long,
+    @SerialName("cached") val cached: Boolean,
 )
