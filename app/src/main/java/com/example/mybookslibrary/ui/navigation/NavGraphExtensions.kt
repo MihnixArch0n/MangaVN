@@ -52,10 +52,6 @@ internal fun NavGraphBuilder.mangaDetailGraph(navController: NavHostController) 
         CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
             MangaDetailScreen(
                 mangaId = route.mangaId,
-                title = "",
-                coverArt = "",
-                description = "",
-                tags = emptyList(),
                 onBackClick = { navController.popBackStack() },
                 onReadChapter = { mangaId, chapterId, chapterTitle, startPageIndex ->
                     navController.navigate(Reader(mangaId, chapterId, chapterTitle, startPageIndex))

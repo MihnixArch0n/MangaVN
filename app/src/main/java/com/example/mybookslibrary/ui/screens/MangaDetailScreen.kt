@@ -39,10 +39,6 @@ fun Modifier.sharedCoverBounds(mangaId: String): Modifier = composed { this@comp
 @Composable
 fun MangaDetailScreen(
     mangaId: String,
-    title: String,
-    coverArt: String,
-    description: String,
-    tags: List<String>,
     onBackClick: () -> Unit,
     onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -> Unit,
     onReviewClick: (mangaId: String) -> Unit = {},
@@ -50,10 +46,10 @@ fun MangaDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val detail = uiState.mangaDetail
-    val displayTitle = title.ifBlank { detail?.title.orEmpty() }
-    val displayDescription = description.ifBlank { detail?.description.orEmpty() }
-    val displayTags = tags.ifEmpty { detail?.tags ?: emptyList() }
-    val displayCoverArt = coverArt.ifBlank { detail?.coverArt.orEmpty() }
+    val displayTitle = detail?.title.orEmpty()
+    val displayDescription = detail?.description.orEmpty()
+    val displayTags = detail?.tags.orEmpty()
+    val displayCoverArt = detail?.coverArt.orEmpty()
     val coverUrl = displayCoverArt.ifBlank { null }
     val noVolumeLabel = appString(R.string.chapter_no_volume)
     val groupedChapters =

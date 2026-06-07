@@ -59,7 +59,7 @@ private fun NavGraphBuilder.libraryTab(navController: NavHostController) {
     ) {
         CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
             LibraryScreen(
-                onOpenDetail = { mangaId, _, _ ->
+                onOpenDetail = { mangaId ->
                     navController.navigate(MangaDetail(mangaId))
                 },
             )

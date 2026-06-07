@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import com.example.mybookslibrary.ui.util.appString
 
@@ -54,7 +55,10 @@ internal fun FloatingPillNavBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 bottomDestinations.forEach { destination ->
-                    val selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true
+                    val selected =
+                        currentDestination?.hierarchy?.any {
+                            it.hasRoute(destination.routeClass)
+                        } == true
                     PillNavItem(
                         icon = destination.icon,
                         label = appString(destination.labelRes),

@@ -54,7 +54,7 @@ import com.example.mybookslibrary.ui.viewmodel.LibraryViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreenContent(
-    onOpenDetail: (mangaId: String, title: String, coverUrl: String) -> Unit = { _, _, _ -> },
+    onOpenDetail: (mangaId: String) -> Unit = {},
     modifier: Modifier = Modifier,
     vm: LibraryViewModel = hiltViewModel(),
 ) {
@@ -111,7 +111,7 @@ fun LibraryScreenContent(
                         title = item.title,
                         coverUrl = item.cover_url,
                         status = item.status,
-                        onClick = { onOpenDetail(item.manga_id, item.title, item.cover_url) },
+                        onClick = { onOpenDetail(item.manga_id) },
                         onLongClick = { pendingRemoval = item },
                     )
                 }

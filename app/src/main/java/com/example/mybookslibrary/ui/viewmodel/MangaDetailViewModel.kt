@@ -10,7 +10,6 @@ import com.example.mybookslibrary.di.IoDispatcher
 import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.domain.usecase.GetChapterListWithProgressUseCase
-import com.example.mybookslibrary.ui.navigation.MangaDetailDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -48,7 +47,7 @@ class MangaDetailViewModel
         private val mangaId: String =
             savedStateHandle
                 .get<String>(
-                    MangaDetailDestination.mangaIdArgumentName,
+                    "mangaId",
                 ).orEmpty()
 
         private val _uiState = MutableStateFlow(MangaDetailUiState())

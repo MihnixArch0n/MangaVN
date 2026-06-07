@@ -30,7 +30,7 @@ fun SearchScreen(onMangaClick: (MangaModel) -> Unit = {}, viewModel: SearchViewM
 }
 
 @Composable
-fun LibraryScreen(onOpenDetail: (mangaId: String, title: String, coverUrl: String) -> Unit) {
+fun LibraryScreen(onOpenDetail: (mangaId: String) -> Unit) {
     LibraryScreenContent(onOpenDetail = onOpenDetail)
 }
 
