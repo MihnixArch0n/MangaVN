@@ -53,7 +53,7 @@ internal class AtHomeFailoverCoordinator(
 
             val oldDelivery = currentDelivery.get()
             Timber.d(
-                "ChapterDownloadWorker failover triggered: chapterId=%s consecutiveErrors=%d oldBaseUrl=%s",
+                "AtHome failover triggered: chapterId=%s consecutiveErrors=%d oldBaseUrl=%s",
                 chapterId,
                 consecutiveErrors.get(),
                 oldDelivery.baseUrl,
@@ -62,7 +62,7 @@ internal class AtHomeFailoverCoordinator(
             currentDelivery.set(refreshedDelivery)
             consecutiveErrors.set(0)
             Timber.d(
-                "ChapterDownloadWorker failover complete: chapterId=%s newBaseUrl=%s pages=%d",
+                "AtHome failover complete: chapterId=%s newBaseUrl=%s pages=%d",
                 chapterId,
                 refreshedDelivery.baseUrl,
                 refreshedDelivery.filenames.size,

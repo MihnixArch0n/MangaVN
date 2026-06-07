@@ -25,7 +25,7 @@ class DownloadNotifier
         @param:ApplicationContext private val context: Context,
     ) {
         @ExcludeFromGeneratedCoverage // Notification/ForegroundInfo + Android foreground-service glue
-        fun createForegroundInfo(
+        internal fun createForegroundInfo(
             chapterId: String,
             progressPercent: Int,
             indeterminate: Boolean,
@@ -40,7 +40,11 @@ class DownloadNotifier
                     .setContentText(content)
                     .setOngoing(true)
                     .setOnlyAlertOnce(true)
-                    .setProgress(100, progressPercent.coerceIn(0, 100), indeterminate)
+                    .setProgress(
+                        PROGRESS_MAX,
+                        progressPercent.coerceIn(PROGRESS_MIN, PROGRESS_MAX),
+                        indeterminate,
+                    )
                     .build()
 
             return ForegroundInfo(
@@ -51,7 +55,7 @@ class DownloadNotifier
         }
 
         @ExcludeFromGeneratedCoverage // NotificationManager Android glue
-        fun ensureNotificationChannel() {
+        private fun ensureNotificationChannel() {
             val manager = context.getSystemService(NotificationManager::class.java)
             val existing = manager.getNotificationChannel(NOTIFICATION_CHANNEL_ID)
             if (existing != null) return
@@ -66,7 +70,7 @@ class DownloadNotifier
         }
 
         @ExcludeFromGeneratedCoverage // NotificationManagerCompat + permission/SecurityException Android glue
-        fun showFinishedNotification(
+        internal fun showFinishedNotification(
             chapterId: String,
             success: Boolean,
             message: String,
@@ -105,5 +109,7 @@ class DownloadNotifier
             const val NOTIFICATION_ID_BASE = 41_000
             const val FINISHED_NOTIFICATION_ID_BASE = 42_000
             const val NOTIFICATION_ID_RANGE = 1_000
+            const val PROGRESS_MIN = 0
+            const val PROGRESS_MAX = 100
         }
     }

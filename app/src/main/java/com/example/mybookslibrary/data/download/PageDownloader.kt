@@ -35,6 +35,7 @@ class PageDownloader
          * Concurrent callers share [AtHomeFailoverCoordinator], so one failed node refresh is
          * enough to update URL construction for retries and remaining pages.
          */
+        @Suppress("TooGenericExceptionCaught")
         internal suspend fun downloadPageWithFailover(
             mangaId: String,
             chapterId: String,
@@ -117,7 +118,7 @@ class PageDownloader
                     val body = response.body
                     if (!response.isSuccessful) {
                         bytes = responseBodySize(body)
-                        throw IllegalStateException("Page download failed: HTTP ${response.code}")
+                        error("Page download failed: HTTP ${response.code}")
                     }
                     val savedFile =
                         offlineDownloadStorage.savePage(
@@ -170,6 +171,7 @@ class PageDownloader
             mangaRepository.sendAtHomeReport(report)
         }
 
+        @Suppress("TooGenericExceptionCaught")
         private fun responseBodySize(body: ResponseBody): Long =
             try {
                 body.bytes().size.toLong()
@@ -192,7 +194,7 @@ class PageDownloader
                     pageUrl
                         .substringBefore("?")
                         .substringAfterLast(".", missingDelimiterValue = "img")
-                        .takeIf { it.length in 2..5 }
+                        .takeIf { it.length in MIN_EXTENSION_LENGTH..MAX_EXTENSION_LENGTH }
                         ?: "img"
             }
         }
@@ -201,5 +203,7 @@ class PageDownloader
             const val MAX_PAGE_DOWNLOAD_ATTEMPTS = 3
             const val HEADER_X_CACHE = "X-Cache"
             const val CACHE_HIT_PREFIX = "HIT"
+            const val MIN_EXTENSION_LENGTH = 2
+            const val MAX_EXTENSION_LENGTH = 5
         }
     }
