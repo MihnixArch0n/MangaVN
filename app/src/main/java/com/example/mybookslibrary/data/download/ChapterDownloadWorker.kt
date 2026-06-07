@@ -7,24 +7,16 @@
 
 package com.example.mybookslibrary.data.download
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
-import android.content.pm.ServiceInfo
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
-import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.local.DownloadStatus
 import com.example.mybookslibrary.data.remote.AtHomeReportPolicy
 import com.example.mybookslibrary.data.remote.models.AtHomeReportRequest
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
-import com.example.mybookslibrary.util.ExcludeFromGeneratedCoverage
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
@@ -41,7 +33,6 @@ import timber.log.Timber
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Named
-import kotlin.math.absoluteValue
 import kotlin.time.TimeSource
 
 /**
@@ -57,6 +48,7 @@ class ChapterDownloadWorker
         private val mangaRepository: MangaRepository,
         private val offlineDownloadRepository: OfflineDownloadRepository,
         private val offlineDownloadStorage: OfflineDownloadStorage,
+        private val downloadNotifier: DownloadNotifier,
         @param:Named("ImageOkHttpClient") private val imageOkHttpClient: OkHttpClient,
     ) : CoroutineWorker(appContext, workerParameters) {
         @OptIn(ExperimentalCoroutinesApi::class)
@@ -70,7 +62,7 @@ class ChapterDownloadWorker
             }
 
             Timber.d("ChapterDownloadWorker start: mangaId=%s chapterId=%s", mangaId, chapterId)
-            setForeground(createForegroundInfo(chapterId, progressPercent = 0, indeterminate = true))
+            setForeground(downloadNotifier.createForegroundInfo(chapterId, progressPercent = 0, indeterminate = true))
             offlineDownloadRepository.updateQueueStatus(chapterId, DownloadStatus.DOWNLOADING, 0)
 
             return try {
@@ -84,9 +76,9 @@ class ChapterDownloadWorker
                         initialDelivery = chapterDelivery,
                         refreshDelivery = { mangaRepository.getChapterDelivery(chapterId).getOrThrow() },
                         errorThreshold = FAILOVER_ERROR_THRESHOLD,
-                    )
+                )
                 val completedPages = AtomicInteger(0)
-                setForeground(createForegroundInfo(chapterId, progressPercent = 0, indeterminate = false))
+                setForeground(downloadNotifier.createForegroundInfo(chapterId, progressPercent = 0, indeterminate = false))
 
                 (0 until failoverCoordinator.totalPages)
                     .asFlow()
@@ -115,7 +107,7 @@ class ChapterDownloadWorker
                                 progressPercent = progress,
                             )
                             setProgress(workDataOf(KEY_PROGRESS_PERCENT to progress))
-                            setForeground(createForegroundInfo(chapterId, progressPercent = progress, indeterminate = false))
+                            setForeground(downloadNotifier.createForegroundInfo(chapterId, progressPercent = progress, indeterminate = false))
                             emit(Unit)
                         }
                     }.collect()
@@ -138,8 +130,8 @@ class ChapterDownloadWorker
                     Timber.w(e, "markChapterDownloaded lỗi sau khi đã ghi marker (scan sẽ tự sửa): chapterId=%s", chapterId)
                 }
                 setProgress(workDataOf(KEY_PROGRESS_PERCENT to 100))
-                setForeground(createForegroundInfo(chapterId, progressPercent = 100, indeterminate = false))
-                showFinishedNotification(chapterId, success = true, message = "Chapter download complete")
+                setForeground(downloadNotifier.createForegroundInfo(chapterId, progressPercent = 100, indeterminate = false))
+                downloadNotifier.showFinishedNotification(chapterId, success = true, message = "Chapter download complete")
                 Timber.d(
                     "ChapterDownloadWorker success: mangaId=%s chapterId=%s pages=%d",
                     mangaId,
@@ -158,7 +150,7 @@ class ChapterDownloadWorker
                     progressPercent = 0,
                     errorMessage = t.message,
                 )
-                showFinishedNotification(
+                downloadNotifier.showFinishedNotification(
                     chapterId = chapterId,
                     success = false,
                     message = t.message ?: "Chapter download failed",
@@ -316,83 +308,6 @@ class ChapterDownloadWorker
                 0L
             }
 
-        @ExcludeFromGeneratedCoverage // Notification/ForegroundInfo + nhánh Build.VERSION — Android glue
-        private fun createForegroundInfo(
-            chapterId: String,
-            progressPercent: Int,
-            indeterminate: Boolean,
-        ): ForegroundInfo {
-            ensureNotificationChannel()
-            val title = "Downloading chapter"
-            val content = if (indeterminate) "Preparing download" else "$progressPercent%"
-            val notification =
-                NotificationCompat
-                    .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_stat_name)
-                    .setContentTitle(title)
-                    .setContentText(content)
-                    .setOngoing(true)
-                    .setOnlyAlertOnce(true)
-                    .setProgress(100, progressPercent.coerceIn(0, 100), indeterminate)
-                    .build()
-
-            return ForegroundInfo(
-                notificationIdFor(chapterId),
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
-            )
-        }
-
-        @ExcludeFromGeneratedCoverage // NotificationManager Android glue
-        private fun ensureNotificationChannel() {
-            val manager = applicationContext.getSystemService(NotificationManager::class.java)
-            val existing = manager.getNotificationChannel(NOTIFICATION_CHANNEL_ID)
-            if (existing != null) return
-
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    NOTIFICATION_CHANNEL_ID,
-                    "Offline downloads",
-                    NotificationManager.IMPORTANCE_LOW,
-                ),
-            )
-        }
-
-        @ExcludeFromGeneratedCoverage // NotificationManagerCompat + permission/SecurityException — Android glue
-        private fun showFinishedNotification(
-            chapterId: String,
-            success: Boolean,
-            message: String,
-        ) {
-            ensureNotificationChannel()
-            val notification =
-                NotificationCompat
-                    .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_stat_name)
-                    .setContentTitle(if (success) "Download complete" else "Download failed")
-                    .setContentText(message)
-                    .setAutoCancel(true)
-                    .setOnlyAlertOnce(false)
-                    .build()
-
-            try {
-                val notificationManager = NotificationManagerCompat.from(applicationContext)
-                if (notificationManager.areNotificationsEnabled()) {
-                    notificationManager.notify(finishedNotificationIdFor(chapterId), notification)
-                } else {
-                    Timber.w("Finished notification skipped: notifications disabled chapterId=%s", chapterId)
-                }
-            } catch (securityException: SecurityException) {
-                Timber.w(securityException, "Finished notification skipped: missing notification permission")
-            }
-        }
-
-        private fun notificationIdFor(chapterId: String): Int =
-            NOTIFICATION_ID_BASE + (chapterId.hashCode().absoluteValue % NOTIFICATION_ID_RANGE)
-
-        private fun finishedNotificationIdFor(chapterId: String): Int =
-            FINISHED_NOTIFICATION_ID_BASE + (chapterId.hashCode().absoluteValue % NOTIFICATION_ID_RANGE)
-
         private fun extensionFor(
             pageUrl: String,
             contentSubtype: String?,
@@ -423,9 +338,5 @@ class ChapterDownloadWorker
             private const val MAX_PAGE_DOWNLOAD_ATTEMPTS = 3
             private const val HEADER_X_CACHE = "X-Cache"
             private const val CACHE_HIT_PREFIX = "HIT"
-            private const val NOTIFICATION_CHANNEL_ID = "offline_downloads"
-            private const val NOTIFICATION_ID_BASE = 41_000
-            private const val FINISHED_NOTIFICATION_ID_BASE = 42_000
-            private const val NOTIFICATION_ID_RANGE = 1_000
         }
     }

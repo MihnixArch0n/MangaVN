@@ -150,6 +150,7 @@ class ChapterDownloadWorkerTest {
                         mangaRepository,
                         offlineDownloadRepository,
                         storage,
+                        DownloadNotifier(appContext),
                         OkHttpClient(),
                     )
             },
