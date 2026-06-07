@@ -211,10 +211,8 @@ class ReaderViewModelTest {
                 "mangaId" to MANGA_ID,
                 "chapterId" to CHAPTER_ID,
                 "chapterTitle" to "Chapter 1",
+                "startPageIndex" to (startPageIndex ?: 0),
             )
-        if (startPageIndex != null) {
-            args["startPageIndex"] = startPageIndex
-        }
 
         return ReaderViewModel(
             application = RuntimeEnvironment.getApplication(),

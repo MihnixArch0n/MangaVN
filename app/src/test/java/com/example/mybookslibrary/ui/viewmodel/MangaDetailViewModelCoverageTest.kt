@@ -9,7 +9,6 @@ import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.domain.usecase.GetChapterListWithProgressUseCase
 import com.example.mybookslibrary.test.MainDispatcherRule
-import com.example.mybookslibrary.ui.navigation.MangaDetailDestination
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -23,6 +22,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Phủ các nhánh của [MangaDetailViewModel] mà test gốc bỏ qua: load detail, observe chapters
@@ -30,6 +31,7 @@ import org.junit.Test
  * của launchSafe.
  */
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class MangaDetailViewModelCoverageTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -48,7 +50,7 @@ class MangaDetailViewModelCoverageTest {
 
     private fun build() =
         MangaDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf(MangaDetailDestination.mangaIdArgumentName to MANGA_ID)),
+            savedStateHandle = SavedStateHandle(mapOf("mangaId" to MANGA_ID)),
             mangaRepository = manga,
             libraryRepository = library,
             getChapterListWithProgressUseCase = useCase,
@@ -228,7 +230,7 @@ class MangaDetailViewModelCoverageTest {
             // SavedStateHandle rỗng -> mangaId="" -> mọi guard isBlank return sớm
             val vm =
                 MangaDetailViewModel(
-                    savedStateHandle = SavedStateHandle(emptyMap()),
+                    savedStateHandle = SavedStateHandle(mapOf("mangaId" to "")),
                     mangaRepository = manga,
                     libraryRepository = library,
                     getChapterListWithProgressUseCase = useCase,

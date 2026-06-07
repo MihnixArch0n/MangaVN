@@ -6,7 +6,6 @@ import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.usecase.GetChapterListWithProgressUseCase
 import com.example.mybookslibrary.test.MainDispatcherRule
-import com.example.mybookslibrary.ui.navigation.MangaDetailDestination
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -18,8 +17,11 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class MangaDetailViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -73,7 +75,7 @@ class MangaDetailViewModelTest {
         coEvery { libraryRepository.isInLibrary(MANGA_ID) } returns false
 
         return MangaDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf(MangaDetailDestination.mangaIdArgumentName to MANGA_ID)),
+            savedStateHandle = SavedStateHandle(mapOf("mangaId" to MANGA_ID)),
             mangaRepository = mangaRepository,
             libraryRepository = libraryRepository,
             getChapterListWithProgressUseCase = getChapterListWithProgressUseCase,

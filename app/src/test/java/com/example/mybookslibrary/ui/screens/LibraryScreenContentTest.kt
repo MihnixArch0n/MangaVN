@@ -89,7 +89,7 @@ class LibraryScreenContentTest {
         var openedId: String? = null
         composeRule.setContent {
             LibraryScreenContent(
-                onOpenDetail = { id, _, _ -> openedId = id },
+                onOpenDetail = { id -> openedId = id },
                 vm = vmWithItems("Naruto"),
             )
         }

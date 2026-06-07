@@ -10,6 +10,10 @@ ij_kotlin_name_count_to_use_star_import = 100
 ij_kotlin_name_count_to_use_star_import_for_properties = 100
 
 ktlint_standard_argument-list-wrapping = disabled
+ktlint_standard_class-signature = disabled
+ktlint_standard_function-signature = disabled
+ktlint_standard_indent = disabled
+ktlint_standard_no-blank-line-before-rbrace = disabled
 ktlint_standard_parameter-list-wrapping = disabled
 ktlint_standard_wrapping = disabled
 ktlint_standard_import-ordering = disabled

@@ -360,7 +360,15 @@ class ReaderViewModelCoverageTest {
         val vm =
             ReaderViewModel(
                 application = RuntimeEnvironment.getApplication(),
-                savedStateHandle = SavedStateHandle(emptyMap()),
+                savedStateHandle =
+                SavedStateHandle(
+                    mapOf(
+                        "mangaId" to "",
+                        "chapterId" to "",
+                        "chapterTitle" to "",
+                        "startPageIndex" to 0,
+                    ),
+                ),
                 loadReaderPagesUseCase = loadReaderPagesUseCase,
                 syncReadingProgressUseCase = syncReadingProgressUseCase,
                 tapZoneEvaluator = TapZoneEvaluator(),

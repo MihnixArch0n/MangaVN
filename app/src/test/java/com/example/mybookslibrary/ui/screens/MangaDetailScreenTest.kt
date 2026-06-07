@@ -16,7 +16,6 @@ import com.example.mybookslibrary.domain.model.ChapterReadingStatus
 import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.domain.usecase.GetChapterListWithProgressUseCase
-import com.example.mybookslibrary.ui.navigation.MangaDetailDestination
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import com.example.mybookslibrary.ui.viewmodel.MangaDetailViewModel
 import io.mockk.coEvery
@@ -54,6 +53,7 @@ class MangaDetailScreenTest {
     private val downloadManager = mockk<OfflineDownloadManager>(relaxed = true)
 
     private fun viewModel(
+        title: String = "Naruto",
         inLibrary: Boolean = false,
         chapters: List<ChapterWithProgressModel> = emptyList(),
         detailError: Boolean = false,
@@ -62,13 +62,13 @@ class MangaDetailScreenTest {
             coEvery { mangaRepo.getMangaDetail(any()) } returns Result.failure(IllegalStateException("lỗi"))
         } else {
             coEvery { mangaRepo.getMangaDetail(any()) } returns
-                Result.success(MangaModel("m1", "Test Manga", "Desc", null, emptyList()))
+                Result.success(MangaModel("m1", title, "Desc", null, emptyList()))
         }
         every { useCase(any()) } returns flowOf(chapters)
         coEvery { libraryRepo.isInLibrary(any()) } returns inLibrary
         coEvery { mangaRepo.getChapterPages(any()) } returns Result.success(emptyList())
         return MangaDetailViewModel(
-            savedStateHandle = SavedStateHandle(mapOf(MangaDetailDestination.mangaIdArgumentName to "m1")),
+            savedStateHandle = SavedStateHandle(mapOf("mangaId" to "m1")),
             mangaRepository = mangaRepo,
             libraryRepository = libraryRepo,
             getChapterListWithProgressUseCase = useCase,
@@ -96,13 +96,15 @@ class MangaDetailScreenTest {
         composeRule.setContent {
             MangaDetailScreen(
                 mangaId = "m1",
-                title = title,
-                coverArt = "",
-                description = "Desc",
-                tags = listOf("Action"),
                 onBackClick = {},
                 onReadChapter = { _, _, _, _ -> },
-                viewModel = viewModel(inLibrary = inLibrary, chapters = chapters, detailError = detailError),
+                viewModel =
+                viewModel(
+                    title = title,
+                    inLibrary = inLibrary,
+                    chapters = chapters,
+                    detailError = detailError,
+                ),
             )
         }
         composeRule.waitForIdle()
