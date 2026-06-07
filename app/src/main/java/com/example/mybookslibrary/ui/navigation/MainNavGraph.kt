@@ -29,6 +29,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -129,12 +130,11 @@ fun MainNavHost(loggedInUserId: String?) {
 
     LaunchedEffect(loggedInUserId) {
         if (loggedInUserId == null) {
-            val current = currentDestination?.route
-            if (current != null &&
-                current != AuthDestination.Login &&
-                current != AuthDestination.Register
+            if (currentDestination != null &&
+                !currentDestination.hasRoute<Login>() &&
+                !currentDestination.hasRoute<Register>()
             ) {
-                navController.navigate(AuthDestination.Login) {
+                navController.navigate(Login) {
                     popUpTo(0) { inclusive = true }
                     launchSingleTop = true
                 }
@@ -144,11 +144,11 @@ fun MainNavHost(loggedInUserId: String?) {
 
     val showBottomBar =
         currentDestination?.hierarchy?.none { dest ->
-            dest.route == AuthDestination.Login ||
-                dest.route == AuthDestination.Register ||
-                dest.route?.startsWith(ReaderDestination.route) == true ||
-                dest.route?.startsWith(MangaDetailDestination.route) == true ||
-                dest.route?.startsWith(MangaReviewDestination.route) == true
+            dest.hasRoute<Login>() ||
+                dest.hasRoute<Register>() ||
+                dest.hasRoute<Reader>() ||
+                dest.hasRoute<MangaDetail>() ||
+                dest.hasRoute<MangaReview>()
         } ?: true
     Scaffold(
         bottomBar = {
@@ -175,9 +175,9 @@ fun MainNavHost(loggedInUserId: String?) {
                         navController = navController,
                         startDestination =
                         if (loggedInUserId == null) {
-                            AuthDestination.Login
+                            Login
                         } else {
-                            BottomNavDestination.Discover.route
+                            Discover
                         },
                         enterTransition = { fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) },
                         exitTransition = { fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing)) },

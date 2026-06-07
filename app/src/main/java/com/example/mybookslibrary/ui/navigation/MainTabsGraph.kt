@@ -24,25 +24,23 @@ internal fun NavGraphBuilder.mainTabsGraph(navController: NavHostController) {
 }
 
 private fun NavGraphBuilder.discoverTab(navController: NavHostController) {
-    composable(
-        route = BottomNavDestination.Discover.route,
+    composable<Discover>(
         enterTransition = { fadeIn(tabTween()) + scaleIn(initialScale = 0.95f, animationSpec = tabTween()) },
         exitTransition = { fadeOut(tabTween()) },
     ) {
         CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
             DiscoverScreen(
                 onMangaClick = { manga -> navController.navigateToDetail(manga) },
-                onSearchClick = { navController.navigateToBottomTab(BottomNavDestination.Search) },
-                onLibraryClick = { navController.navigateToBottomTab(BottomNavDestination.Library) },
-                onProfileClick = { navController.navigateToBottomTab(BottomNavDestination.Setting) },
+                onSearchClick = { navController.navigateToBottomTab(Search) },
+                onLibraryClick = { navController.navigateToBottomTab(Library) },
+                onProfileClick = { navController.navigateToBottomTab(Setting) },
             )
         }
     }
 }
 
 private fun NavGraphBuilder.searchTab(navController: NavHostController) {
-    composable(
-        route = BottomNavDestination.Search.route,
+    composable<Search>(
         enterTransition = { fadeIn(tabTween()) + scaleIn(initialScale = 0.95f, animationSpec = tabTween()) },
         exitTransition = { fadeOut(tabTween()) },
     ) {
@@ -55,17 +53,14 @@ private fun NavGraphBuilder.searchTab(navController: NavHostController) {
 }
 
 private fun NavGraphBuilder.libraryTab(navController: NavHostController) {
-    composable(
-        route = BottomNavDestination.Library.route,
+    composable<Library>(
         enterTransition = { fadeIn(tabTween()) + scaleIn(initialScale = 0.95f, animationSpec = tabTween()) },
         exitTransition = { fadeOut(tabTween()) },
     ) {
         CompositionLocalProvider(LocalNavAnimatedVisibilityScope provides this@composable) {
             LibraryScreen(
-                onOpenDetail = { mangaId, title, coverUrl ->
-                    navController.navigate(
-                        MangaDetailDestination.createRoute(mangaId, title, coverUrl, "", emptyList()),
-                    )
+                onOpenDetail = { mangaId, _, _ ->
+                    navController.navigate(MangaDetail(mangaId))
                 },
             )
         }
@@ -73,8 +68,7 @@ private fun NavGraphBuilder.libraryTab(navController: NavHostController) {
 }
 
 private fun NavGraphBuilder.settingTab() {
-    composable(
-        route = BottomNavDestination.Setting.route,
+    composable<Setting>(
         enterTransition = { fadeIn(tabTween()) + scaleIn(initialScale = 0.95f, animationSpec = tabTween()) },
         exitTransition = { fadeOut(tabTween()) },
     ) {
@@ -82,8 +76,8 @@ private fun NavGraphBuilder.settingTab() {
     }
 }
 
-private fun NavHostController.navigateToBottomTab(destination: BottomNavDestination) {
-    navigate(destination.route) {
+private fun <T : Any> NavHostController.navigateToBottomTab(destination: T) {
+    navigate(destination) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
@@ -91,15 +85,7 @@ private fun NavHostController.navigateToBottomTab(destination: BottomNavDestinat
 }
 
 private fun NavHostController.navigateToDetail(manga: MangaModel) {
-    navigate(
-        MangaDetailDestination.createRoute(
-            mangaId = manga.id,
-            title = manga.title,
-            coverArt = manga.coverArt,
-            description = manga.description,
-            tags = manga.tags,
-        ),
-    )
+    navigate(MangaDetail(manga.id))
 }
 
 private fun <T> tabTween() = tween<T>(durationMillis = 300, easing = FastOutSlowInEasing)
