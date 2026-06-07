@@ -28,6 +28,9 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -40,6 +43,7 @@ import kotlin.reflect.KClass
 @OptIn(ExperimentalSharedTransitionApi::class)
 val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope?> { null }
 val LocalNavAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope?> { null }
+val LocalBottomNavPadding = compositionLocalOf<Dp> { 0.dp }
 
 sealed class BottomNavDestination(
     val destination: Any,
@@ -109,15 +113,24 @@ fun MainNavHost(loggedInUserId: String?) {
                             restoreState = true
                         }
                     },
+                    modifier = Modifier.testTag(FLOATING_PILL_NAV_TAG),
                 )
             }
         },
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
-        Box(modifier = Modifier.consumeWindowInsets(innerPadding)) {
+        Box(
+            modifier =
+                Modifier
+                    .consumeWindowInsets(innerPadding)
+                    .testTag(MAIN_NAV_CONTENT_TAG),
+        ) {
             SharedTransitionLayout {
-                CompositionLocalProvider(LocalSharedTransitionScope provides this@SharedTransitionLayout) {
+                CompositionLocalProvider(
+                    LocalSharedTransitionScope provides this@SharedTransitionLayout,
+                    LocalBottomNavPadding provides innerPadding.calculateBottomPadding(),
+                ) {
                     NavHost(
                         navController = navController,
                         startDestination =
@@ -142,3 +155,6 @@ fun MainNavHost(loggedInUserId: String?) {
         }
     }
 }
+
+internal const val MAIN_NAV_CONTENT_TAG = "main-nav-content"
+internal const val FLOATING_PILL_NAV_TAG = "floating-pill-nav"

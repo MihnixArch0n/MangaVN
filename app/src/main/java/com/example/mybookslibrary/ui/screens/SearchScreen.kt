@@ -43,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.ui.navigation.LocalBottomNavPadding
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.SearchViewModel
 
@@ -54,6 +55,7 @@ fun SearchScreenContent(
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val bottomNavPadding = LocalBottomNavPadding.current
 
     Scaffold(
         modifier = modifier,
@@ -176,7 +178,13 @@ fun SearchScreenContent(
                 }
                 else -> {
                     LazyColumn(
-                        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 100.dp),
+                        contentPadding =
+                            PaddingValues(
+                                start = 24.dp,
+                                end = 24.dp,
+                                top = 8.dp,
+                                bottom = bottomNavPadding + 16.dp,
+                            ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(uiState.results, key = { it.id }) { manga ->

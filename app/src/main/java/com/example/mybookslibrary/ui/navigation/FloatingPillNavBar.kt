@@ -37,7 +37,7 @@ internal fun FloatingPillNavBar(
         modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 32.dp, vertical = 16.dp)
+            .padding(start = 24.dp, top = 12.dp, end = 24.dp, bottom = 8.dp)
             .background(Color.Transparent),
         contentAlignment = Alignment.Center,
     ) {

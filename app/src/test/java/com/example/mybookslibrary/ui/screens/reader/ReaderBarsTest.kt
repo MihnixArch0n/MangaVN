@@ -1,15 +1,21 @@
 ﻿package com.example.mybookslibrary.ui.screens.reader
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import com.example.mybookslibrary.domain.model.ReadingMode
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -66,6 +72,32 @@ class ReaderBarsTest {
 
         composeRule.onNodeWithContentDescription("Back").performClick()
         assertTrue(clicked)
+    }
+
+    @Test
+    fun topBar_tapAndDoubleTap_doNotReachContentBehindOverlay() {
+        var tappedBehind = false
+        var doubleTappedBehind = false
+        composeRule.setContent {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { tappedBehind = true },
+                            onDoubleTap = { doubleTappedBehind = true },
+                        )
+                    },
+            ) {
+                ReaderTopBar(chapterTitle = "Protected title", isVisible = true, onBackClick = {})
+            }
+        }
+
+        composeRule.onNodeWithText("Protected title").performTouchInput { click() }
+        composeRule.onNodeWithText("Protected title").performTouchInput { doubleClick() }
+
+        assertFalse(tappedBehind)
+        assertFalse(doubleTappedBehind)
     }
 
     // ---- ReaderBottomBar ----
@@ -126,6 +158,38 @@ class ReaderBarsTest {
             .onNodeWithContentDescription("Switch reading mode to Horizontal (LTR)")
             .performClick()
         assertTrue(toggled)
+    }
+
+    @Test
+    fun bottomBar_tapAndDoubleTap_doNotReachContentBehindOverlay() {
+        var tappedBehind = false
+        var doubleTappedBehind = false
+        composeRule.setContent {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { tappedBehind = true },
+                            onDoubleTap = { doubleTappedBehind = true },
+                        )
+                    },
+            ) {
+                ReaderBottomBar(
+                    isVisible = true,
+                    currentPage = 0,
+                    totalPages = 5,
+                    currentReadingMode = ReadingMode.LTR,
+                    onToggleReadingMode = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Pages").performTouchInput { click() }
+        composeRule.onNodeWithText("Pages").performTouchInput { doubleClick() }
+
+        assertFalse(tappedBehind)
+        assertFalse(doubleTappedBehind)
     }
 
     @Test

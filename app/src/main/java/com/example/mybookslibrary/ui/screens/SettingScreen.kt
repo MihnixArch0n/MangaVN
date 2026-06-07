@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.ui.navigation.LocalBottomNavPadding
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.BackupRestoreResult
 import com.example.mybookslibrary.ui.viewmodel.SettingsViewModel
@@ -37,6 +38,7 @@ import com.example.mybookslibrary.ui.viewmodel.SettingsViewModel
 fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel(),) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val bottomNavPadding = LocalBottomNavPadding.current
 
     val backupLauncher =
         rememberLauncherForActivityResult(
@@ -63,7 +65,13 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                 .fillMaxSize()
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding),
-            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+            contentPadding =
+                PaddingValues(
+                    start = 24.dp,
+                    end = 24.dp,
+                    top = 16.dp,
+                    bottom = bottomNavPadding + 16.dp,
+                ),
         ) {
             item {
                 Text(
@@ -182,7 +190,6 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                         onClick = viewModel::signOut,
                     )
                 }
-                Spacer(Modifier.height(80.dp))
             }
         }
     }

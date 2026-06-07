@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.domain.model.MangaModel
+import com.example.mybookslibrary.ui.navigation.LocalBottomNavPadding
 import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModel
 
 @Suppress("unused", "LongMethod", "LongParameterList")
@@ -31,6 +32,7 @@ fun DiscoverScreenContent(
     val expandedPopular = remember { mutableStateOf(false) }
     val expandedNew = remember { mutableStateOf(false) }
     val expandedExplore = remember { mutableStateOf(false) }
+    val bottomNavPadding = LocalBottomNavPadding.current
 
     val items = uiState.items
     val popularItems = remember(items) { if (items.size > 1) items.drop(1).take(5) else emptyList() }
@@ -72,7 +74,7 @@ fun DiscoverScreenContent(
                         .fillMaxSize()
                         .padding(innerPadding)
                         .consumeWindowInsets(innerPadding),
-                    contentPadding = PaddingValues(bottom = 100.dp),
+                    contentPadding = PaddingValues(bottom = bottomNavPadding + 16.dp),
                     spotlight = items.firstOrNull(),
                     popularItems = popularItems,
                     newItems = newItems,

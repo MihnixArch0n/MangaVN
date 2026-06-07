@@ -42,6 +42,7 @@ import coil3.compose.AsyncImage
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
+import com.example.mybookslibrary.ui.navigation.LocalBottomNavPadding
 import com.example.mybookslibrary.ui.theme.KansoDarkBackground
 import com.example.mybookslibrary.ui.theme.KansoDarkSuccess
 import com.example.mybookslibrary.ui.theme.KansoDarkWarning
@@ -60,6 +61,7 @@ fun LibraryScreenContent(
 ) {
     val items by vm.libraryItems.collectAsStateWithLifecycle(initialValue = emptyList())
     var pendingRemoval by remember { mutableStateOf<LibraryItemEntity?>(null) }
+    val bottomNavPadding = LocalBottomNavPadding.current
 
     Scaffold(
         modifier = modifier,
@@ -95,7 +97,13 @@ fun LibraryScreenContent(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .consumeWindowInsets(innerPadding),
-                contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 100.dp),
+                contentPadding =
+                    PaddingValues(
+                        start = 24.dp,
+                        end = 24.dp,
+                        top = 16.dp,
+                        bottom = bottomNavPadding + 16.dp,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
