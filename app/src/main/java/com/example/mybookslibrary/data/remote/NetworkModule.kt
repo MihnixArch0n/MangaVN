@@ -97,6 +97,7 @@ object NetworkModule {
             ignoreUnknownKeys = true
             coerceInputValues = true
             explicitNulls = false
+            encodeDefaults = true
         }
 
     @Provides

@@ -2,6 +2,7 @@ package com.example.mybookslibrary.data.repository
 
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.remote.MangaDexApi
+import com.example.mybookslibrary.data.remote.NetworkModule
 import com.example.mybookslibrary.domain.model.SearchFilters
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -9,10 +10,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import okhttp3.MediaType.Companion.toMediaType
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -41,10 +41,9 @@ class MangaRepositorySearchIntegrationTest {
                 .Builder()
                 .baseUrl(mockWebServer.url("/"))
                 .addConverterFactory(
-                    Json {
-                        ignoreUnknownKeys = true
-                        coerceInputValues = true
-                    }.asConverterFactory("application/json".toMediaType()),
+                    NetworkModule
+                        .provideJson()
+                        .asConverterFactory("application/json".toMediaType()),
                 )
                 .build()
                 .create(MangaDexApi::class.java)

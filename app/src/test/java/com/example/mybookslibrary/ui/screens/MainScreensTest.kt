@@ -7,6 +7,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import coil3.ImageLoader
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.data.remote.NetworkModule
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.ui.util.FakeImageLoader
@@ -17,7 +18,6 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -69,7 +69,7 @@ class MainScreensTest {
                         libraryRepository = mockk<LibraryRepository>(relaxed = true),
                         imageLoader = mockk<ImageLoader>(relaxed = true),
                         ioDispatcher = UnconfinedTestDispatcher(),
-                        json = Json { ignoreUnknownKeys = true },
+                        json = NetworkModule.provideJson(),
                     ),
             )
         }

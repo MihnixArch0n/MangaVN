@@ -4,14 +4,15 @@ import coil3.ImageLoader
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.data.remote.NetworkModule
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.test.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -45,7 +46,7 @@ class SettingsViewModelTest {
             libraryRepository = libraryRepository,
             imageLoader = imageLoader,
             ioDispatcher = mainDispatcherRule.dispatcher,
-            json = Json { ignoreUnknownKeys = true },
+            json = NetworkModule.provideJson(),
         )
 
     @Test
@@ -166,7 +167,10 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(BackupRestoreResult.Success(1), vm.uiState.value.backupResult)
-            assertTrue(output.toString().contains("m1"))
+            assertEquals(
+                """[{"manga_id":"m1","title":"Title m1","cover_url":"https://x/m1.jpg","status":"READING","last_read_chapter_id":"","last_read_page_index":0,"updated_at":1000}]""",
+                output.toString(),
+            )
         }
 
     @Test
@@ -187,6 +191,8 @@ class SettingsViewModelTest {
     fun restoreLibrary_jsonHopLe_restoreItems() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             stubDefaults()
+            val restoredItems = slot<List<LibraryItemEntity>>()
+            coEvery { libraryRepository.restoreItems(capture(restoredItems)) } returns Unit
             val vm = viewModel()
             advanceUntilIdle()
             val item =
@@ -198,7 +204,10 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(BackupRestoreResult.Success(1), vm.uiState.value.restoreResult)
-            coVerify { libraryRepository.restoreItems(any()) }
+            assertEquals(
+                sampleEntity("m1").copy(title = "T", cover_url = "", updated_at = 123),
+                restoredItems.captured.single(),
+            )
         }
 
     @Test
@@ -281,6 +290,25 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertTrue(vm.uiState.value.restoreResult is BackupRestoreResult.Failure)
+        }
+
+    @Test
+    fun restoreLibrary_itemSaiKieu_boQuaNhungVanRestoreItemHopLe() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults()
+            val restoredItems = slot<List<LibraryItemEntity>>()
+            coEvery { libraryRepository.restoreItems(capture(restoredItems)) } returns Unit
+            val vm = viewModel()
+            advanceUntilIdle()
+            val json =
+                """[{"manga_id":"bad","title":"Bad","last_read_page_index":"not-number"},""" +
+                    """{"manga_id":"m2","title":"Good","unknown":"ignored"}]"""
+
+            vm.restoreLibrary(ByteArrayInputStream(json.toByteArray()))
+            advanceUntilIdle()
+
+            assertEquals(BackupRestoreResult.Success(1), vm.uiState.value.restoreResult)
+            assertEquals("m2", restoredItems.captured.single().manga_id)
         }
 
     private fun sampleEntity(id: String) =

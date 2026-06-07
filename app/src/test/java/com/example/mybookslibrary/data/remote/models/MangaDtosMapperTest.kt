@@ -7,8 +7,8 @@ import org.junit.Test
 
 /**
  * Phủ các mapper DTO -> domain trong MangaDtos.kt: chọn ngôn ngữ ưu tiên + fallback,
- * ghép cover URL, và default khi attributes thiếu. Khởi tạo DTO trực tiếp (không qua Gson)
- * để chạy đúng constructor + getter của data class.
+ * ghép cover URL, và default khi attributes thiếu. Khởi tạo DTO trực tiếp để kiểm tra
+ * constructor defaults độc lập với JSON parser.
  */
 class MangaDtosMapperTest {
     private fun relationship(
@@ -223,7 +223,7 @@ class MangaDtosMapperTest {
     @Test
     fun dtoDataClass_giaTriMacDinhDung() {
         // Construct BỎ arg optional -> chạy nhánh giá trị mặc định (= null / = emptyMap()).
-        // Có ý nghĩa: Gson dùng Unsafe (bỏ qua constructor) nên default là hợp đồng khi tạo thủ công.
+        // Constructor defaults cũng là hợp đồng khi kotlinx.serialization gặp field bị thiếu.
         assertNull(RelationshipDto(id = "r", type = "t").attributes)
         assertNull(RelationshipAttributesDto().fileName)
         assertNull(TagDto().attributes)

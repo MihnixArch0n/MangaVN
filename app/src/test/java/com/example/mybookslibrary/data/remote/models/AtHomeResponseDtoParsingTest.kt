@@ -14,8 +14,7 @@ import org.junit.Test
  * Guard cho finding H7: khi MangaDex trả error-envelope (HTTP 200, thiếu baseUrl/chapter),
  * `getChapterDelivery` phải trả `Result.failure` rõ ràng thay vì NullPointerException lúc build URL.
  *
- * Trước fix: DTO khai non-null + Gson Unsafe → field null → NPE khi build ChapterDelivery.
- * Sau fix: DTO nullable + validate result/baseUrl/chapter → Result.failure.
+ * DTO nullable + default và repository validate result/baseUrl/chapter trước khi dựng URL.
  */
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class AtHomeResponseDtoParsingTest {

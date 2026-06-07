@@ -23,6 +23,7 @@ import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import javax.inject.Named
 import javax.inject.Singleton
@@ -68,6 +69,10 @@ object FakeNavigationModule {
     @Provides
     @Singleton
     fun provideMangaDexApi(): MangaDexApi = mockk(relaxed = true)
+
+    @Provides
+    @Singleton
+    fun provideJson(): Json = NetworkModule.provideJson()
 
     @Provides
     @Singleton
