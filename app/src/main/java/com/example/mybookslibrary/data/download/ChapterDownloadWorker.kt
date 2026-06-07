@@ -328,7 +328,7 @@ class ChapterDownloadWorker
             val notification =
                 NotificationCompat
                     .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setSmallIcon(R.drawable.ic_stat_name)
                     .setContentTitle(title)
                     .setContentText(content)
                     .setOngoing(true)
@@ -368,7 +368,7 @@ class ChapterDownloadWorker
             val notification =
                 NotificationCompat
                     .Builder(applicationContext, NOTIFICATION_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setSmallIcon(R.drawable.ic_stat_name)
                     .setContentTitle(if (success) "Download complete" else "Download failed")
                     .setContentText(message)
                     .setAutoCancel(true)
