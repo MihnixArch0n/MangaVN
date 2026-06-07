@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package com.example.mybookslibrary.ui.viewmodel
 
 import androidx.lifecycle.ViewModel

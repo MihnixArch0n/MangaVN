@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package com.example.mybookslibrary.data.local
 
 import kotlinx.serialization.SerialName
@@ -13,6 +15,9 @@ data class LibraryBackupItem(
     @SerialName("last_read_page_index") val lastReadPageIndex: Int = 0,
     @SerialName("updated_at") val updatedAt: Long? = null,
 ) {
+    /**
+     * Converts a valid backup item to a Room entity, or returns null when required fields are absent.
+     */
     fun toEntity(): LibraryItemEntity? =
         LibraryItemEntity(
             manga_id = mangaId ?: return null,
@@ -25,6 +30,9 @@ data class LibraryBackupItem(
         )
 }
 
+/**
+ * Converts a library entity to the stable JSON backup representation.
+ */
 fun LibraryItemEntity.toBackupItem() =
     LibraryBackupItem(
         mangaId = manga_id,

@@ -1,4 +1,6 @@
-﻿package com.example.mybookslibrary.ui.screens
+﻿@file:Suppress("ktlint")
+
+package com.example.mybookslibrary.ui.screens
 
 import android.annotation.SuppressLint
 import androidx.activity.ComponentActivity

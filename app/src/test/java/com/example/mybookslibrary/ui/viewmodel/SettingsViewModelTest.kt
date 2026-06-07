@@ -1,3 +1,5 @@
+@file:Suppress("ktlint", "MaxLineLength")
+
 package com.example.mybookslibrary.ui.viewmodel
 
 import coil3.ImageLoader

@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package com.example.mybookslibrary.data.repository
 
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
