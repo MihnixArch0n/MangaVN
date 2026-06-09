@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class AtHomeFailoverCoordinatorTest {
     @Test
-    fun onPageFailure_refreshesAfterThresholdAndUsesNewBaseUrl() =
+    fun onPageFailure_refreshesGenerationAndUsesNewBaseUrl() =
         runTest {
             val refreshCount = AtomicInteger(0)
             val coordinator =
@@ -23,18 +23,17 @@ class AtHomeFailoverCoordinatorTest {
                         refreshCount.incrementAndGet()
                         delivery("https://new-node.example.net")
                     },
-                    errorThreshold = 3,
                 )
+            val oldAttempt = coordinator.pageAttempt(0)
 
-            assertFalse(coordinator.onPageFailure(CHAPTER_ID))
-            assertFalse(coordinator.onPageFailure(CHAPTER_ID))
-            assertTrue(coordinator.onPageFailure(CHAPTER_ID))
+            assertTrue(coordinator.onPageFailure(CHAPTER_ID, oldAttempt.generation))
 
             assertEquals(1, refreshCount.get())
             assertEquals(
                 "https://new-node.example.net/data/hash/page-1.png",
-                coordinator.pageUrl(0),
+                coordinator.pageAttempt(0).url,
             )
+            assertEquals(oldAttempt.generation + 1, coordinator.pageAttempt(0).generation)
         }
 
     @Test
@@ -49,14 +48,14 @@ class AtHomeFailoverCoordinatorTest {
                         refreshCount.incrementAndGet()
                         delivery("https://new-node.example.net")
                     },
-                    errorThreshold = 3,
                 )
+            val failedGeneration = coordinator.pageAttempt(0).generation
 
             val results =
                 listOf(
-                    async { coordinator.onPageFailure(CHAPTER_ID) },
-                    async { coordinator.onPageFailure(CHAPTER_ID) },
-                    async { coordinator.onPageFailure(CHAPTER_ID) },
+                    async { coordinator.onPageFailure(CHAPTER_ID, failedGeneration) },
+                    async { coordinator.onPageFailure(CHAPTER_ID, failedGeneration) },
+                    async { coordinator.onPageFailure(CHAPTER_ID, failedGeneration) },
                 ).awaitAll()
 
             assertEquals(1, refreshCount.get())
@@ -64,7 +63,7 @@ class AtHomeFailoverCoordinatorTest {
         }
 
     @Test
-    fun pageSuccess_resetsConsecutiveErrors() =
+    fun staleGenerationFailure_doesNotRefreshReplacementNode() =
         runTest {
             val refreshCount = AtomicInteger(0)
             val coordinator =
@@ -74,15 +73,13 @@ class AtHomeFailoverCoordinatorTest {
                         refreshCount.incrementAndGet()
                         delivery("https://new-node.example.net")
                     },
-                    errorThreshold = 3,
                 )
+            val oldGeneration = coordinator.pageAttempt(0).generation
 
-            assertFalse(coordinator.onPageFailure(CHAPTER_ID))
-            assertFalse(coordinator.onPageFailure(CHAPTER_ID))
-            coordinator.onPageSuccess()
-            assertFalse(coordinator.onPageFailure(CHAPTER_ID))
+            assertTrue(coordinator.onPageFailure(CHAPTER_ID, oldGeneration))
+            assertFalse(coordinator.onPageFailure(CHAPTER_ID, oldGeneration))
 
-            assertEquals(0, refreshCount.get())
+            assertEquals(1, refreshCount.get())
         }
 
     private fun delivery(baseUrl: String): ChapterDelivery =

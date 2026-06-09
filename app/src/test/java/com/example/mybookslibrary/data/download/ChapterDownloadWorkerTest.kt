@@ -14,6 +14,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -31,6 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Test [ChapterDownloadWorker.doWork] qua Robolectric:
@@ -87,6 +90,31 @@ class ChapterDownloadWorkerTest {
         }
 
     @Test
+    fun doWork_neverDownloadsMoreThanThreePagesConcurrently() =
+        runBlocking {
+            val activeRequests = AtomicInteger(0)
+            val maxActiveRequests = AtomicInteger(0)
+            mockWebServer.dispatcher =
+                object : Dispatcher() {
+                    override fun dispatch(request: RecordedRequest): MockResponse {
+                        val active = activeRequests.incrementAndGet()
+                        maxActiveRequests.updateAndGet { current -> maxOf(current, active) }
+                        Thread.sleep(100)
+                        activeRequests.decrementAndGet()
+                        return MockResponse().setResponseCode(200).setBody("page-bytes")
+                    }
+                }
+            coEvery { mangaRepository.getChapterDelivery(CHAPTER_ID) } returns
+                Result.success(delivery(filenames = List(6) { index -> "page-$index.png" }))
+
+            val result = buildWorker(pageDispatcher = Dispatchers.IO).doWork()
+
+            assertEquals(ListenableWorker.Result.success(), result)
+            assertEquals(ChapterDownloadWorker.PAGE_DOWNLOAD_CONCURRENCY, maxActiveRequests.get())
+            assertTrue(maxActiveRequests.get() <= 3)
+        }
+
+    @Test
     fun doWork_noPages_failsAndMarksError() =
         runBlocking {
             coEvery { mangaRepository.getChapterDelivery(CHAPTER_ID) } returns
@@ -129,7 +157,9 @@ class ChapterDownloadWorkerTest {
             }
         }
 
-    private fun buildWorker(): ChapterDownloadWorker =
+    private fun buildWorker(
+        pageDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
+    ): ChapterDownloadWorker =
         TestListenableWorkerBuilder<ChapterDownloadWorker>(
             context = context,
             inputData =
@@ -155,7 +185,7 @@ class ChapterDownloadWorkerTest {
                             mangaRepository = mangaRepository,
                             offlineDownloadStorage = storage,
                             imageOkHttpClient = OkHttpClient(),
-                            ioDispatcher = UnconfinedTestDispatcher(),
+                            ioDispatcher = pageDispatcher,
                         ),
                     )
             },

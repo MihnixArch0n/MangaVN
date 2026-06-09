@@ -64,7 +64,6 @@ class ChapterDownloadWorker @AssistedInject constructor(
                 AtHomeFailoverCoordinator(
                     initialDelivery = chapterDelivery,
                     refreshDelivery = { mangaRepository.getChapterDelivery(chapterId).getOrThrow() },
-                    errorThreshold = FAILOVER_ERROR_THRESHOLD,
                 )
             val completedPages = AtomicInteger(0)
             setForeground(
@@ -190,7 +189,6 @@ class ChapterDownloadWorker @AssistedInject constructor(
         const val KEY_PROGRESS_PERCENT = "progress_percent"
         const val KEY_ERROR = "error"
 
-        private const val PAGE_DOWNLOAD_CONCURRENCY = 5
-        private const val FAILOVER_ERROR_THRESHOLD = 3
+        internal const val PAGE_DOWNLOAD_CONCURRENCY = 3
     }
 }

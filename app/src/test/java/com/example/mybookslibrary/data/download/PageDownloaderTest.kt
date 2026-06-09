@@ -7,6 +7,9 @@ import com.example.mybookslibrary.data.repository.MangaRepository
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
@@ -24,6 +27,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(RobolectricTestRunner::class)
@@ -103,7 +108,6 @@ class PageDownloaderTest {
                             refreshCount.incrementAndGet()
                             delivery(newServer, filenames = listOf("p1.png"))
                         },
-                        errorThreshold = 1,
                     )
 
                 downloader().downloadPageWithFailover(
@@ -124,6 +128,69 @@ class PageDownloaderTest {
         }
 
     @Test
+    fun concurrentFailures_refreshOnceAndReportEveryAttempt() =
+        runTest {
+            val oldServer = MockWebServer()
+            val newServer = MockWebServer()
+            oldServer.start()
+            newServer.start()
+            try {
+                val oldRequestsStarted = CountDownLatch(3)
+                oldServer.dispatcher =
+                    object : Dispatcher() {
+                        override fun dispatch(request: RecordedRequest): MockResponse {
+                            oldRequestsStarted.countDown()
+                            oldRequestsStarted.await(2, TimeUnit.SECONDS)
+                            return MockResponse().setResponseCode(500).setBody("old-error")
+                        }
+                    }
+                newServer.dispatcher =
+                    object : Dispatcher() {
+                        override fun dispatch(request: RecordedRequest): MockResponse =
+                            MockResponse().setResponseCode(200).setBody("new-page")
+                    }
+                val refreshCount = AtomicInteger(0)
+                val filenames = listOf("p1.png", "p2.png", "p3.png")
+                val oldBaseUrl = oldServer.url("/").toString().trimEnd('/')
+                val newBaseUrl = newServer.url("/").toString().trimEnd('/')
+                val coordinator =
+                    AtHomeFailoverCoordinator(
+                        initialDelivery = delivery(oldServer, filenames),
+                        refreshDelivery = {
+                            refreshCount.incrementAndGet()
+                            delivery(newServer, filenames)
+                        },
+                    )
+                val pageDownloader = downloader(ioDispatcher = Dispatchers.IO)
+
+                filenames.indices
+                    .map { pageIndex ->
+                        async {
+                            pageDownloader.downloadPageWithFailover(
+                                mangaId = MANGA_ID,
+                                chapterId = FAILOVER_CHAPTER_ID,
+                                pageIndex = pageIndex,
+                                failoverCoordinator = coordinator,
+                            )
+                        }
+                    }.awaitAll()
+
+                assertEquals(1, refreshCount.get())
+                assertEquals(3, oldServer.requestCount)
+                assertEquals(3, newServer.requestCount)
+                coVerify(exactly = 3) {
+                    mangaRepository.sendAtHomeReport(match { report -> !report.success && report.url.startsWith(oldBaseUrl) })
+                }
+                coVerify(exactly = 3) {
+                    mangaRepository.sendAtHomeReport(match { report -> report.success && report.url.startsWith(newBaseUrl) })
+                }
+            } finally {
+                oldServer.shutdown()
+                newServer.shutdown()
+            }
+        }
+
+    @Test
     fun downloadPageWithFailover_ioException_exhaustsAttemptsAndThrows() =
         runTest {
             val deadServer = MockWebServer()
@@ -134,7 +201,6 @@ class PageDownloaderTest {
                 AtHomeFailoverCoordinator(
                     initialDelivery = deadDelivery,
                     refreshDelivery = { deadDelivery },
-                    errorThreshold = 10,
                 )
 
             try {
@@ -192,19 +258,20 @@ class PageDownloaderTest {
             }
         }
 
-    private fun downloader(): PageDownloader =
+    private fun downloader(
+        ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = UnconfinedTestDispatcher(),
+    ): PageDownloader =
         PageDownloader(
             mangaRepository = mangaRepository,
             offlineDownloadStorage = storage,
             imageOkHttpClient = OkHttpClient(),
-            ioDispatcher = UnconfinedTestDispatcher(),
+            ioDispatcher = ioDispatcher,
         )
 
     private fun coordinator(delivery: ChapterDelivery): AtHomeFailoverCoordinator =
         AtHomeFailoverCoordinator(
             initialDelivery = delivery,
             refreshDelivery = { delivery },
-            errorThreshold = 3,
         )
 
     private fun delivery(

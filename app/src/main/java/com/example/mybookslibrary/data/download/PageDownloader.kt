@@ -45,22 +45,25 @@ class PageDownloader
             var attempt = 1
             while (true) {
                 currentCoroutineContext().ensureActive()
-                val pageUrl = failoverCoordinator.pageUrl(pageIndex)
+                val pageAttempt = failoverCoordinator.pageAttempt(pageIndex)
 
                 try {
                     downloadPage(
                         mangaId = mangaId,
                         chapterId = chapterId,
                         pageIndex = pageIndex,
-                        pageUrl = pageUrl,
+                        pageUrl = pageAttempt.url,
                     )
-                    failoverCoordinator.onPageSuccess()
                     return
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
                 } catch (t: Throwable) {
                     currentCoroutineContext().ensureActive()
-                    val failoverTriggered = failoverCoordinator.onPageFailure(chapterId)
+                    val failoverTriggered =
+                        failoverCoordinator.onPageFailure(
+                            chapterId = chapterId,
+                            failedGeneration = pageAttempt.generation,
+                        )
                     Timber.e(
                         t,
                         "downloadPage attempt failed: chapterId=%s pageIndex=%d attempt=%d failoverTriggered=%s",
