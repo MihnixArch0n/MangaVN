@@ -101,5 +101,6 @@ jobs:
           if [ -n "$EXISTING_ID" ]; then
             gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$EXISTING_ID" -f body="$BODY" > /dev/null
           else
-            gh pr comment "$PR_NUMBER" --body "$BODY"
+            # --repo bắt buộc: working dir không phải git repo (checkout vào pr/ và base/)
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "$BODY"
           fi
