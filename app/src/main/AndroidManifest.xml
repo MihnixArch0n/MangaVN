@@ -27,7 +27,7 @@
             </intent-filter>
             <!-- Deep link: intercepts https://mangadex.org/title/{id} and .../title/{id}/slug.
                  NOT using autoVerify="true" because we do not own mangadex.org. -->
-            <intent-filter android:autoVerify="false">
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -37,6 +37,13 @@
                     android:scheme="https"
                     android:host="mangadex.org"
                     android:pathPrefix="/title/" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 

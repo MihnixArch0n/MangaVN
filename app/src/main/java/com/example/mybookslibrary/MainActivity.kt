@@ -1,6 +1,7 @@
 package com.example.mybookslibrary
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
@@ -24,6 +25,7 @@ import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.ui.navigation.MainNavHost
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.LocalAppLocale
+import com.example.mybookslibrary.util.extractMangaIdFromMangaDexUrl
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -36,6 +38,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         requestNotificationPermissionIfNeeded()
         setContent {
+            // Parse ACTION_SEND intent (e.g. share from Chrome) to extract a manga ID.
+            val incomingMangaId = remember(intent) {
+                if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+                    extractMangaIdFromMangaDexUrl(intent.getStringExtra(Intent.EXTRA_TEXT))
+                } else {
+                    null
+                }
+            }
             val language by preferencesDataStore
                 .observeLanguage()
                 .collectAsStateWithLifecycle(initialValue = "en")
@@ -71,7 +81,7 @@ class MainActivity : ComponentActivity() {
                 MyBooksLibraryTheme(darkTheme = darkTheme) {
                     when (val session = authSession) {
                         AuthSession.Loading -> AuthLoadingScreen()
-                        is AuthSession.Ready -> MainNavHost(session.loggedInUserId)
+                        is AuthSession.Ready -> MainNavHost(session.loggedInUserId, incomingMangaId)
                     }
                 }
             }
