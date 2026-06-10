@@ -3,6 +3,7 @@ package com.example.mybookslibrary.domain.usecase
 import com.example.mybookslibrary.data.download.DownloadedChapterCache
 import com.example.mybookslibrary.data.download.OfflineDownloadStorage
 import com.example.mybookslibrary.data.repository.MangaRepository
+import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -12,6 +13,7 @@ constructor(
     private val mangaRepository: MangaRepository,
     private val downloadedChapterCache: DownloadedChapterCache,
     private val offlineDownloadStorage: OfflineDownloadStorage,
+    private val offlineDownloadRepository: OfflineDownloadRepository,
 ) {
     /**
      * Routes verified physical downloads to local files before considering MangaDex@Home.
@@ -31,7 +33,7 @@ constructor(
         }
 
         if (wasCachedAsDownloaded || isPhysicallyDownloaded) {
-            downloadedChapterCache.removeChapter(chapterId)
+            offlineDownloadRepository.markChapterCorrupted(mangaId, chapterId)
             Timber.w(
                 "LoadReaderPagesUseCase physical download invalid, fallback network: mangaId=%s chapterId=%s",
                 mangaId,

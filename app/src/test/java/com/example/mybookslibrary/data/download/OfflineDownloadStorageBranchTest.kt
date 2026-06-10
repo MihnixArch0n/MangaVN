@@ -54,7 +54,7 @@ class OfflineDownloadStorageBranchTest {
             storage.deleteChapter(MANGA, "no-pages")
 
             assertThrows(IOException::class.java) {
-                runBlockingIO { storage.markChapterComplete(MANGA, "no-pages") }
+                runBlockingIO { storage.markChapterComplete(MANGA, "no-pages", totalPages = 1) }
             }
         }
 
@@ -132,9 +132,9 @@ class OfflineDownloadStorageBranchTest {
             storage.deleteChapter(MANGA, "twice")
             storage.savePage(MANGA, "twice", 0, bytes())
 
-            storage.markChapterComplete(MANGA, "twice")
+            storage.markChapterComplete(MANGA, "twice", totalPages = 1)
             // Lần 2: marker đã tồn tại -> nhánh !marker.exists() false
-            storage.markChapterComplete(MANGA, "twice")
+            storage.markChapterComplete(MANGA, "twice", totalPages = 1)
             assertTrue("twice" in storage.scanDownloadedChapters())
             storage.deleteChapter(MANGA, "twice")
         }
@@ -151,7 +151,7 @@ class OfflineDownloadStorageBranchTest {
             storage.savePage(MANGA, "bf-out", 0, bytes())
             // bf-marked: trong set, có trang, ĐÃ marker -> bỏ qua (!marker.exists() = false)
             storage.savePage(MANGA, "bf-marked", 0, bytes())
-            storage.markChapterComplete(MANGA, "bf-marked")
+            storage.markChapterComplete(MANGA, "bf-marked", totalPages = 1)
             // bf-empty: trong set, KHÔNG trang -> bỏ qua (pages.isNotEmpty() = false)
             File(File(rootDir(), MANGA), "bf-empty").mkdirs()
 

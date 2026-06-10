@@ -3,6 +3,7 @@ package com.example.mybookslibrary.domain.usecase
 import com.example.mybookslibrary.data.download.DownloadedChapterCache
 import com.example.mybookslibrary.data.download.OfflineDownloadStorage
 import com.example.mybookslibrary.data.repository.MangaRepository
+import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -21,12 +22,14 @@ class LoadReaderPagesUseCaseTest {
     private val mangaRepository = mockk<MangaRepository>()
     private val downloadedChapterCache = mockk<DownloadedChapterCache>()
     private val offlineDownloadStorage = mockk<OfflineDownloadStorage>()
+    private val offlineDownloadRepository = mockk<OfflineDownloadRepository>()
 
     private val useCase =
         LoadReaderPagesUseCase(
             mangaRepository = mangaRepository,
             downloadedChapterCache = downloadedChapterCache,
             offlineDownloadStorage = offlineDownloadStorage,
+            offlineDownloadRepository = offlineDownloadRepository,
         )
 
     @Test
@@ -48,14 +51,14 @@ class LoadReaderPagesUseCaseTest {
     fun ghostDownloadedChapter_repairsCacheAndFallsBackToNetwork() = runTest {
         every { downloadedChapterCache.downloadedChapterIds } returns MutableStateFlow(setOf(CHAPTER_ID))
         coEvery { offlineDownloadStorage.verifyDownloadedChapter(MANGA_ID, CHAPTER_ID) } returns false
-        every { downloadedChapterCache.removeChapter(CHAPTER_ID) } just Runs
+        coEvery { offlineDownloadRepository.markChapterCorrupted(MANGA_ID, CHAPTER_ID) } just Runs
         coEvery { mangaRepository.getChapterPages(CHAPTER_ID) } returns Result.success(listOf("net-0", "net-1"))
 
         val pages = useCase(MANGA_ID, CHAPTER_ID).getOrThrow()
 
         assertEquals(listOf("net-0", "net-1"), pages)
         coVerify(exactly = 0) { offlineDownloadStorage.getChapterPages(any(), any()) }
-        io.mockk.verify(exactly = 1) { downloadedChapterCache.removeChapter(CHAPTER_ID) }
+        coVerify(exactly = 1) { offlineDownloadRepository.markChapterCorrupted(MANGA_ID, CHAPTER_ID) }
     }
 
     @Test

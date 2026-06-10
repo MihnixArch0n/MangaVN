@@ -12,7 +12,6 @@ import com.example.mybookslibrary.data.local.dao.DownloadQueueDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 import com.example.mybookslibrary.data.local.dao.UserDao
 import com.example.mybookslibrary.data.local.userPreferencesDataStore
-import com.example.mybookslibrary.data.remote.AtHomeReportInterceptor
 import com.example.mybookslibrary.data.remote.MangaDexApi
 import com.example.mybookslibrary.data.remote.NetworkModule
 import com.example.mybookslibrary.data.repository.GoogleSignInClient
@@ -100,10 +99,6 @@ object FakeNavigationModule {
     @Singleton
     @Named("ImageOkHttpClient")
     fun provideImageOkHttpClient(): OkHttpClient = mockk(relaxed = true)
-
-    @Provides
-    @Singleton
-    fun provideAtHomeReportInterceptor(): AtHomeReportInterceptor = mockk(relaxed = true)
 
     @Provides
     @Singleton

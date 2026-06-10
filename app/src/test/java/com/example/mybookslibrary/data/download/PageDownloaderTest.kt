@@ -237,6 +237,27 @@ class PageDownloaderTest {
             assertEquals(listOf("jpg", "jpg", "png", "webp", "gif", "bin"), extensions)
         }
 
+    @Test
+    fun downloadPageWithFailover_skipsExistingPage() =
+        runTest {
+            val file = storage.savePage(MANGA_ID, CHAPTER_ID, 0, java.io.ByteArrayInputStream("existing".toByteArray()))
+            
+            // This should not be hit
+            server.enqueue(MockResponse().setResponseCode(500).setBody("should not be called"))
+            val coordinator = coordinator(delivery(server, filenames = listOf("page-1.png")))
+
+            downloader().downloadPageWithFailover(
+                mangaId = MANGA_ID,
+                chapterId = CHAPTER_ID,
+                pageIndex = 0,
+                failoverCoordinator = coordinator,
+            )
+
+            assertEquals(0, server.requestCount)
+            val pages = storage.getChapterPages(MANGA_ID, CHAPTER_ID)
+            assertEquals(1, pages.size)
+        }
+
     private fun downloader(
         ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = UnconfinedTestDispatcher(),
     ): PageDownloader =

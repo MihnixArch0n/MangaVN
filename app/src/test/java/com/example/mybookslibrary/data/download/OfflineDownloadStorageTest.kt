@@ -25,7 +25,7 @@ class OfflineDownloadStorageTest {
                 storage.savePage(MANGA_ID, CHAPTER_ID, pageIndex = 0, byteStream = pageBytes())
                 assertFalse(CHAPTER_ID in storage.scanDownloadedChapters())
 
-                storage.markChapterComplete(MANGA_ID, CHAPTER_ID)
+                storage.markChapterComplete(MANGA_ID, CHAPTER_ID, totalPages = 1)
                 assertTrue(CHAPTER_ID in storage.scanDownloadedChapters())
             } finally {
                 storage.deleteChapter(MANGA_ID, CHAPTER_ID)
@@ -44,7 +44,7 @@ class OfflineDownloadStorageTest {
                 storage.savePage(MANGA_ID, CHAPTER_ID, pageIndex = 0, byteStream = pageBytes())
                 assertFalse(storage.verifyDownloadedChapter(MANGA_ID, CHAPTER_ID))
 
-                storage.markChapterComplete(MANGA_ID, CHAPTER_ID)
+                storage.markChapterComplete(MANGA_ID, CHAPTER_ID, totalPages = 1)
                 assertTrue(storage.verifyDownloadedChapter(MANGA_ID, CHAPTER_ID))
 
                 storage.deleteChapter(MANGA_ID, CHAPTER_ID)
@@ -68,6 +68,52 @@ class OfflineDownloadStorageTest {
                 assertTrue(LEGACY_CHAPTER_ID in storage.scanDownloadedChapters())
             } finally {
                 storage.deleteChapter(MANGA_ID, LEGACY_CHAPTER_ID)
+            }
+        }
+
+    @Test
+    fun scanCorruptedChapters_findsChaptersWithMissingPages() =
+        runTest {
+            val storage = storage()
+            storage.deleteChapter(MANGA_ID, CHAPTER_ID)
+
+            try {
+                // Not corrupted if nothing is downloaded
+                assertTrue(storage.scanCorruptedChapters().isEmpty())
+
+                // Download 2 pages, mark as complete (total = 2)
+                storage.savePage(MANGA_ID, CHAPTER_ID, pageIndex = 0, byteStream = pageBytes())
+                val page1 = storage.savePage(MANGA_ID, CHAPTER_ID, pageIndex = 1, byteStream = pageBytes())
+                storage.markChapterComplete(MANGA_ID, CHAPTER_ID, totalPages = 2)
+                
+                // Not corrupted, perfectly valid
+                assertTrue(storage.scanCorruptedChapters().isEmpty())
+
+                // Simulate external deletion of page 1
+                page1.delete()
+                
+                // Now it should be considered corrupted
+                val corrupted = storage.scanCorruptedChapters()
+                assertEquals(1, corrupted.size)
+                assertEquals(Pair(MANGA_ID, CHAPTER_ID), corrupted[0])
+            } finally {
+                storage.deleteChapter(MANGA_ID, CHAPTER_ID)
+            }
+        }
+
+    @Test
+    fun getPageFileIfExists_returnsFileIfValid() =
+        runTest {
+            val storage = storage()
+            storage.deleteChapter(MANGA_ID, CHAPTER_ID)
+
+            try {
+                val file = storage.savePage(MANGA_ID, CHAPTER_ID, pageIndex = 0, byteStream = pageBytes())
+                
+                assertEquals(file.absolutePath, storage.getPageFileIfExists(MANGA_ID, CHAPTER_ID, 0)?.absolutePath)
+                assertEquals(null, storage.getPageFileIfExists(MANGA_ID, CHAPTER_ID, 1))
+            } finally {
+                storage.deleteChapter(MANGA_ID, CHAPTER_ID)
             }
         }
 

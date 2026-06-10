@@ -17,7 +17,7 @@ class ModuleConfigurationTest {
     @Test
     fun provideImageOkHttpClient_hasCache() {
         val context = createContextWithTempCache()
-        val client = NetworkModule.provideImageOkHttpClient(context, mockk(relaxed = true))
+        val client = NetworkModule.provideImageOkHttpClient(context)
 
         assertNotNull(client.cache)
     }
@@ -25,7 +25,7 @@ class ModuleConfigurationTest {
     @Test
     fun provideCoilImageLoader_hasDiskCache() {
         val context = createContextWithTempCache()
-        val client = NetworkModule.provideImageOkHttpClient(context, mockk(relaxed = true))
+        val client = NetworkModule.provideImageOkHttpClient(context)
         val imageLoader = ImageModule.provideCoilImageLoader(context, client)
 
         assertNotNull(imageLoader.diskCache)

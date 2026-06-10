@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.data.download
 
 import com.example.mybookslibrary.data.local.dao.ChapterDao
+import com.example.mybookslibrary.data.local.dao.DownloadQueueDao
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -19,13 +20,15 @@ class DownloadedChapterCacheTest {
     fun initializesFromFilesystemAfterLegacyBackfill() =
         runTest {
             val chapterDao = mockk<ChapterDao>()
+            val downloadQueueDao = mockk<DownloadQueueDao>(relaxed = true)
             val storage = mockk<OfflineDownloadStorage>()
             coEvery { chapterDao.getDownloadedChapterIds() } returns listOf("chapter-1", "chapter-2")
             coEvery { storage.backfillCompletionMarkers(setOf("chapter-1", "chapter-2")) } returns 2
             coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
             coEvery { storage.scanDownloadedChapters() } returns setOf("chapter-1", "chapter-2")
+            coEvery { storage.scanCorruptedChapters() } returns emptyList()
 
-            val cache = DownloadedChapterCache(chapterDao, storage, TestScope(testScheduler))
+            val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
 
             assertEquals(setOf("chapter-1", "chapter-2"), cache.downloadedChapterIds.value)
@@ -39,13 +42,15 @@ class DownloadedChapterCacheTest {
     fun isChapterDownloaded_doiInitRoiTraVeKetQua() =
         runTest {
             val chapterDao = mockk<ChapterDao>()
+            val downloadQueueDao = mockk<DownloadQueueDao>(relaxed = true)
             val storage = mockk<OfflineDownloadStorage>()
             coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
             coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
             coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
             coEvery { storage.scanDownloadedChapters() } returns setOf("chapter-1")
+            coEvery { storage.scanCorruptedChapters() } returns emptyList()
 
-            val cache = DownloadedChapterCache(chapterDao, storage, TestScope(testScheduler))
+            val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
 
             assertTrue(cache.isChapterDownloaded("chapter-1"))
@@ -56,11 +61,12 @@ class DownloadedChapterCacheTest {
     fun init_khiDaoNem_khongCrashVaTrangThaiRong() =
         runTest {
             val chapterDao = mockk<ChapterDao>()
+            val downloadQueueDao = mockk<DownloadQueueDao>(relaxed = true)
             val storage = mockk<OfflineDownloadStorage>()
             // getDownloadedChapterIds ném -> init catch (Throwable) -> Timber.e -> finally complete
             coEvery { chapterDao.getDownloadedChapterIds() } throws RuntimeException("db lỗi")
 
-            val cache = DownloadedChapterCache(chapterDao, storage, TestScope(testScheduler))
+            val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
 
             // initialization vẫn complete ở finally -> isChapterDownloaded không treo
@@ -72,13 +78,15 @@ class DownloadedChapterCacheTest {
     fun addChapterAndRemoveChapter_emitUpdatedState() =
         runTest {
             val chapterDao = mockk<ChapterDao>()
+            val downloadQueueDao = mockk<DownloadQueueDao>(relaxed = true)
             val storage = mockk<OfflineDownloadStorage>()
             coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
             coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
             coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
             coEvery { storage.scanDownloadedChapters() } returns emptySet()
+            coEvery { storage.scanCorruptedChapters() } returns emptyList()
 
-            val cache = DownloadedChapterCache(chapterDao, storage, TestScope(testScheduler))
+            val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
 
             cache.addChapter("chapter-1")

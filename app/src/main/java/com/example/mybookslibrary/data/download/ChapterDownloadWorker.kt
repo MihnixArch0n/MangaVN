@@ -97,6 +97,7 @@ class ChapterDownloadWorker @AssistedInject constructor(
             offlineDownloadStorage.markChapterComplete(
                 mangaId = mangaId,
                 chapterId = chapterId,
+                totalPages = failoverCoordinator.totalPages,
             )
             // Marker filesystem là nguồn sự thật (đã tải xong). Cập nhật DB/cache là dẫn xuất;
             // nếu lỗi, scan lúc khởi động dựng lại từ marker -> KHÔNG coi là tải thất bại.

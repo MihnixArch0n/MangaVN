@@ -118,6 +118,20 @@ class OfflineDownloadRepository
             downloadedChapterCache.removeChapter(chapterId)
         }
 
+        suspend fun markChapterCorrupted(mangaId: String, chapterId: String) {
+            Timber.d("markChapterCorrupted: mangaId=%s chapterId=%s", mangaId, chapterId)
+            downloadQueueDao.upsert(
+                DownloadQueueEntity(
+                    chapter_id = chapterId,
+                    manga_id = mangaId,
+                    status = DownloadStatus.ERROR,
+                    progress_percent = 0,
+                    error_msg = "Thiếu trang (Missing pages)"
+                )
+            )
+            downloadedChapterCache.removeChapter(chapterId)
+        }
+
         fun observeDownloadOnlyOnWifi(): Flow<Boolean> = preferencesDataStore.observeDownloadOnlyOnWifi()
 
         suspend fun getDownloadOnlyOnWifi(): Boolean = preferencesDataStore.getDownloadOnlyOnWifi()

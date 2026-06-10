@@ -1,6 +1,9 @@
 package com.example.mybookslibrary.data.download
 
+import com.example.mybookslibrary.data.local.DownloadQueueEntity
+import com.example.mybookslibrary.data.local.DownloadStatus
 import com.example.mybookslibrary.data.local.dao.ChapterDao
+import com.example.mybookslibrary.data.local.dao.DownloadQueueDao
 import com.example.mybookslibrary.di.ApplicationScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -27,6 +30,7 @@ class DownloadedChapterCache
     @Inject
     constructor(
         private val chapterDao: ChapterDao,
+        private val downloadQueueDao: DownloadQueueDao,
         private val storage: OfflineDownloadStorage,
         @param:ApplicationScope private val applicationScope: CoroutineScope,
     ) {
@@ -42,7 +46,21 @@ class DownloadedChapterCache
                     storage.backfillCompletionMarkers(legacyDownloadedIds)
                     chapterDao.clearDownloadedChapterFlags()
                     scanDownloadedChapters()
-                    Timber.d("DownloadedChapterCache initialized: count=%d", downloadedChapterIds.value.size)
+                    
+                    val corruptedChapters = storage.scanCorruptedChapters()
+                    for ((mangaId, chapterId) in corruptedChapters) {
+                        downloadQueueDao.upsert(
+                            DownloadQueueEntity(
+                                chapter_id = chapterId,
+                                manga_id = mangaId,
+                                status = DownloadStatus.ERROR,
+                                progress_percent = 0,
+                                error_msg = "Thiếu trang (Missing pages)"
+                            )
+                        )
+                    }
+                    
+                    Timber.d("DownloadedChapterCache initialized: count=%d, corrupted=%d", downloadedChapterIds.value.size, corruptedChapters.size)
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
                 } catch (t: Throwable) {

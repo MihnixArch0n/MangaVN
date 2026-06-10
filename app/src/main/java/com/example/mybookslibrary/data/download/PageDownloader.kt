@@ -101,6 +101,12 @@ class PageDownloader
             pageIndex: Int,
             pageUrl: String,
         ) = withContext(ioDispatcher) {
+            val existingFile = offlineDownloadStorage.getPageFileIfExists(mangaId, chapterId, pageIndex)
+            if (existingFile != null) {
+                Timber.d("downloadPage skipped, already exists: chapterId=%s pageIndex=%d", chapterId, pageIndex)
+                return@withContext
+            }
+
             Timber.d("downloadPage start: chapterId=%s pageIndex=%d url=%s", chapterId, pageIndex, pageUrl)
             val startedAt = TimeSource.Monotonic.markNow()
             var bytes = 0L

@@ -103,16 +103,28 @@ class OfflineDownloadStorage
         ): Boolean =
             withContext(ioDispatcher) {
                 val chapterDir = chapterDirectory(mangaId, chapterId)
-                val isDownloaded =
-                    File(chapterDir, COMPLETION_MARKER).isFile &&
-                        getValidPageFiles(chapterDir).isNotEmpty()
+                val pages = getValidPageFiles(chapterDir)
+                val marker = File(chapterDir, COMPLETION_MARKER)
+                
+                var isValid = false
+                if (marker.isFile && pages.isNotEmpty()) {
+                    val content = runCatching { marker.readText().trim() }.getOrNull()
+                    val expectedPages = content?.toIntOrNull()
+                    
+                    isValid = if (expectedPages != null) {
+                        pages.size == expectedPages && pageIndexFromName(pages.last().name) == pages.size - 1
+                    } else {
+                        pageIndexFromName(pages.last().name) == pages.size - 1
+                    }
+                }
+                
                 Timber.d(
                     "verifyDownloadedChapter: mangaId=%s chapterId=%s downloaded=%s",
                     mangaId,
                     chapterId,
-                    isDownloaded,
+                    isValid,
                 )
-                isDownloaded
+                isValid
             }
 
         /**
@@ -121,13 +133,14 @@ class OfflineDownloadStorage
         suspend fun markChapterComplete(
             mangaId: String,
             chapterId: String,
+            totalPages: Int,
         ) = withContext(ioDispatcher) {
             val chapterDir = chapterDirectory(mangaId, chapterId)
             if (getValidPageFiles(chapterDir).isEmpty()) {
                 throw IOException("Cannot complete offline chapter without pages: ${chapterDir.absolutePath}")
             }
-            writeCompletionMarker(chapterDir)
-            Timber.d("markChapterComplete: mangaId=%s chapterId=%s", mangaId, chapterId)
+            writeCompletionMarker(chapterDir, totalPages)
+            Timber.d("markChapterComplete: mangaId=%s chapterId=%s totalPages=%d", mangaId, chapterId, totalPages)
         }
 
         /**
@@ -141,10 +154,66 @@ class OfflineDownloadStorage
                         .orEmpty()
                         .flatMap { mangaDir -> mangaDir.listFiles { file -> file.isDirectory }.orEmpty().asList() }
                         .filter { chapterDir ->
-                            File(chapterDir, COMPLETION_MARKER).isFile && getValidPageFiles(chapterDir).isNotEmpty()
+                            val pages = getValidPageFiles(chapterDir)
+                            val marker = File(chapterDir, COMPLETION_MARKER)
+                            if (marker.isFile && pages.isNotEmpty()) {
+                                val expected = runCatching { marker.readText().trim().toInt() }.getOrNull()
+                                if (expected != null) {
+                                    pages.size == expected && pageIndexFromName(pages.last().name) == pages.size - 1
+                                } else {
+                                    pageIndexFromName(pages.last().name) == pages.size - 1
+                                }
+                            } else false
                         }.mapTo(linkedSetOf()) { chapterDir -> chapterDir.name }
                 Timber.d("scanDownloadedChapters: count=%d", downloadedIds.size)
                 downloadedIds
+            }
+
+        /**
+         * Scans for chapters that have a completion marker but fail validity checks (e.g. missing pages).
+         */
+        suspend fun scanCorruptedChapters(): List<Pair<String, String>> =
+            withContext(ioDispatcher) {
+                val corrupted = mutableListOf<Pair<String, String>>()
+                rootDirectory()
+                    .listFiles { file -> file.isDirectory }
+                    .orEmpty()
+                    .forEach { mangaDir ->
+                        val mangaId = mangaDir.name
+                        mangaDir.listFiles { file -> file.isDirectory }.orEmpty().forEach { chapterDir ->
+                            val chapterId = chapterDir.name
+                            val pages = getValidPageFiles(chapterDir)
+                            val marker = File(chapterDir, COMPLETION_MARKER)
+                            if (marker.isFile) {
+                                var isValid = false
+                                if (pages.isNotEmpty()) {
+                                    val expected = runCatching { marker.readText().trim().toInt() }.getOrNull()
+                                    isValid = if (expected != null) {
+                                        pages.size == expected && pageIndexFromName(pages.last().name) == pages.size - 1
+                                    } else {
+                                        pageIndexFromName(pages.last().name) == pages.size - 1
+                                    }
+                                }
+                                if (!isValid) {
+                                    corrupted.add(Pair(mangaId, chapterId))
+                                }
+                            }
+                        }
+                    }
+                Timber.d("scanCorruptedChapters: count=%d", corrupted.size)
+                corrupted
+            }
+
+        /**
+         * Returns a valid page file if it already exists, or null otherwise.
+         */
+        suspend fun getPageFileIfExists(mangaId: String, chapterId: String, pageIndex: Int): File? =
+            withContext(ioDispatcher) {
+                val chapterDir = chapterDirectory(mangaId, chapterId)
+                if (!chapterDir.exists()) return@withContext null
+                
+                val pages = getValidPageFiles(chapterDir)
+                pages.firstOrNull { pageIndexFromName(it.name) == pageIndex && it.length() > 0 }
             }
 
         /**
@@ -160,11 +229,14 @@ class OfflineDownloadStorage
                     .orEmpty()
                     .flatMap { mangaDir -> mangaDir.listFiles { file -> file.isDirectory }.orEmpty().asList() }
                     .filter { chapterDir ->
+                        val pages = getValidPageFiles(chapterDir)
                         chapterDir.name in legacyDownloadedIds &&
-                            getValidPageFiles(chapterDir).isNotEmpty() &&
+                            pages.isNotEmpty() &&
+                            pageIndexFromName(pages.last().name) == pages.size - 1 &&
                             !File(chapterDir, COMPLETION_MARKER).exists()
                     }.forEach { chapterDir ->
-                        writeCompletionMarker(chapterDir)
+                        val pages = getValidPageFiles(chapterDir)
+                        writeCompletionMarker(chapterDir, pages.size)
                         createdMarkers += 1
                     }
                 Timber.d("backfillCompletionMarkers: legacy=%d created=%d", legacyDownloadedIds.size, createdMarkers)
@@ -208,11 +280,12 @@ class OfflineDownloadStorage
                 ?.sortedBy { file -> pageIndexFromName(file.name) }
                 .orEmpty()
 
-        private fun writeCompletionMarker(chapterDir: File) {
+        private fun writeCompletionMarker(chapterDir: File, totalPages: Int) {
             val marker = File(chapterDir, COMPLETION_MARKER)
-            if (!marker.exists() && !marker.createNewFile()) {
-                throw IOException("Cannot create offline chapter completion marker: ${marker.absolutePath}")
+            if (!marker.exists()) {
+                marker.createNewFile()
             }
+            marker.writeText(totalPages.toString())
         }
 
         private fun pageFileName(
