@@ -42,6 +42,7 @@ fun MangaDetailScreen(
     onBackClick: () -> Unit,
     onReadChapter: (mangaId: String, chapterId: String, chapterTitle: String, startPageIndex: Int) -> Unit,
     onReviewClick: (mangaId: String) -> Unit = {},
+    onShareClick: ((mangaTitle: String) -> Unit)? = null,
     viewModel: MangaDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -208,6 +209,12 @@ fun MangaDetailScreen(
             onBackClick = onBackClick,
             modifier = Modifier.align(Alignment.TopStart),
         )
+        if (onShareClick != null && detail != null) {
+            DetailShareButton(
+                onShareClick = { onShareClick(displayTitle) },
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
+        }
     }
 }
 
