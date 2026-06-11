@@ -110,24 +110,21 @@ class AuthRepository
          * @return A Result containing the authenticated FirebaseUser on success.
          */
         suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> =
-            withContext(ioDispatcher) {
-                try {
-                    val account =
-                         googleSignInClient
-                             .getGoogleAccount(context)
-                             .getOrThrow()
+            try {
+                // Credential Manager presents UI, so keep this call on the caller's Main dispatcher.
+                val account = googleSignInClient.getGoogleAccount(context).getOrThrow()
 
-                    // account.googleId here is actually the ID Token from Credential Manager
-                    val credential = GoogleAuthProvider.getCredential(account.googleId, null)
+                withContext(ioDispatcher) {
+                    val credential = GoogleAuthProvider.getCredential(account.idToken, null)
                     val result = firebaseAuth.signInWithCredential(credential).await()
                     val user = result.user ?: throw Exception("User is null after Google sign in")
 
                     preferencesDataStore.updateAuthStatus(AuthStatus.LOGGED_IN)
                     preferencesDataStore.updateFirebaseUid(user.uid)
                     Result.success(user)
-                } catch (e: Exception) {
-                     Result.failure(e)
                 }
+            } catch (e: Exception) {
+                Result.failure(e)
             }
 
         /**

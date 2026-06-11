@@ -58,25 +58,10 @@ else
     exit 0
 fi
 
-# AuthSecrets.kt bị gitignore (chứa secret thật) — tạo stub tạm nếu chưa có
-# để lintDebug compile được. Xóa sau khi hook chạy xong.
-AUTH_SECRETS="app/src/main/java/com/example/mybookslibrary/util/AuthSecrets.kt"
-STUB_CREATED=0
-if [ ! -f "$AUTH_SECRETS" ]; then
-    mkdir -p "$(dirname "$AUTH_SECRETS")"
-    printf 'package com.example.mybookslibrary.util\n\nobject AuthSecrets {\n    const val WEB_CLIENT_ID = "stub"\n}\n' > "$AUTH_SECRETS"
-    STUB_CREATED=1
-fi
-
 echo ">>> lint + ktlint + detekt: kiểm tra staged .kt files..."
 
 "$GRADLEW" lintDebug ktlintCheck detekt --console=plain -q
 STATUS=$?
-
-# Xóa stub nếu đã tạo (không để lại file rác trong working tree)
-if [ $STUB_CREATED -eq 1 ]; then
-    rm -f "$AUTH_SECRETS"
-fi
 
 if [ $STATUS -ne 0 ]; then
     echo ""

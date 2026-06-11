@@ -40,20 +40,8 @@ jobs:
           if [ -n "$GOOGLE_SERVICES_JSON" ]; then
             echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
           else
-            echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[]}}}]}' > app/google-services.json
+            echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"oauth_client":[{"client_id":"123456789-test.apps.googleusercontent.com","client_type":3}],"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[]}}}]}' > app/google-services.json
           fi
-
-      # Stub AuthSecrets để build được trên CI (file thật bị gitignore).
-      - name: Stub AuthSecrets
-        run: |
-          mkdir -p app/src/main/java/com/example/mybookslibrary/util
-          cat > app/src/main/java/com/example/mybookslibrary/util/AuthSecrets.kt <<'EOF'
-          package com.example.mybookslibrary.util
-
-          object AuthSecrets {
-              const val WEB_CLIENT_ID = "test-web-client-id.apps.googleusercontent.com"
-          }
-          EOF
 
       - name: Chạy unit suite 3 vòng
         id: rounds

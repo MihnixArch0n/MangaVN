@@ -63,7 +63,7 @@ Rule đang **bật**. KDoc bắt buộc cho public function, **ngoại trừ** c
 **Nơi bắt buộc có KDoc**: `data/repository/**` (trừ các file trên) và các public API khác không trong danh sách.
 
 ## Files Cần Chú Ý
-- `app/src/main/java/.../util/AuthSecrets.kt` — **gitignored** (chứa secret thật). Pre-commit hook tự tạo stub khi cần build.
+- Google Sign-In dùng `default_web_client_id` do Google Services plugin sinh từ `app/google-services.json`.
 - `app/schemas/` — commit kèm khi thay đổi Room schema.
 - `.gitattributes` — `*.kt eol=lf` đã set, ktlintFormat hoạt động trên Windows.
 
@@ -77,4 +77,4 @@ Rule đang **bật**. KDoc bắt buộc cho public function, **ngoại trừ** c
 - Branch protection main: require PR (0 approvals) + required checks `wrapper-validation`, `build-test`, `static-analysis`, `emulator-test`. Không force push/delete.
 - Đã bật: auto-merge, Dependency graph, suggest-update-branch, auto-delete head branches.
 - Secrets đã set: `GRADLE_ENCRYPTION_KEY` (config-cache CI) + 4 secret ký release (`RELEASE_KEYSTORE_BASE64/PASSWORD`, `RELEASE_KEY_ALIAS/PASSWORD`). Keystore gốc backup ngoài repo (máy owner) — MẤT LÀ KHÔNG UPDATE APP ĐƯỢC.
-- Release: push tag `v*` → workflow `release.yml` build AAB/APK ký + GitHub Release + mapping.txt + changelog. Dry-run: chạy workflow_dispatch (build + verify chữ ký, không tạo Release). Secret optional `AUTH_WEB_CLIENT_ID` chưa set → release dùng stub, Google sign-in không hoạt động.
+- Release: push tag `v*` → workflow `release.yml` build AAB/APK ký + GitHub Release + mapping.txt + changelog. Dry-run: chạy workflow_dispatch (build + verify chữ ký, không tạo Release).

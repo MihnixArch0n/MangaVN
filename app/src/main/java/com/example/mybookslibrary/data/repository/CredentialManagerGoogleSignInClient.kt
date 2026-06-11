@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import com.example.mybookslibrary.util.AuthSecrets
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.example.mybookslibrary.R
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import javax.inject.Inject
 
@@ -21,16 +21,14 @@ class CredentialManagerGoogleSignInClient
         @Suppress("TooGenericExceptionCaught")
         override suspend fun getGoogleAccount(context: Context): Result<GoogleAccount> {
             val credentialManager = CredentialManager.create(context)
-            val googleIdOption =
-                GetGoogleIdOption
-                    .Builder()
-                    .setFilterByAuthorizedAccounts(false)
-                    .setServerClientId(AuthSecrets.WEB_CLIENT_ID)
+            val signInWithGoogleOption =
+                GetSignInWithGoogleOption
+                    .Builder(context.getString(R.string.default_web_client_id))
                     .build()
             val request =
                 GetCredentialRequest
                     .Builder()
-                    .addCredentialOption(googleIdOption)
+                    .addCredentialOption(signInWithGoogleOption)
                     .build()
 
             return try {
@@ -42,8 +40,7 @@ class CredentialManagerGoogleSignInClient
                     val token = GoogleIdTokenCredential.createFrom(credential.data)
                     Result.success(
                         GoogleAccount(
-                            googleId = token.id,
-                            // id thường là email với Google ID token; giữ nguyên hành vi cũ.
+                            idToken = token.idToken,
                             email = token.id,
                             displayName = token.displayName ?: "Google User",
                         ),

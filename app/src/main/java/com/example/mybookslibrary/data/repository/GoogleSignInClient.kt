@@ -7,7 +7,7 @@ import android.content.Context
  * để [AuthRepository] có thể test logic lưu user mà không cần framework.
  */
 data class GoogleAccount(
-    val googleId: String,
+    val idToken: String,
     val email: String,
     val displayName: String,
 )
