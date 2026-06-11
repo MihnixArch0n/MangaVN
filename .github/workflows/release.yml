@@ -35,6 +35,17 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo "::warning::Secret GOOGLE_SERVICES_JSON chưa set — bản release dùng mock google-services.json."
+            echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[]}}}]}' > app/google-services.json
+          fi
+
       - name: AuthSecrets (real nếu có secret, stub nếu chưa)
         env:
           WEB_CLIENT_ID: ${{ secrets.AUTH_WEB_CLIENT_ID }}

@@ -43,6 +43,16 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
 
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[]}}}]}' > app/google-services.json
+          fi
+
       # Stub AuthSecrets để build được trên CI (file thật bị gitignore).
       - name: Stub AuthSecrets
         run: |

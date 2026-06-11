@@ -104,6 +104,16 @@ jobs:
           # cảm nên setup-gradle yêu cầu key). Secret chưa tồn tại → input rỗng, action bỏ qua.
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[]}}}]}' > app/google-services.json
+          fi
+
       - name: Stub AuthSecrets
         run: |
           mkdir -p app/src/main/java/com/example/mybookslibrary/util
@@ -161,6 +171,16 @@ jobs:
           # Mã hóa để cache được configuration-cache giữa các run (chứa dữ liệu nhạy
           # cảm nên setup-gradle yêu cầu key). Secret chưa tồn tại → input rỗng, action bỏ qua.
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[]}}}]}' > app/google-services.json
+          fi
 
       - name: Stub AuthSecrets
         run: |
@@ -342,6 +362,16 @@ jobs:
           # Mã hóa để cache được configuration-cache giữa các run (chứa dữ liệu nhạy
           # cảm nên setup-gradle yêu cầu key). Secret chưa tồn tại → input rỗng, action bỏ qua.
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Create google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          else
+            echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[]}}}]}' > app/google-services.json
+          fi
 
       - name: Stub AuthSecrets
         run: |
