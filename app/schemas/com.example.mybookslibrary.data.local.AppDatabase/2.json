@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 6,
-    "identityHash": "10548017d0f3b69435b57f3baed15bc5",
+    "version": 2,
+    "identityHash": "2ff8b2fdc1e7c160532660f28c0c1d8c",
     "entities": [
       {
         "tableName": "library_items",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`manga_id` TEXT NOT NULL, `title` TEXT NOT NULL, `cover_url` TEXT NOT NULL, `status` TEXT NOT NULL, `last_read_chapter_id` TEXT, `last_read_page_index` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`manga_id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`manga_id` TEXT NOT NULL, `title` TEXT NOT NULL, `cover_url` TEXT NOT NULL, `status` TEXT NOT NULL, `last_read_chapter_id` TEXT, `last_read_page_index` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `sync_status` TEXT NOT NULL, PRIMARY KEY(`manga_id`))",
         "fields": [
           {
             "fieldPath": "manga_id",
@@ -47,6 +47,12 @@
             "fieldPath": "updated_at",
             "columnName": "updated_at",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sync_status",
+            "columnName": "sync_status",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -269,7 +275,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '10548017d0f3b69435b57f3baed15bc5')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2ff8b2fdc1e7c160532660f28c0c1d8c')"
     ]
   }
 }

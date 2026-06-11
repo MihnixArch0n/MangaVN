@@ -12,8 +12,7 @@ import com.example.mybookslibrary.data.local.dao.DownloadQueueDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 
 @Suppress("UnusedPrivateProperty")
-private const val PREVIOUS_DATABASE_VERSION = 5
-private const val CURRENT_DATABASE_VERSION = 6
+private const val CURRENT_DATABASE_VERSION = 2
 
 @Database(
     entities = [
@@ -52,9 +51,8 @@ abstract class AppDatabase : RoomDatabase() {
                             AppDatabase::class.java,
                             "mybooks_library.db",
                         )
-                        .addMigrations(migration3To4, migration4To5, migration5To6)
-                        // Không dùng fallbackToDestructiveMigration: thiếu migration khi bump version
-                        // sẽ fail loud (giữ nguyên dữ liệu trên đĩa) thay vì xóa sạch thư viện người dùng.
+                        .addMigrations(migration1To2)
+                        .fallbackToDestructiveMigration() // Dùng cho lần downgrade từ 6 -> 1 này. Các version sau (2, 3...) bắt buộc phải viết Migration.
                         .build()
 
                 instance = created
@@ -63,48 +61,12 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         @Suppress("MagicNumber")
-        val migration3To4 =
-            object : Migration(3, 4) {
+        val migration1To2 =
+            object : Migration(1, 2) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL(
-                        """
-                        CREATE TABLE IF NOT EXISTS `chapter_metadata` (
-                            `chapter_id` TEXT NOT NULL,
-                            `manga_id` TEXT NOT NULL,
-                            `volume` TEXT,
-                            `chapter_number` TEXT,
-                            `title` TEXT,
-                            `pages` INTEGER NOT NULL,
-                            `is_unavailable` INTEGER NOT NULL,
-                            `feed_order` INTEGER NOT NULL,
-                            `updated_at` INTEGER NOT NULL,
-                            PRIMARY KEY(`chapter_id`)
-                        )
-                        """.trimIndent(),
+                        "ALTER TABLE `library_items` ADD COLUMN `sync_status` TEXT NOT NULL DEFAULT 'PENDING_UPDATE'"
                     )
-                    db.execSQL(
-                        "CREATE INDEX IF NOT EXISTS `index_chapter_metadata_manga_id` " +
-                            "ON `chapter_metadata` (`manga_id`)",
-                    )
-                }
-            }
-
-        @Suppress("MagicNumber")
-        val migration4To5 =
-            object : Migration(4, 5) {
-                override fun migrate(db: SupportSQLiteDatabase) {
-                    db.execSQL(
-                        "ALTER TABLE `chapter_metadata` ADD COLUMN `translated_language` TEXT"
-                    )
-                }
-            }
-
-        // Migration 5→6: Xóa bảng users — auth chuyển sang Firebase Auth.
-        @Suppress("MagicNumber")
-        val migration5To6 =
-            object : Migration(5, 6) {
-                override fun migrate(db: SupportSQLiteDatabase) {
-                    db.execSQL("DROP TABLE IF EXISTS `users`")
                 }
             }
     }

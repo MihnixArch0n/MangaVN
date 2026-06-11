@@ -3,6 +3,7 @@ package com.example.mybookslibrary.data.local
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.mybookslibrary.domain.model.SyncStatus
 
 enum class LibraryStatus {
     READING,
@@ -21,6 +22,17 @@ class LibraryStatusConverters {
         } catch (_: IllegalArgumentException) {
             LibraryStatus.READING
         }
+
+    @androidx.room.TypeConverter
+    fun fromSyncStatus(status: SyncStatus): String = status.name
+
+    @androidx.room.TypeConverter
+    fun toSyncStatus(value: String): SyncStatus =
+        try {
+            SyncStatus.valueOf(value)
+        } catch (_: IllegalArgumentException) {
+            SyncStatus.PENDING_UPDATE
+        }
 }
 
 @Entity(tableName = "library_items")
@@ -33,4 +45,5 @@ data class LibraryItemEntity(
     @ColumnInfo(name = "last_read_chapter_id") val last_read_chapter_id: String? = null,
     @ColumnInfo(name = "last_read_page_index") val last_read_page_index: Int = 0,
     @ColumnInfo(name = "updated_at") val updated_at: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "sync_status") val sync_status: SyncStatus = SyncStatus.PENDING_UPDATE,
 )
