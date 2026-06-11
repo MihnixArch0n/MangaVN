@@ -51,6 +51,29 @@ class ChapterDaoMetadataTest {
             )
         }
 
+    @Test
+    fun syncChapterMetadata_withEmptyFeed_deletesAllUndownloadedChapters() =
+        runTest {
+            val dao = database.chapterDao()
+            dao.syncChapterMetadata(
+                mangaId = MANGA_ID,
+                chapters = listOf(metadata("chapter-1", 0), metadata("chapter-2", 1)),
+                downloadedChapterIds = emptySet(),
+            )
+
+            // Feed rỗng (nhánh chapters.isEmpty) → xóa toàn bộ chapter không được download giữ lại
+            dao.syncChapterMetadata(
+                mangaId = MANGA_ID,
+                chapters = emptyList(),
+                downloadedChapterIds = setOf("chapter-2"),
+            )
+
+            assertEquals(
+                listOf("chapter-2"),
+                dao.getChaptersByMangaIdFlow(MANGA_ID).first().map { it.chapterId },
+            )
+        }
+
     private fun metadata(
         chapterId: String,
         feedOrder: Int,

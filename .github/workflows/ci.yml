@@ -123,6 +123,12 @@ jobs:
             app/build/outputs/roborazzi/
           if-no-files-found: ignore
 
+      # Gate coverage per-package (jacocoCoverageVerification trong build.gradle.kts).
+      # Trước đây task này KHÔNG được gọi ở đâu (chỉ wire vào `check` mà CI không chạy)
+      # → gate giấy: main từng vi phạm 76.8% < 80% mà không ai biết.
+      - name: Gate per-package coverage
+        run: ./gradlew :app:jacocoCoverageVerification --console=plain
+
       - name: Upload unit test exec (ubuntu — dùng bởi emulator-test cho combined report)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

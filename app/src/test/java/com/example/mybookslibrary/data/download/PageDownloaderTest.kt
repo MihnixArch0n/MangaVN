@@ -198,6 +198,14 @@ class PageDownloaderTest {
             server.dispatcher =
                 object : Dispatcher() {
                     override fun dispatch(request: RecordedRequest): MockResponse {
+                        if (request.path?.contains("p10noct") == true) {
+                            // Không set Content-Type → subtype null → fallback đuôi URL;
+                            // X-Cache khác "HIT" → cover vế cached=false khi header tồn tại
+                            return MockResponse()
+                                .setResponseCode(200)
+                                .setHeader("X-Cache", "MISS")
+                                .setBody("bytes")
+                        }
                         val contentType =
                             when {
                                 request.path?.endsWith(".jpg") == true -> "image/jpeg"
@@ -214,7 +222,13 @@ class PageDownloaderTest {
                             .setBody("bytes")
                     }
                 }
-            val filenames = listOf("p1.jpg", "p2.jpeg", "p3.png", "p4.webp", "p5.gif", "p6.bin")
+            // p7/p8: extension quá dài (>5) và không có extension → "img";
+            // p9: extension 1 ký tự (< min 2) → "img"; p10noct: không Content-Type → đuôi URL
+            val filenames =
+                listOf(
+                    "p1.jpg", "p2.jpeg", "p3.png", "p4.webp", "p5.gif",
+                    "p6.bin", "p7.verylongext", "p8", "p9.x", "p10noct.png",
+                )
             val coordinator = coordinator(delivery(server, filenames = filenames))
             val pageDownloader = downloader()
 
@@ -228,7 +242,7 @@ class PageDownloaderTest {
             }
 
             val extensions = storage.getChapterPages(MANGA_ID, EXTENSION_CHAPTER_ID).map { it.extension }
-            assertEquals(listOf("jpg", "jpg", "png", "webp", "gif", "bin"), extensions)
+            assertEquals(listOf("jpg", "jpg", "png", "webp", "gif", "bin", "img", "img", "img", "png"), extensions)
         }
 
     @Test

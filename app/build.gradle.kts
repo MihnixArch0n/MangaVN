@@ -261,8 +261,9 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
             }
         }
         // Tầng data còn lại (local/dao/remote/models/download) đã phủ test JVM kỹ:
-        // LINE ≥90% + BRANCH ≥80% (branch luôn thấp hơn line do nhánh platform/IO-error
-        // khó ép trong unit test — không chặn cao hơn để tránh fragile gate).
+        // LINE ≥90% + BRANCH ≥85% (mức thật 2026-06: download 90.9%, local 90.6%,
+        // dao 100%, models 98.4% — headroom ≥5pp; phần miss còn lại là nhánh defensive
+        // File.delete/renameTo fail không ép được trong unit test).
         rule {
             element = "PACKAGE"
             includes =
@@ -281,7 +282,7 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.80".toBigDecimal()
+                minimum = "0.85".toBigDecimal()
             }
         }
     }
