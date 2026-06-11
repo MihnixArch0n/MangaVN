@@ -30,6 +30,20 @@ android {
         testInstrumentationRunner = "com.example.mybookslibrary.HiltTestRunner"
     }
 
+    // Ký release qua env vars — release.yml decode keystore từ GitHub secrets rồi set env.
+    // Thiếu env (build local, PR CI) → không tạo config, assembleRelease ra bản unsigned như cũ.
+    signingConfigs {
+        val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+        if (!keystorePath.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // R8 minify + resource shrink (issue #93): APK 56.4 MB → nhỏ hơn đáng kể.
@@ -41,6 +55,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            signingConfig = signingConfigs.findByName("release")
         }
     }
     compileOptions {

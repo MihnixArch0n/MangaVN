@@ -72,7 +72,9 @@ Rule đang **bật**. KDoc bắt buộc cho public function, **ngoại trừ** c
 - Squash merge: `gh pr merge <N> --squash --delete-branch --body ""` (bắt buộc `--body ""` để không thêm Co-authored-by).
 - Không dùng `git rebase` khi branch có squash-merged commits từ main → dùng `git merge origin/main`.
 
-## Người Cần Làm (phan-tho)
-- Branch protection required checks (Issue #53)
-- Enable Dependency graph trong GitHub Settings
-- Enable "Always suggest updating PR branches"
+## Repo Settings
+- Owner: **MinhThang1009** (transfer từ phan-tho, 2026-06-11). URL cũ `phan-tho/MyBooksLibrary` được GitHub redirect.
+- Branch protection main: require PR (0 approvals) + required checks `wrapper-validation`, `build-test`, `static-analysis`, `emulator-test`. Không force push/delete.
+- Đã bật: auto-merge, Dependency graph, suggest-update-branch, auto-delete head branches.
+- Secrets đã set: `GRADLE_ENCRYPTION_KEY` (config-cache CI) + 4 secret ký release (`RELEASE_KEYSTORE_BASE64/PASSWORD`, `RELEASE_KEY_ALIAS/PASSWORD`). Keystore gốc backup ngoài repo (máy owner) — MẤT LÀ KHÔNG UPDATE APP ĐƯỢC.
+- Release: push tag `v*` → workflow `release.yml` build AAB/APK ký + GitHub Release + mapping.txt + changelog. Dry-run: chạy workflow_dispatch (build + verify chữ ký, không tạo Release). Secret optional `AUTH_WEB_CLIENT_ID` chưa set → release dùng stub, Google sign-in không hoạt động.
