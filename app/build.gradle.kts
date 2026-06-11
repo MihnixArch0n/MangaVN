@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.roborazzi)
     jacoco
 }
 
@@ -75,6 +76,33 @@ detekt {
     buildUponDefaultConfig = true
     config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
     baseline = file("$rootDir/config/detekt/baseline.xml")
+}
+
+// Screenshot testing: golden images commit vào src/test/screenshots, record/verify CHỈ trên CI
+// (Linux) — Windows render lệch nhẹ font antialiasing nên local không phải source of truth.
+// Update goldens: chạy workflow roborazzi-record trên branch PR.
+roborazzi {
+    outputDir.set(file("src/test/screenshots"))
+    // Tự sinh screenshot test cho MỌI @Composable có @Preview (kể cả private) —
+    // UI mới chỉ cần viết @Preview với fake data là tự có screenshot test,
+    // không phải viết *ScreenshotTest.kt tay. Record/verify vẫn CHỈ trên CI.
+    generateComposePreviewRobolectricTests {
+        enable.set(true)
+        packages.set(listOf("com.example.mybookslibrary"))
+        includePrivatePreviews.set(true)
+        // Tester custom cài FakeImageLoader trước mỗi capture — không có nó, preview
+        // chứa AsyncImage render nondeterministic (đang-load vs failed) → golden flaky.
+        // useScanOptionParametersInTester: tester delegate về AndroidComposePreviewTester
+        // nên scan options (packages/includePrivatePreviews) vẫn được đọc từ DSL này.
+        testerQualifiedClassName.set("com.example.mybookslibrary.ui.util.FakeImageLoaderPreviewTester")
+        useScanOptionParametersInTester.set(true)
+        // Khớp môi trường render với các *ScreenshotTest viết tay
+        robolectricConfig.set(
+            mapOf(
+                "qualifiers" to "\"w411dp-h891dp-xxhdpi\"",
+            ),
+        )
+    }
 }
 
 ktlint {
@@ -233,8 +261,9 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
             }
         }
         // Tầng data còn lại (local/dao/remote/models/download) đã phủ test JVM kỹ:
-        // LINE ≥90% + BRANCH ≥80% (branch luôn thấp hơn line do nhánh platform/IO-error
-        // khó ép trong unit test — không chặn cao hơn để tránh fragile gate).
+        // LINE ≥90% + BRANCH ≥85% (mức thật 2026-06: download 90.9%, local 90.6%,
+        // dao 100%, models 98.4% — headroom ≥5pp; phần miss còn lại là nhánh defensive
+        // File.delete/renameTo fail không ép được trong unit test).
         rule {
             element = "PACKAGE"
             includes =
@@ -253,7 +282,7 @@ tasks.register<JacocoCoverageVerification>("jacocoCoverageVerification") {
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.80".toBigDecimal()
+                minimum = "0.85".toBigDecimal()
             }
         }
     }
@@ -334,6 +363,11 @@ dependencies {
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.kotest.property)
+    testImplementation(libs.roborazzi.core)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.roborazzi.preview.scanner.support)
+    testImplementation(libs.composable.preview.scanner)
 
     // Instrumented tests
     androidTestImplementation(libs.androidx.junit)

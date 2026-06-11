@@ -28,15 +28,22 @@ JAVA_HOME="C:/Program Files/Java/jdk-21.0.10" ./gradlew assembleDebug
 - `MainNavGraph.kt` (62.77%) và `MainScreens.kt` (48.84%): Compose ceiling, không cố fix.
 
 ## Database (Room)
-- **Version hiện tại: 3**. Schema exported tại `app/schemas/...3.json`.
+- **Version hiện tại: 4** (`CURRENT_DATABASE_VERSION` trong `AppDatabase.kt`). Schema exported tại `app/schemas/...4.json`.
 - Schema v1, v2 không còn — chỉ test migration từ v3 trở đi.
-- Khi bump version: viết `Migration(old, new)` trước, register trong `AppDatabase.getInstance()`, uncomment template trong `AppDatabaseMigrationTest.kt`.
-- Pre-commit hook sẽ block nếu bump version mà không có Migration.
+- Khi bump version: cập nhật `PREVIOUS_DATABASE_VERSION`/`CURRENT_DATABASE_VERSION`, viết `Migration(old, new)`, register qua `.addMigrations(...)` trong `AppDatabase.getInstance()`, build để KSP export schema JSON rồi commit, cập nhật `AppDatabaseMigrationTest.kt`.
+- Gate chặn bump thiếu migration: `scripts/check-room-migration.sh` — chạy ở cả pre-commit hook (local) lẫn CI job `static-analysis` (check Migration + register + schema JSON).
 
 ## Test Patterns
 - Compose tests: dùng `createAndroidComposeRule<ComponentActivity>()` (KHÔNG dùng `junit4.v2.createComposeRule` — không generate coverage ổn định; KHÔNG dùng `createEmptyComposeRule` với HiltAndroidTest).
 - HiltAndroidTest: `@UninstallModules` để swap fake repository.
 - Mỗi test file Compose cần `@HiltAndroidTest` + `@RunWith(AndroidJUnit4::class)`.
+
+## Screenshot Tests (Roborazzi)
+- Golden images tại `app/src/test/screenshots/` — record/verify **CHỈ trên CI Linux**, KHÔNG record local (Windows render font khác → ảnh lệch). CI là source of truth.
+- Update goldens khi UI đổi có chủ đích: gắn label `record-screenshots` vào PR (gỡ rồi gắn lại để chạy lần nữa), hoặc Actions → "Roborazzi record" → Run workflow sau khi merge.
+- `captureRoboImage` là no-op khi chạy `testDebugUnitTest` thường — pre-commit hook không bị ảnh hưởng.
+- `ModalBottomSheet`/dialog render window riêng → dùng `captureScreenRoboImage()` thay vì `onRoot().captureRoboImage()`.
+- **UI mới → viết `@Preview` (private OK) với fake data** → screenshot test TỰ SINH qua `generateComposePreviewRobolectricTests`, không cần viết `*ScreenshotTest.kt` tay (chỉ viết tay khi cần interaction/state đặc biệt).
 
 ## Convention: @Composable không được ở ViewModel/Repository
 **ViewModel và data layer không được import `androidx.compose.**`** — `@Composable` function không chạy được trên JVM unit test, kéo coverage xuống.

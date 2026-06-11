@@ -75,6 +75,28 @@ class DownloadedChapterCacheTest {
         }
 
     @Test
+    fun init_voiCorruptedChapters_upsertErrorVaoDownloadQueue() =
+        runTest {
+            val chapterDao = mockk<ChapterDao>()
+            val downloadQueueDao = mockk<DownloadQueueDao>(relaxed = true)
+            val storage = mockk<OfflineDownloadStorage>()
+            coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
+            coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
+            coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
+            coEvery { storage.scanDownloadedChapters() } returns emptySet()
+            coEvery { storage.scanCorruptedChapters() } returns listOf(Pair("manga-1", "chapter-9"))
+
+            DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                downloadQueueDao.upsert(
+                    match { it.chapter_id == "chapter-9" && it.manga_id == "manga-1" },
+                )
+            }
+        }
+
+    @Test
     fun addChapterAndRemoveChapter_emitUpdatedState() =
         runTest {
             val chapterDao = mockk<ChapterDao>()

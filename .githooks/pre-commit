@@ -36,17 +36,13 @@ if echo "$STAGED_KT" | xargs grep -l "createEmptyComposeRule" 2>/dev/null | grep
     FAST_FAIL=1
 fi
 
-# Room DB version bump không có Migration → crash app khi user upgrade
-DB_FILE="app/src/main/java/com/example/mybookslibrary/data/local/AppDatabase.kt"
+# Room DB version bump không có Migration → crash app khi user upgrade.
+# Logic gate nằm trong scripts/check-room-migration.sh (dùng chung với CI) —
+# grep cũ inline ở đây đã chết khi AppDatabase.kt chuyển sang version = CONSTANT (issue #94).
 if echo "$STAGED_KT" | grep -q "AppDatabase.kt"; then
-    OLD_VER=$(git show HEAD:"$DB_FILE" 2>/dev/null | grep -o 'version = [0-9]*' | grep -o '[0-9]*')
-    NEW_VER=$(git diff --cached -- "$DB_FILE" | grep '^+.*version = [0-9]' | grep -o '[0-9]*' | head -1)
-    if [ -n "$OLD_VER" ] && [ -n "$NEW_VER" ] && [ "$OLD_VER" != "$NEW_VER" ]; then
-        if ! grep -r "Migration($OLD_VER, $NEW_VER)" app/src/main/java/ 2>/dev/null | grep -q .; then
-            echo "❌ DB version $OLD_VER → $NEW_VER: không tìm thấy Migration($OLD_VER, $NEW_VER)"
-            echo "   Phải viết migration trước khi bump version, nếu không app sẽ crash khi user upgrade."
-            FAST_FAIL=1
-        fi
+    # old = HEAD, new = staged index (ref rỗng)
+    if ! sh scripts/check-room-migration.sh "HEAD" ""; then
+        FAST_FAIL=1
     fi
 fi
 
