@@ -22,6 +22,11 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
+import com.example.mybookslibrary.data.remote.FirestoreDataSource
+import com.example.mybookslibrary.data.repository.AuthRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+
 // Hilt module cung cấp Room DB, DAO, Repository và DataStore cho toàn app
 @Module
 @InstallIn(SingletonComponent::class)
@@ -48,7 +53,17 @@ object DataModule {
         libraryDao: LibraryDao,
         chapterDao: ChapterDao,
         database: AppDatabase,
-    ): LibraryRepository = LibraryRepository(libraryDao, chapterDao, database)
+        firestoreDataSource: FirestoreDataSource,
+        authRepository: AuthRepository,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): LibraryRepository = LibraryRepository(
+        libraryDao,
+        chapterDao,
+        database,
+        firestoreDataSource,
+        authRepository,
+        CoroutineScope(SupervisorJob() + ioDispatcher)
+    )
 
     @Provides
     @Singleton

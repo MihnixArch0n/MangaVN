@@ -87,6 +87,25 @@ class MyBooksLibraryApp :
         }
 
         Log.i(TAG, "App initialized")
+        setupSyncWorker()
+    }
+
+    private fun setupSyncWorker() {
+        val constraints = androidx.work.Constraints.Builder()
+            .setRequiredNetworkType(androidx.work.NetworkType.CONNECTED)
+            .build()
+            
+        val syncWorkRequest = androidx.work.PeriodicWorkRequestBuilder<com.example.mybookslibrary.data.remote.SyncWorker>(
+            1, java.util.concurrent.TimeUnit.HOURS
+        )
+            .setConstraints(constraints)
+            .build()
+            
+        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "LibrarySyncWorker",
+            androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+            syncWorkRequest
+        )
     }
 
     companion object {

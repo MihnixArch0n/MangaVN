@@ -8,14 +8,22 @@ import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
+import com.example.mybookslibrary.data.remote.FirestoreDataSource
+import com.example.mybookslibrary.data.remote.models.FirestoreLibraryItem
+import com.example.mybookslibrary.domain.model.SyncStatus
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
-// Repository quản lý thư viện cá nhân (Room DB)
+// Repository quản lý thư viện cá nhân (Room DB + Firestore Sync)
 class LibraryRepository(
     private val libraryDao: LibraryDao,
     private val chapterDao: ChapterDao,
     private val database: AppDatabase,
+    private val firestoreDataSource: FirestoreDataSource,
+    private val authRepository: AuthRepository,
+    private val externalScope: CoroutineScope,
 ) {
     /** Reactive stream danh sách manga trong thư viện, dùng cho [LibraryScreen]. */
     fun observeLibraryItems(): Flow<List<LibraryItemEntity>> = libraryDao.observeAll()
@@ -31,22 +39,39 @@ class LibraryRepository(
         status: LibraryStatus = LibraryStatus.READING,
     ) {
         val now = System.currentTimeMillis()
-        libraryDao.upsert(
-            LibraryItemEntity(
-                manga_id = mangaId,
-                title = title,
-                cover_url = coverUrl,
-                status = status,
-                last_read_chapter_id = null,
-                last_read_page_index = 0,
-                updated_at = now,
-            ),
+        val entity = LibraryItemEntity(
+            manga_id = mangaId,
+            title = title,
+            cover_url = coverUrl,
+            status = status,
+            last_read_chapter_id = null,
+            last_read_page_index = 0,
+            updated_at = now,
+            sync_status = SyncStatus.PENDING_UPDATE
         )
+        libraryDao.upsert(entity)
+        trySyncItem(entity)
     }
 
-    /** Xóa manga khỏi thư viện (chỉ library row, không xóa chapter progress). */
+    /** Xóa manga khỏi thư viện (đánh dấu PENDING_DELETE thay vì xóa ngay để sync worker còn bắt được). */
     suspend fun removeFromLibrary(mangaId: String) {
-        libraryDao.deleteByMangaId(mangaId)
+        libraryDao.markDeleted(mangaId)
+        val user = authRepository.getCurrentUser()
+        if (user != null) {
+            externalScope.launch {
+                try {
+                    firestoreDataSource.deleteItem(user.uid, mangaId)
+                    libraryDao.physicallyDelete(mangaId)
+                    chapterDao.deleteLibraryItemAndProgress(mangaId)
+                } catch (e: Exception) {
+                    Timber.e(e, "Lỗi xóa Firestore item")
+                }
+            }
+        } else {
+            // Không đăng nhập -> xóa ngay
+            libraryDao.physicallyDelete(mangaId)
+            chapterDao.deleteLibraryItemAndProgress(mangaId)
+        }
     }
 
     /** Kiểm tra manga đã có trong thư viện chưa. */
@@ -59,17 +84,10 @@ class LibraryRepository(
 
     /** Upsert danh sách items từ backup JSON. */
     suspend fun restoreItems(items: List<LibraryItemEntity>) {
-        libraryDao.upsert(items)
+        libraryDao.upsert(items.map { it.copy(sync_status = SyncStatus.PENDING_UPDATE) })
+        items.forEach { trySyncItem(it) }
     }
 
-    /**
-     * Persists the chapter/page reading progress in a single Room transaction.
-     *
-     * - Updates the library row with the latest chapter and page index without REPLACE,
-     *   because REPLACE can cascade-delete chapter progress rows through the FK.
-     * - Updates the chapter progress row with READING/COMPLETED state.
-     * - Marks the chapter as completed only when the last page is reached exactly.
-     */
     suspend fun updateReadingProgress(
         mangaId: String,
         chapterId: String,
@@ -81,22 +99,7 @@ class LibraryRepository(
         val boundedPageIndex = pageIndex.coerceAtLeast(0)
         val isCompleted = boundedTotalPages > 0 && boundedPageIndex == (boundedTotalPages - 1)
 
-        Timber.d(
-            "updateReadingProgress start: mangaId=%s chapterId=%s pageIndex=%d totalPages=%d completed=%s",
-            mangaId,
-            chapterId,
-            boundedPageIndex,
-            boundedTotalPages,
-            isCompleted,
-        )
-
         database.withTransaction {
-            Timber.d(
-                "updateReadingProgress tx: writing library progress row mangaId=%s chapterId=%s pageIndex=%d",
-                mangaId,
-                chapterId,
-                boundedPageIndex,
-            )
             libraryDao.updateReadingProgress(
                 mangaId = mangaId,
                 chapterId = chapterId,
@@ -104,13 +107,6 @@ class LibraryRepository(
                 updatedAt = now,
             )
 
-            Timber.d(
-                "updateReadingProgress tx: writing chapter_progress chapterId=%s status=%s lastReadPage=%d totalPages=%d",
-                chapterId,
-                if (isCompleted) ChapterStatus.COMPLETED else ChapterStatus.READING,
-                boundedPageIndex,
-                boundedTotalPages,
-            )
             chapterDao.upsertReadingProgress(
                 ChapterProgressEntity(
                     chapter_id = chapterId,
@@ -122,29 +118,17 @@ class LibraryRepository(
                 ),
             )
         }
-
-        Timber.d(
-            "updateReadingProgress end: mangaId=%s chapterId=%s pageIndex=%d completed=%s",
-            mangaId,
-            chapterId,
-            boundedPageIndex,
-            isCompleted,
-        )
+        
+        val item = libraryDao.getByMangaId(mangaId)
+        if (item != null) trySyncItem(item)
     }
 
-    /** Đánh dấu chapter đã đọc xong. `last_read_page` = `totalPages` (trang cuối). */
     suspend fun markChapterCompleted(
         mangaId: String,
         chapterId: String,
         totalPages: Int,
     ) {
         val boundedTotalPages = totalPages.coerceAtLeast(0)
-        Timber.d(
-            "markChapterCompleted: mangaId=%s chapterId=%s totalPages=%d",
-            mangaId,
-            chapterId,
-            boundedTotalPages,
-        )
         chapterDao.upsertReadingProgress(
             ChapterProgressEntity(
                 chapter_id = chapterId,
@@ -157,18 +141,11 @@ class LibraryRepository(
         )
     }
 
-    /** Reset chapter về trạng thái chưa đọc, `last_read_page` về 0. */
     suspend fun markChapterUnread(
         mangaId: String,
         chapterId: String,
         totalPages: Int,
     ) {
-        Timber.d(
-            "markChapterUnread: mangaId=%s chapterId=%s totalPages=%d",
-            mangaId,
-            chapterId,
-            totalPages.coerceAtLeast(0),
-        )
         chapterDao.upsertReadingProgress(
             ChapterProgressEntity(
                 chapter_id = chapterId,
@@ -181,8 +158,59 @@ class LibraryRepository(
         )
     }
 
-    /** Xóa library item VÀ toàn bộ chapter progress của manga này (cascade delete). */
     suspend fun removeBookmark(mangaId: String) {
-        chapterDao.deleteLibraryItemAndProgress(mangaId)
+        removeFromLibrary(mangaId)
+    }
+
+    private fun trySyncItem(item: LibraryItemEntity) {
+        val user = authRepository.getCurrentUser() ?: return
+        externalScope.launch {
+            try {
+                val firestoreItem = FirestoreLibraryItem(
+                    mangaId = item.manga_id,
+                    title = item.title,
+                    coverUrl = item.cover_url,
+                    status = item.status.name,
+                    addedAt = item.updated_at,
+                    lastReadAt = item.updated_at,
+                    lastChapterId = item.last_read_chapter_id,
+                    updatedAt = item.updated_at
+                )
+                firestoreDataSource.saveItem(user.uid, firestoreItem)
+                libraryDao.markSynced(item.manga_id)
+            } catch (e: Exception) {
+                Timber.e(e, "Lỗi đồng bộ Firestore item")
+            }
+        }
+    }
+
+    // Dùng cho SyncWorker
+    suspend fun syncPendingItems() {
+        val user = authRepository.getCurrentUser() ?: return
+        val pendingItems = libraryDao.getPendingSyncItems()
+        for (item in pendingItems) {
+            try {
+                if (item.sync_status == SyncStatus.PENDING_DELETE) {
+                    firestoreDataSource.deleteItem(user.uid, item.manga_id)
+                    libraryDao.physicallyDelete(item.manga_id)
+                    chapterDao.deleteLibraryItemAndProgress(item.manga_id)
+                } else {
+                    val firestoreItem = FirestoreLibraryItem(
+                        mangaId = item.manga_id,
+                        title = item.title,
+                        coverUrl = item.cover_url,
+                        status = item.status.name,
+                        addedAt = item.updated_at,
+                        lastReadAt = item.updated_at,
+                        lastChapterId = item.last_read_chapter_id,
+                        updatedAt = item.updated_at
+                    )
+                    firestoreDataSource.saveItem(user.uid, firestoreItem)
+                    libraryDao.markSynced(item.manga_id)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Lỗi khi chạy SyncWorker cho item ${item.manga_id}")
+            }
+        }
     }
 }
