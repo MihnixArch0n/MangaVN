@@ -1,12 +1,15 @@
+# Mọi collaborator có quyền write đều là code owner — review chéo lẫn nhau,
+# approve của bất kỳ ai (trừ tác giả PR) đều thỏa required review,
+# tránh nghẽn vào một người duy nhất.
 # Default owner cho toàn bộ repo
-* @phan-tho
+* @phan-tho @MinhThang1009 @MihnixArch0n
 
 # CI/CD và config
-.github/ @phan-tho
-.githooks/ @phan-tho
-*.gradle.kts @phan-tho
-gradle/ @phan-tho
+.github/ @phan-tho @MinhThang1009 @MihnixArch0n
+.githooks/ @phan-tho @MinhThang1009 @MihnixArch0n
+*.gradle.kts @phan-tho @MinhThang1009 @MihnixArch0n
+gradle/ @phan-tho @MinhThang1009 @MihnixArch0n
 
 # Core architecture
-app/src/main/java/ @phan-tho
-app/src/main/res/ @phan-tho
+app/src/main/java/ @phan-tho @MinhThang1009 @MihnixArch0n
+app/src/main/res/ @phan-tho @MinhThang1009 @MihnixArch0n

@@ -41,7 +41,9 @@ class OfflineDownloadStorage
         ): File =
             withContext(ioDispatcher) {
                 val chapterDir = chapterDirectory(mangaId, chapterId)
-                if (!chapterDir.exists() && !chapterDir.mkdirs()) {
+                // mkdirs() trả false khi thread khác vừa tạo dir cùng lúc (TOCTOU race, issue #92)
+                // → chỉ throw khi dir thật sự không tồn tại sau khi mkdirs thất bại.
+                if (!chapterDir.mkdirs() && !chapterDir.isDirectory) {
                     throw IOException("Cannot create offline chapter directory: ${chapterDir.absolutePath}")
                 }
 
@@ -68,7 +70,12 @@ class OfflineDownloadStorage
                     if (!tempFile.renameTo(pageFile)) {
                         throw IOException("Cannot move temp page into place: ${pageFile.absolutePath}")
                     }
-                    Timber.d("savePage end: chapterId=%s pageIndex=%d bytes=%d", chapterId, pageIndex, pageFile.length())
+                    Timber.d(
+                        "savePage end: chapterId=%s pageIndex=%d bytes=%d",
+                        chapterId,
+                        pageIndex,
+                        pageFile.length(),
+                    )
                     pageFile
                 } catch (e: Exception) {
                     tempFile.delete()
