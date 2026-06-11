@@ -120,7 +120,7 @@ class SettingsViewModel
                 } catch (c: CancellationException) {
                     throw c
                 } catch (e: Exception) {
-                    Timber.e(e, "signOut thất bại")
+                    Timber.e(e, "Sign out failed")
                     _uiState.update { it.copy(signedOut = false) }
                 }
             }
@@ -133,8 +133,30 @@ class SettingsViewModel
                     libraryRepository.syncPendingItems()
                     _uiState.update { it.copy(isSyncing = false, syncSuccess = true) }
                 } catch (e: Exception) {
-                    Timber.e(e, "Lỗi đồng bộ thủ công")
+                    Timber.e(e, "Manual sync failed")
                     _uiState.update { it.copy(isSyncing = false, syncSuccess = false) }
+                }
+            }
+        }
+
+        fun deleteAccount() {
+            viewModelScope.launch(ioDispatcher) {
+                try {
+                    // Xóa dữ liệu trên Firestore
+                    libraryRepository.clearAllRemote()
+                    
+                    // Xóa dữ liệu local
+                    preferencesDataStore.setReaderQuality("data")
+                    libraryRepository.clearAll()
+                    
+                    // Xóa tài khoản Firebase Auth
+                    authRepository.deleteAccount().getOrThrow()
+                    
+                    _uiState.update { it.copy(signedOut = true, quality = "data") }
+                } catch (c: CancellationException) {
+                    throw c
+                } catch (e: Exception) {
+                    Timber.e(e, "Error deleting account")
                 }
             }
         }

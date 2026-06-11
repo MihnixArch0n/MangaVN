@@ -18,12 +18,12 @@ class SyncWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
-            Timber.d("SyncWorker: Bắt đầu đồng bộ Firestore")
+            Timber.d("SyncWorker: Starting Firestore sync")
             libraryRepository.syncPendingItems()
-            Timber.d("SyncWorker: Đồng bộ hoàn tất")
+            Timber.d("SyncWorker: Sync completed")
             Result.success()
         } catch (e: Exception) {
-            Timber.e(e, "SyncWorker: Lỗi đồng bộ")
+            Timber.e(e, "SyncWorker: Sync failed")
             Result.retry()
         }
     }

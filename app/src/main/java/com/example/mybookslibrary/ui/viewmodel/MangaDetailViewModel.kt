@@ -69,7 +69,7 @@ class MangaDetailViewModel
                 } catch (c: CancellationException) {
                     throw c
                 } catch (e: Exception) {
-                    Timber.e(e, "MangaDetailViewModel: tác vụ thất bại")
+                    Timber.e(e, "MangaDetailViewModel: task failed")
                 }
             }
         }

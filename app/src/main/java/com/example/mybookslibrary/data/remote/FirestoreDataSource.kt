@@ -45,4 +45,17 @@ class FirestoreDataSource @Inject constructor(
         
         batch.commit().await()
     }
+
+    suspend fun deleteAllUserData(userId: String) {
+        val collection = getLibraryCollection(userId)
+        val snapshot = collection.get().await()
+        if (!snapshot.isEmpty) {
+            val batch = firestore.batch()
+            for (doc in snapshot.documents) {
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+        }
+        firestore.collection("users").document(userId).delete().await()
+    }
 }

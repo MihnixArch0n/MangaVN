@@ -64,7 +64,7 @@ class LibraryRepository(
                     libraryDao.physicallyDelete(mangaId)
                     chapterDao.deleteLibraryItemAndProgress(mangaId)
                 } catch (e: Exception) {
-                    Timber.e(e, "Lỗi xóa Firestore item")
+                    Timber.e(e, "Error deleting Firestore item")
                 }
             }
         } else {
@@ -80,6 +80,12 @@ class LibraryRepository(
     /** Xóa toàn bộ thư viện. Gọi khi sign out. */
     suspend fun clearAll() {
         libraryDao.deleteAll()
+    }
+
+    /** Xóa toàn bộ dữ liệu trên Firestore (dùng khi xóa tài khoản). */
+    suspend fun clearAllRemote() {
+        val user = authRepository.getCurrentUser() ?: return
+        firestoreDataSource.deleteAllUserData(user.uid)
     }
 
     /** Upsert danh sách items từ backup JSON. */
@@ -179,7 +185,7 @@ class LibraryRepository(
                 firestoreDataSource.saveItem(user.uid, firestoreItem)
                 libraryDao.markSynced(item.manga_id)
             } catch (e: Exception) {
-                Timber.e(e, "Lỗi đồng bộ Firestore item")
+                Timber.e(e, "Error syncing Firestore item")
             }
         }
     }
@@ -209,7 +215,7 @@ class LibraryRepository(
                     libraryDao.markSynced(item.manga_id)
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Lỗi khi chạy SyncWorker cho item ${item.manga_id}")
+                Timber.e(e, "Error during SyncWorker for item ${item.manga_id}")
             }
         }
     }

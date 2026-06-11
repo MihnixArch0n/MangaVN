@@ -194,6 +194,8 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
 
             item { SettingsSectionLabel(appString(R.string.settings_section_account)) }
             item {
+                var showDeleteAccountDialog by remember { mutableStateOf(false) }
+                
                 val signOutTitle =
                     if (uiState.signedOut) {
                         appString(R.string.settings_signed_out)
@@ -214,6 +216,41 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                         subtitle = signOutSub,
                         titleColor = MaterialTheme.colorScheme.tertiary,
                         onClick = viewModel::signOut,
+                    )
+                    SettingsDivider()
+                    SettingsRow(
+                        title = appString(R.string.settings_delete_account),
+                        subtitle = appString(R.string.settings_delete_account_subtitle),
+                        titleColor = MaterialTheme.colorScheme.error,
+                        onClick = { showDeleteAccountDialog = true },
+                    )
+                }
+
+                if (showDeleteAccountDialog) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { showDeleteAccountDialog = false },
+                        title = { Text(appString(R.string.settings_delete_account)) },
+                        text = { Text(appString(R.string.settings_delete_account_desc)) },
+                        confirmButton = {
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    showDeleteAccountDialog = false
+                                    viewModel.deleteAccount()
+                                }
+                            ) {
+                                Text(
+                                    text = appString(R.string.settings_delete_account_confirm),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            androidx.compose.material3.TextButton(
+                                onClick = { showDeleteAccountDialog = false }
+                            ) {
+                                Text(appString(R.string.action_cancel))
+                            }
+                        }
                     )
                 }
             }
