@@ -78,11 +78,14 @@ fun MangaDetailScreen(
                 )
             }
             item {
-                val lastReadChapter = uiState.lastReadChapterId?.let { id -> uiState.chapters.find { it.chapterId == id } }
+                val lastReadChapter =
+                    uiState.lastReadChapterId?.let { id ->
+                        uiState.chapters.find { it.chapterId == id }
+                    }
                 val readingChapter = uiState.chapters.find { it.status == ChapterReadingStatus.READING }
                 val firstUnreadChapter = uiState.chapters.find { it.status == ChapterReadingStatus.UNREAD }
                 val firstChapter = uiState.chapters.firstOrNull()
-                
+
                 val targetChapter = lastReadChapter ?: readingChapter ?: firstUnreadChapter ?: firstChapter
                 val targetChapterTitle = targetChapter?.let { buildChapterTitle(it) }.orEmpty()
                 MangaDetailActions(

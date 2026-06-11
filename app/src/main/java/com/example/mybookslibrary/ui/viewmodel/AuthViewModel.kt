@@ -49,7 +49,7 @@ class AuthViewModel
             viewModelScope.launch {
                 val result = authRepository.signInWithEmail(email, password)
                 if (result.isSuccess) {
-                    try { libraryRepository.performSync() } catch(e: Exception) { timber.log.Timber.e(e, "Sync failed on login") }
+                    syncLibrary("Sync failed on login")
                     _uiState.value = AuthState.Success
                 } else {
                     _uiState.value = AuthState.Error(authError(result.exceptionOrNull()?.message))
@@ -70,7 +70,7 @@ class AuthViewModel
             viewModelScope.launch {
                 val result = authRepository.registerWithEmail(email, password)
                 if (result.isSuccess) {
-                    try { libraryRepository.performSync() } catch(e: Exception) { timber.log.Timber.e(e, "Sync failed on register") }
+                    syncLibrary("Sync failed on register")
                     _uiState.value = AuthState.Success
                 } else {
                     _uiState.value = AuthState.Error(authError(result.exceptionOrNull()?.message))
@@ -84,7 +84,7 @@ class AuthViewModel
             viewModelScope.launch {
                 val result = authRepository.signInWithGoogle(context)
                 if (result.isSuccess) {
-                    try { libraryRepository.performSync() } catch(e: Exception) { timber.log.Timber.e(e, "Sync failed on Google sign in") }
+                    syncLibrary("Sync failed on Google sign in")
                     _uiState.value = AuthState.Success
                 } else {
                     _uiState.value = AuthState.Error(authError(result.exceptionOrNull()?.message))
@@ -98,6 +98,14 @@ class AuthViewModel
             viewModelScope.launch {
                 authRepository.continueAsGuest()
                 _uiState.value = AuthState.Success
+            }
+        }
+
+        private suspend fun syncLibrary(errorMessage: String) {
+            try {
+                libraryRepository.performSync()
+            } catch (e: Exception) {
+                timber.log.Timber.e(e, errorMessage)
             }
         }
 

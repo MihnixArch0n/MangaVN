@@ -159,6 +159,37 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun forceSync_chayFullTwoWaySyncVaBaoThanhCong() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults()
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.forceSync()
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { libraryRepository.performSync() }
+            assertFalse(vm.uiState.value.isSyncing)
+            assertEquals(true, vm.uiState.value.syncSuccess)
+        }
+
+    @Test
+    fun forceSync_fullTwoWaySyncLoi_thongBaoThatBai() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults()
+            coEvery { libraryRepository.performSync() } throws RuntimeException("sync lỗi")
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.forceSync()
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { libraryRepository.performSync() }
+            assertFalse(vm.uiState.value.isSyncing)
+            assertEquals(false, vm.uiState.value.syncSuccess)
+        }
+
+    @Test
     fun backupLibrary_thanhCong_ghiJsonVaSuccess() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             stubDefaults()

@@ -49,7 +49,8 @@ class MangaDetailViewModelCoverageTest {
         coEvery { manga.getMangaDetail(MANGA_ID) } returns Result.failure(IllegalStateException("x"))
         every { useCase(MANGA_ID) } returns flowOf(ChapterListResult(emptyList(), emptyList(), ""))
         every { userPreferencesDataStore.observePreferredChapterLanguage() } returns flowOf("")
-        coEvery { library.isInLibrary(MANGA_ID) } returns inLibrary
+        coEvery { library.getLibraryItem(MANGA_ID) } returns
+            if (inLibrary) mockk(relaxed = true) else null
     }
 
     private fun build() =

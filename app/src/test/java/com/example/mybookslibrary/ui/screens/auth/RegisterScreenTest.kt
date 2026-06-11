@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.example.mybookslibrary.data.repository.AuthRepository
+import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.ui.viewmodel.AuthViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -33,7 +34,9 @@ class RegisterScreenTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private fun viewModel() = AuthViewModel(mockk<AuthRepository>(relaxed = true))
+    private val libraryRepository = mockk<LibraryRepository>(relaxed = true)
+
+    private fun viewModel() = AuthViewModel(mockk<AuthRepository>(relaxed = true), libraryRepository)
 
     @Test
     fun rendersTitleAndFields() {
@@ -109,7 +112,7 @@ class RegisterScreenTest {
         val authRepository = mockk<AuthRepository>(relaxed = true)
         coEvery { authRepository.registerWithEmail(any(), any()) } returns
             Result.failure(IllegalStateException("Email already taken"))
-        val vm = AuthViewModel(authRepository)
+        val vm = AuthViewModel(authRepository, libraryRepository)
         composeRule.setContent {
             RegisterScreen(onRegisterSuccess = {}, onNavigateToLogin = {}, viewModel = vm)
         }
@@ -128,7 +131,7 @@ class RegisterScreenTest {
         val repo = mockk<AuthRepository>(relaxed = true)
         coEvery { repo.registerWithEmail(any(), any()) } coAnswers
             { Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true)) }
-        val vm = AuthViewModel(repo)
+        val vm = AuthViewModel(repo, libraryRepository)
         vm.register("newuser", "pass1")
 
         composeRule.setContent {

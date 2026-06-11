@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.example.mybookslibrary.data.repository.AuthRepository
+import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.ui.viewmodel.AuthViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -33,8 +34,9 @@ class LoginScreenTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private val authRepository = mockk<AuthRepository>(relaxed = true)
+    private val libraryRepository = mockk<LibraryRepository>(relaxed = true)
 
-    private fun viewModel() = AuthViewModel(authRepository)
+    private fun viewModel() = AuthViewModel(authRepository, libraryRepository)
 
     @Test
     fun rendersWelcomeTitleAndInputs() {
@@ -78,7 +80,7 @@ class LoginScreenTest {
         val repo = mockk<AuthRepository>(relaxed = true)
         coEvery { repo.signInWithEmail(any(), any()) } coAnswers
             { Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true)) }
-        val vm = AuthViewModel(repo)
+        val vm = AuthViewModel(repo, libraryRepository)
         vm.login("user", "pass")
 
         composeRule.setContent {
@@ -96,7 +98,7 @@ class LoginScreenTest {
             delay(Long.MAX_VALUE)
             Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
         }
-        val vm = AuthViewModel(repo)
+        val vm = AuthViewModel(repo, libraryRepository)
 
         composeRule.setContent {
             LoginScreen(onLoginSuccess = {}, onNavigateToRegister = {}, viewModel = vm)

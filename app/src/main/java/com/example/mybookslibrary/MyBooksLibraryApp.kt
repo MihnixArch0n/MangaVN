@@ -104,7 +104,8 @@ class MyBooksLibraryApp :
             .build()
 
         val syncWorkRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-            15, TimeUnit.MINUTES
+            SYNC_INTERVAL_MINUTES,
+            TimeUnit.MINUTES,
         )
             .setConstraints(constraints)
             .build()
@@ -118,6 +119,7 @@ class MyBooksLibraryApp :
 
     companion object {
         private const val TAG = "MyBooksLibraryApp"
+        private const val SYNC_INTERVAL_MINUTES = 15L
     }
 }
 

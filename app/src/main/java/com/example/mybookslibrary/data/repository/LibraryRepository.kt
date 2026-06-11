@@ -9,6 +9,7 @@ import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.local.dao.LibraryDao
 import com.example.mybookslibrary.data.remote.FirestoreDataSource
+import com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress
 import com.example.mybookslibrary.data.remote.models.FirestoreLibraryItem
 import com.example.mybookslibrary.domain.model.SyncStatus
 import kotlinx.coroutines.CoroutineScope
@@ -228,154 +229,140 @@ class LibraryRepository(
      */
     suspend fun performSync() {
         val user = authRepository.getCurrentUser() ?: return
-        
-        // 1. Upload pending changes from local first
+
+        uploadPendingItems(user.uid)
+        try {
+            mergeLibraryItems(user.uid)
+            syncChapterProgress(user.uid)
+        } catch (e: Exception) {
+            Timber.e(e, "Error downloading and merging items from Firestore")
+            throw e
+        }
+    }
+
+    private suspend fun uploadPendingItems(userId: String) {
         val pendingItems = libraryDao.getPendingSyncItems()
         for (item in pendingItems) {
             try {
                 if (item.syncStatus == SyncStatus.PENDING_DELETE) {
-                    firestoreDataSource.deleteItem(user.uid, item.manga_id)
+                    firestoreDataSource.deleteItem(userId, item.manga_id)
                     libraryDao.physicallyDelete(item.manga_id)
                     chapterDao.deleteLibraryItemAndProgress(item.manga_id)
                 } else {
-                    val firestoreItem = FirestoreLibraryItem(
-                        mangaId = item.manga_id,
-                        title = item.title,
-                        coverUrl = item.cover_url,
-                        status = item.status.name,
-                        addedAt = item.updated_at,
-                        lastReadAt = item.updated_at,
-                        lastChapterId = item.last_read_chapter_id,
-                        updatedAt = item.updated_at
-                    )
-                    firestoreDataSource.saveItem(user.uid, firestoreItem)
+                    firestoreDataSource.saveItem(userId, item.toFirestore())
                     libraryDao.markSynced(item.manga_id)
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error during uploading pending item ${item.manga_id}")
             }
         }
-
-        // 2. Download all items from cloud and merge to local
-        try {
-            val remoteItems = firestoreDataSource.getAllItems(user.uid)
-            val remoteItemsMap = remoteItems.associateBy { it.mangaId }
-            val localItems = libraryDao.getAll()
-            
-            val itemsToUpsertLocal = mutableListOf<LibraryItemEntity>()
-            val itemsToDeleteLocal = mutableListOf<String>()
-            
-            // Handle remote items -> merge to local
-            for (remoteItem in remoteItems) {
-                val localItem = localItems.find { it.manga_id == remoteItem.mangaId }
-                if (localItem == null) {
-                    // Cloud only -> copy to local
-                    itemsToUpsertLocal.add(
-                        LibraryItemEntity(
-                            manga_id = remoteItem.mangaId,
-                            title = remoteItem.title,
-                            cover_url = remoteItem.coverUrl ?: "",
-                            status = try { LibraryStatus.valueOf(remoteItem.status) } catch(e: Exception) { LibraryStatus.READING },
-                            last_read_chapter_id = remoteItem.lastChapterId,
-                            last_read_page_index = 0, 
-                            updated_at = remoteItem.updatedAt,
-                            syncStatus = SyncStatus.SYNCED
-                        )
-                    )
-                } else {
-                    // Exists in both -> Last Write Wins
-                    if (remoteItem.updatedAt > localItem.updated_at) {
-                        itemsToUpsertLocal.add(
-                            localItem.copy(
-                                title = remoteItem.title,
-                                cover_url = remoteItem.coverUrl ?: "",
-                                status = try { LibraryStatus.valueOf(remoteItem.status) } catch(e: Exception) { LibraryStatus.READING },
-                                last_read_chapter_id = remoteItem.lastChapterId,
-                                updated_at = remoteItem.updatedAt,
-                                syncStatus = SyncStatus.SYNCED
-                            )
-                        )
-                    }
-                }
-            }
-            
-            // Handle local items missing on remote
-            for (localItem in localItems) {
-                if (!remoteItemsMap.containsKey(localItem.manga_id)) {
-                    // Local only
-                    if (localItem.syncStatus == SyncStatus.SYNCED) {
-                        // It was synced before, but now missing remotely -> it was deleted on another device
-                        itemsToDeleteLocal.add(localItem.manga_id)
-                    }
-                }
-            }
-            
-            if (itemsToUpsertLocal.isNotEmpty()) {
-                libraryDao.upsert(itemsToUpsertLocal)
-            }
-            
-            for (mangaId in itemsToDeleteLocal) {
-                libraryDao.physicallyDelete(mangaId)
-                chapterDao.deleteLibraryItemAndProgress(mangaId)
-            }
-
-            // --- 3. Sync Chapter Progress ---
-            val remoteProgress = firestoreDataSource.getAllProgress(user.uid)
-            val remoteProgressMap = remoteProgress.associateBy { it.chapterId }
-            val localProgress = chapterDao.getAllProgress()
-            val localProgressMap = localProgress.associateBy { it.chapter_id }
-            
-            val progressToUpload = mutableListOf<com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress>()
-            val progressToUpsertLocal = mutableListOf<ChapterProgressEntity>()
-            
-            // Upload local progress that is newer or missing on remote
-            for (local in localProgress) {
-                val remote = remoteProgressMap[local.chapter_id]
-                if (remote == null || local.updated_at > remote.updatedAt) {
-                    progressToUpload.add(
-                        com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress(
-                            chapterId = local.chapter_id,
-                            mangaId = local.manga_id,
-                            status = local.status.name,
-                            lastReadPage = local.last_read_page,
-                            totalPages = local.total_pages,
-                            updatedAt = local.updated_at
-                        )
-                    )
-                }
-            }
-            
-            // Download remote progress that is newer or missing locally
-            for (remote in remoteProgress) {
-                val local = localProgressMap[remote.chapterId]
-                if (local == null || remote.updatedAt > local.updated_at) {
-                    // Make sure the manga still exists locally before inserting to avoid FK constraint errors
-                    if (libraryDao.getByMangaId(remote.mangaId) != null) {
-                        progressToUpsertLocal.add(
-                            ChapterProgressEntity(
-                                chapter_id = remote.chapterId,
-                                manga_id = remote.mangaId,
-                                status = try { ChapterStatus.valueOf(remote.status) } catch(e: Exception) { ChapterStatus.UNREAD },
-                                last_read_page = remote.lastReadPage,
-                                total_pages = remote.totalPages,
-                                updated_at = remote.updatedAt,
-                                is_downloaded = local?.is_downloaded ?: false
-                            )
-                        )
-                    }
-                }
-            }
-            
-            if (progressToUpload.isNotEmpty()) {
-                firestoreDataSource.saveProgressList(user.uid, progressToUpload)
-            }
-            for (progress in progressToUpsertLocal) {
-                chapterDao.upsertChapterProgress(progress)
-            }
-            
-        } catch (e: Exception) {
-             Timber.e(e, "Error downloading and merging items from Firestore")
-             throw e // Rethrow to let callers know it failed
-        }
     }
+
+    private suspend fun mergeLibraryItems(userId: String) {
+        val remoteItems = firestoreDataSource.getAllItems(userId)
+        val localItems = libraryDao.getAll()
+        val localItemsById = localItems.associateBy { it.manga_id }
+        val remoteItemIds = remoteItems.mapTo(mutableSetOf()) { it.mangaId }
+
+        val itemsToUpsert =
+            remoteItems.mapNotNull { remoteItem ->
+                val localItem = localItemsById[remoteItem.mangaId]
+                when {
+                    localItem == null -> remoteItem.toLocal()
+                    remoteItem.updatedAt > localItem.updated_at -> remoteItem.mergeInto(localItem)
+                    else -> null
+                }
+            }
+
+        if (itemsToUpsert.isNotEmpty()) {
+            libraryDao.upsert(itemsToUpsert)
+        }
+
+        localItems
+            .filter { it.syncStatus == SyncStatus.SYNCED && it.manga_id !in remoteItemIds }
+            .forEach { item ->
+                libraryDao.physicallyDelete(item.manga_id)
+                chapterDao.deleteLibraryItemAndProgress(item.manga_id)
+            }
+    }
+
+    private suspend fun syncChapterProgress(userId: String) {
+        val remoteProgress = firestoreDataSource.getAllProgress(userId)
+        val localProgress = chapterDao.getAllProgress()
+        val remoteByChapterId = remoteProgress.associateBy { it.chapterId }
+        val localByChapterId = localProgress.associateBy { it.chapter_id }
+
+        val progressToUpload =
+            localProgress
+                .filter { local ->
+                    val remote = remoteByChapterId[local.chapter_id]
+                    remote == null || local.updated_at > remote.updatedAt
+                }.map { it.toFirestore() }
+        if (progressToUpload.isNotEmpty()) {
+            firestoreDataSource.saveProgressList(userId, progressToUpload)
+        }
+
+        remoteProgress
+            .filter { remote ->
+                val local = localByChapterId[remote.chapterId]
+                local == null || remote.updatedAt > local.updated_at
+            }.filter { libraryDao.getByMangaId(it.mangaId) != null }
+            .map { remote -> remote.toLocal(localByChapterId[remote.chapterId]) }
+            .forEach { chapterDao.upsertChapterProgress(it) }
+    }
+
+    private fun LibraryItemEntity.toFirestore() =
+        FirestoreLibraryItem(
+            mangaId = manga_id,
+            title = title,
+            coverUrl = cover_url,
+            status = status.name,
+            addedAt = updated_at,
+            lastReadAt = updated_at,
+            lastChapterId = last_read_chapter_id,
+            updatedAt = updated_at,
+        )
+
+    private fun FirestoreLibraryItem.toLocal() =
+        LibraryItemEntity(
+            manga_id = mangaId,
+            title = title,
+            cover_url = coverUrl ?: "",
+            status = LibraryStatus.entries.firstOrNull { it.name == status } ?: LibraryStatus.READING,
+            last_read_chapter_id = lastChapterId,
+            last_read_page_index = 0,
+            updated_at = updatedAt,
+            syncStatus = SyncStatus.SYNCED,
+        )
+
+    private fun FirestoreLibraryItem.mergeInto(local: LibraryItemEntity) =
+        local.copy(
+            title = title,
+            cover_url = coverUrl ?: "",
+            status = LibraryStatus.entries.firstOrNull { it.name == status } ?: LibraryStatus.READING,
+            last_read_chapter_id = lastChapterId,
+            updated_at = updatedAt,
+            syncStatus = SyncStatus.SYNCED,
+        )
+
+    private fun ChapterProgressEntity.toFirestore() =
+        FirestoreChapterProgress(
+            chapterId = chapter_id,
+            mangaId = manga_id,
+            status = status.name,
+            lastReadPage = last_read_page,
+            totalPages = total_pages,
+            updatedAt = updated_at,
+        )
+
+    private fun FirestoreChapterProgress.toLocal(local: ChapterProgressEntity?) =
+        ChapterProgressEntity(
+            chapter_id = chapterId,
+            manga_id = mangaId,
+            status = ChapterStatus.entries.firstOrNull { it.name == status } ?: ChapterStatus.UNREAD,
+            last_read_page = lastReadPage,
+            total_pages = totalPages,
+            updated_at = updatedAt,
+            is_downloaded = local?.is_downloaded ?: false,
+        )
 }

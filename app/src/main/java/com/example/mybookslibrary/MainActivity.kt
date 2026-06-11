@@ -34,8 +34,11 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @Inject lateinit var preferencesDataStore: UserPreferencesDataStore
-    @Inject lateinit var libraryRepository: LibraryRepository
+    @Inject
+    lateinit var preferencesDataStore: UserPreferencesDataStore
+
+    @Inject
+    lateinit var libraryRepository: LibraryRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

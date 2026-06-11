@@ -75,6 +75,7 @@
     <string name="detail_chapters_error">Không tải được danh sách chương</string>
     <string name="detail_chapters_empty">Chưa có chương nào</string>
     <string name="detail_read_now">ĐỌC NGAY</string>
+    <string name="detail_continue_reading">TIẾP TỤC ĐỌC</string>
     <string name="detail_loading">ĐANG TẢI…</string>
     <string name="detail_in_library">TRONG THƯ VIỆN</string>
     <string name="detail_add_to_library">THÊM VÀO THƯ VIỆN</string>

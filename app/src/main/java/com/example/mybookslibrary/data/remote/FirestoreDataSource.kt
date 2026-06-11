@@ -1,5 +1,6 @@
 package com.example.mybookslibrary.data.remote
 
+import com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress
 import com.example.mybookslibrary.data.remote.models.FirestoreLibraryItem
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -86,7 +87,10 @@ class FirestoreDataSource @Inject constructor(
     /**
      * Saves a list of chapter progress items to the user's Firestore collection in a batch.
      */
-    suspend fun saveProgressList(userId: String, items: List<com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress>) {
+    suspend fun saveProgressList(
+        userId: String,
+        items: List<FirestoreChapterProgress>,
+    ) {
         if (items.isEmpty()) return
         val batch = firestore.batch()
         val collection = getProgressCollection(userId)
@@ -101,9 +105,9 @@ class FirestoreDataSource @Inject constructor(
     /**
      * Retrieves all chapter progress items from the user's Firestore collection.
      */
-    suspend fun getAllProgress(userId: String): List<com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress> {
+    suspend fun getAllProgress(userId: String): List<FirestoreChapterProgress> {
         val snapshot = getProgressCollection(userId).get().await()
-        return snapshot.toObjects(com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress::class.java)
+        return snapshot.toObjects(FirestoreChapterProgress::class.java)
     }
 
     /**
