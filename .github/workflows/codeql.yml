@@ -55,8 +55,11 @@ jobs:
           }
           EOF
 
+      # clean + no-build-cache + no-daemon: ép compile THẬT trong step này.
+      # Task FROM-CACHE/UP-TO-DATE hoặc daemon có sẵn ngoài tracer → CodeQL không
+      # thấy compiler chạy → fail "no source code seen during the build".
       - name: Build for analysis
-        run: ./gradlew :app:compileDebugKotlin --console=plain
+        run: ./gradlew --no-daemon --no-build-cache --no-configuration-cache clean :app:compileDebugKotlin --console=plain
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4

@@ -1,0 +1,106 @@
+# So sánh kích thước debug APK của PR với base branch và comment kết quả (sticky —
+# update comment cũ thay vì spam). Cảnh báo khi tăng >5% hoặc >1 MB.
+# Workflow riêng (không nằm trong ci.yml) để build 2 lần không kéo dài job build-test.
+name: APK size diff
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: apk-size-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  size-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          path: pr
+
+      - name: Checkout base
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
+
+      - name: Stub AuthSecrets cho cả 2 bản
+        run: |
+          for dir in pr base; do
+            mkdir -p "$dir/app/src/main/java/com/example/mybookslibrary/util"
+            cat > "$dir/app/src/main/java/com/example/mybookslibrary/util/AuthSecrets.kt" <<'EOF'
+          package com.example.mybookslibrary.util
+
+          object AuthSecrets {
+              const val WEB_CLIENT_ID = "test-web-client-id.apps.googleusercontent.com"
+          }
+          EOF
+          done
+
+      - name: Build APK PR
+        working-directory: pr
+        run: ./gradlew :app:assembleDebug --console=plain -q
+
+      - name: Build APK base
+        working-directory: base
+        run: ./gradlew :app:assembleDebug --console=plain -q
+
+      - name: So sánh và comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          PR_APK=$(find pr/app/build/outputs/apk/debug -name '*.apk' | head -1)
+          BASE_APK=$(find base/app/build/outputs/apk/debug -name '*.apk' | head -1)
+          PR_SIZE=$(stat -c%s "$PR_APK")
+          BASE_SIZE=$(stat -c%s "$BASE_APK")
+          DELTA=$((PR_SIZE - BASE_SIZE))
+          PR_MB=$(echo "scale=2; $PR_SIZE / 1048576" | bc)
+          BASE_MB=$(echo "scale=2; $BASE_SIZE / 1048576" | bc)
+          DELTA_KB=$(echo "scale=1; $DELTA / 1024" | bc)
+          PCT=$(echo "scale=2; $DELTA * 100 / $BASE_SIZE" | bc)
+
+          WARN=""
+          # Cảnh báo khi tăng >5% hoặc >1 MB
+          if [ "$DELTA" -gt 1048576 ] || [ "$(echo "$PCT > 5" | bc)" -eq 1 ]; then
+            WARN="⚠️ **APK tăng đáng kể — kiểm tra dependency/resource mới có cần thiết không.**"
+          fi
+
+          MARKER="<!-- apk-size-diff -->"
+          BODY=$(cat <<EOF
+          $MARKER
+          ## 📦 APK size (debug)
+
+          | | Base | PR | Chênh lệch |
+          |---|---|---|---|
+          | Size | ${BASE_MB} MB | ${PR_MB} MB | ${DELTA_KB} KB (${PCT}%) |
+
+          $WARN
+          EOF
+          )
+
+          # Sticky comment: update comment cũ nếu có
+          EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" \
+            --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -1)
+          if [ -n "$EXISTING_ID" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$EXISTING_ID" -f body="$BODY" > /dev/null
+          else
+            # --repo bắt buộc: working dir không phải git repo (checkout vào pr/ và base/)
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "$BODY"
+          fi
