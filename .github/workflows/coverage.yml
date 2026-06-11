@@ -1,89 +1,14 @@
-# JVM-only coverage: quick sanity check chạy trước emulator (fast feedback).
-# Chỉ check overall — diff-coverage authoritative dùng combined report trong ci.yml.
+# Khuyến nghị: xóa workflow này sau khi dùng ci.optimized.yml.
+# Lý do: coverage.yml hiện chạy lại unit test/Jacoco riêng, trong khi ci.optimized.yml
+# đã sinh jacocoTestReport và gate JVM coverage trong job build-test.
+# Giữ file này chỉ như marker để tránh chạy trùng.
 name: Coverage
 
-on: pull_request
-
-permissions:
-  contents: read
-  pull-requests: write
-
-concurrency:
-  group: coverage-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+on:
+  workflow_dispatch:
 
 jobs:
-  diff-coverage:
+  removed:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
-
-      - name: Stub AuthSecrets
-        run: |
-          mkdir -p app/src/main/java/com/example/mybookslibrary/util
-          cat > app/src/main/java/com/example/mybookslibrary/util/AuthSecrets.kt <<'EOF'
-          package com.example.mybookslibrary.util
-
-          object AuthSecrets {
-              const val WEB_CLIENT_ID = "test-web-client-id.apps.googleusercontent.com"
-          }
-          EOF
-
-      - name: Tạo báo cáo JaCoCo (JVM-only)
-        run: ./gradlew :app:jacocoTestReport --console=plain
-
-      # Parse trực tiếp từ XML để lấy coverage thật — madrapps/jacoco-report tính khác.
-      # Lấy counter LINE cuối cùng trong file = report-level aggregate.
-      - name: Hiển thị coverage thực tế từ XML
-        run: |
-          XML=app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-          LINE=$(grep -o 'type="LINE" missed="[0-9]*" covered="[0-9]*"' "$XML" | tail -1)
-          MISSED=$(echo "$LINE" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
-          COVERED=$(echo "$LINE" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
-          TOTAL=$((MISSED + COVERED))
-          PCT=$(awk "BEGIN{printf \"%.2f\", $COVERED*100/$TOTAL}")
-          echo "Coverage LINE thực tế: ${PCT}% (${COVERED}/${TOTAL} lines)"
-          echo "## JVM Coverage thực tế (LINE counter)" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
-          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| **Overall LINE** | **${PCT}%** (${COVERED}/${TOTAL}) |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Missed lines | ${MISSED} |" >> "$GITHUB_STEP_SUMMARY"
-
-      # Chỉ check overall — đủ để phát hiện regression sớm (< 5 phút).
-      # Diff-coverage (code mới) dùng combined report trong ci.yml sau emulator.
-      - name: JVM overall coverage ≥ 85% (early check)
-        id: coverage-report
-        uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920 # v1.8.0
-        with:
-          paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 85
-          title: JVM Coverage (early check)
-          update-comment: true
-
-      # Upload JaCoCo XML để có thể download phân tích sau khi CI chạy.
-      - name: Upload JaCoCo XML report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: jvm-coverage-xml
-          path: app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
-          if-no-files-found: ignore
-
-      - name: Fail nếu overall JVM coverage tụt dưới 82%
-        if: ${{ steps.coverage-report.outputs.coverage-overall < 85.0 }}
-        run: |
-          echo "JVM coverage tổng: ${{ steps.coverage-report.outputs.coverage-overall }}% (ngưỡng 85%)"
-          exit 1
+      - run: echo "Coverage đã được gộp vào CI để tránh chạy unit/Jacoco hai lần."

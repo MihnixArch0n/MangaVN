@@ -1,6 +1,4 @@
-# So sánh kích thước debug APK của PR với base branch và comment kết quả (sticky —
-# update comment cũ thay vì spam). Cảnh báo khi tăng >5% hoặc >1 MB.
-# Workflow riêng (không nằm trong ci.yml) để build 2 lần không kéo dài job build-test.
+# APK size diff tối ưu — chỉ chạy khi PR đổi phần Android/build; docs-only PR bỏ qua.
 name: APK size diff
 
 on:
@@ -16,7 +14,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+      - id: filter
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          git diff --name-only "origin/${{ github.base_ref }}" HEAD | tee /tmp/changed.txt
+          if grep -Eq '^(app/|gradle/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradlew$)' /tmp/changed.txt; then
+            echo "android=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "android=false" >> "$GITHUB_OUTPUT"
+          fi
+
   size-diff:
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -44,13 +65,13 @@ jobs:
         run: |
           for dir in pr base; do
             mkdir -p "$dir/app/src/main/java/com/example/mybookslibrary/util"
-            cat > "$dir/app/src/main/java/com/example/mybookslibrary/util/AuthSecrets.kt" <<'EOF'
+            cat > "$dir/app/src/main/java/com/example/mybookslibrary/util/AuthSecrets.kt" <<'KOTLIN'
           package com.example.mybookslibrary.util
 
           object AuthSecrets {
               const val WEB_CLIENT_ID = "test-web-client-id.apps.googleusercontent.com"
           }
-          EOF
+          KOTLIN
           done
 
       - name: Build APK PR
@@ -77,13 +98,12 @@ jobs:
           PCT=$(echo "scale=2; $DELTA * 100 / $BASE_SIZE" | bc)
 
           WARN=""
-          # Cảnh báo khi tăng >5% hoặc >1 MB
           if [ "$DELTA" -gt 1048576 ] || [ "$(echo "$PCT > 5" | bc)" -eq 1 ]; then
             WARN="⚠️ **APK tăng đáng kể — kiểm tra dependency/resource mới có cần thiết không.**"
           fi
 
           MARKER="<!-- apk-size-diff -->"
-          BODY=$(cat <<EOF
+          BODY=$(cat <<BODY_EOF
           $MARKER
           ## 📦 APK size (debug)
 
@@ -92,15 +112,13 @@ jobs:
           | Size | ${BASE_MB} MB | ${PR_MB} MB | ${DELTA_KB} KB (${PCT}%) |
 
           $WARN
-          EOF
+          BODY_EOF
           )
 
-          # Sticky comment: update comment cũ nếu có
           EXISTING_ID=$(gh api "repos/${{ github.repository }}/issues/$PR_NUMBER/comments" \
             --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" | head -1)
           if [ -n "$EXISTING_ID" ]; then
             gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$EXISTING_ID" -f body="$BODY" > /dev/null
           else
-            # --repo bắt buộc: working dir không phải git repo (checkout vào pr/ và base/)
             gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" --body "$BODY"
           fi
