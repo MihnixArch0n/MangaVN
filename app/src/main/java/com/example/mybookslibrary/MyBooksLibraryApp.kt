@@ -104,7 +104,7 @@ class MyBooksLibraryApp :
             .build()
 
         val syncWorkRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-            1, TimeUnit.HOURS
+            15, TimeUnit.MINUTES
         )
             .setConstraints(constraints)
             .build()

@@ -219,11 +219,14 @@ class LibraryRepository(
     }
 
     /**
-     * Synchronizes all library items with PENDING_UPDATE or PENDING_DELETE status to Firestore.
-     * Usually executed inside the background SyncWorker.
+     * Performs a full 2-way sync with Firestore.
+     * 1. Uploads pending local changes.
+     * 2. Downloads all remote items and merges them into the local database.
      */
-    suspend fun syncPendingItems() {
+    suspend fun performSync() {
         val user = authRepository.getCurrentUser() ?: return
+        
+        // 1. Upload pending changes from local first
         val pendingItems = libraryDao.getPendingSyncItems()
         for (item in pendingItems) {
             try {
@@ -246,8 +249,76 @@ class LibraryRepository(
                     libraryDao.markSynced(item.manga_id)
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error during SyncWorker for item ${item.manga_id}")
+                Timber.e(e, "Error during uploading pending item ${item.manga_id}")
             }
+        }
+
+        // 2. Download all items from cloud and merge to local
+        try {
+            val remoteItems = firestoreDataSource.getAllItems(user.uid)
+            val remoteItemsMap = remoteItems.associateBy { it.mangaId }
+            val localItems = libraryDao.getAll()
+            
+            val itemsToUpsertLocal = mutableListOf<LibraryItemEntity>()
+            val itemsToDeleteLocal = mutableListOf<String>()
+            
+            // Handle remote items -> merge to local
+            for (remoteItem in remoteItems) {
+                val localItem = localItems.find { it.manga_id == remoteItem.mangaId }
+                if (localItem == null) {
+                    // Cloud only -> copy to local
+                    itemsToUpsertLocal.add(
+                        LibraryItemEntity(
+                            manga_id = remoteItem.mangaId,
+                            title = remoteItem.title,
+                            cover_url = remoteItem.coverUrl ?: "",
+                            status = try { LibraryStatus.valueOf(remoteItem.status) } catch(e: Exception) { LibraryStatus.READING },
+                            last_read_chapter_id = remoteItem.lastChapterId,
+                            last_read_page_index = 0, 
+                            updated_at = remoteItem.updatedAt,
+                            syncStatus = SyncStatus.SYNCED
+                        )
+                    )
+                } else {
+                    // Exists in both -> Last Write Wins
+                    if (remoteItem.updatedAt > localItem.updated_at) {
+                        itemsToUpsertLocal.add(
+                            localItem.copy(
+                                title = remoteItem.title,
+                                cover_url = remoteItem.coverUrl ?: "",
+                                status = try { LibraryStatus.valueOf(remoteItem.status) } catch(e: Exception) { LibraryStatus.READING },
+                                last_read_chapter_id = remoteItem.lastChapterId,
+                                updated_at = remoteItem.updatedAt,
+                                syncStatus = SyncStatus.SYNCED
+                            )
+                        )
+                    }
+                }
+            }
+            
+            // Handle local items missing on remote
+            for (localItem in localItems) {
+                if (!remoteItemsMap.containsKey(localItem.manga_id)) {
+                    // Local only
+                    if (localItem.syncStatus == SyncStatus.SYNCED) {
+                        // It was synced before, but now missing remotely -> it was deleted on another device
+                        itemsToDeleteLocal.add(localItem.manga_id)
+                    }
+                }
+            }
+            
+            if (itemsToUpsertLocal.isNotEmpty()) {
+                libraryDao.upsert(itemsToUpsertLocal)
+            }
+            
+            for (mangaId in itemsToDeleteLocal) {
+                libraryDao.physicallyDelete(mangaId)
+                chapterDao.deleteLibraryItemAndProgress(mangaId)
+            }
+            
+        } catch (e: Exception) {
+             Timber.e(e, "Error downloading and merging items from Firestore")
+             throw e // Rethrow to let callers know it failed
         }
     }
 }

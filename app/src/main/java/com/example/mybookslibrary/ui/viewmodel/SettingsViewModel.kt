@@ -130,7 +130,7 @@ class SettingsViewModel
             viewModelScope.launch(ioDispatcher) {
                 _uiState.update { it.copy(isSyncing = true, syncSuccess = null) }
                 try {
-                    libraryRepository.syncPendingItems()
+                    libraryRepository.performSync()
                     _uiState.update { it.copy(isSyncing = false, syncSuccess = true) }
                 } catch (e: Exception) {
                     Timber.e(e, "Manual sync failed")

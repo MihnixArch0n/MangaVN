@@ -31,6 +31,7 @@ class AuthViewModel
     @Inject
     constructor(
         private val authRepository: AuthRepository,
+        private val libraryRepository: com.example.mybookslibrary.data.repository.LibraryRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<AuthState>(AuthState.Idle)
         val uiState: StateFlow<AuthState> = _uiState.asStateFlow()
@@ -47,12 +48,12 @@ class AuthViewModel
             _uiState.value = AuthState.Loading
             viewModelScope.launch {
                 val result = authRepository.signInWithEmail(email, password)
-                _uiState.value =
-                    if (result.isSuccess) {
-                        AuthState.Success
-                    } else {
-                        AuthState.Error(authError(result.exceptionOrNull()?.message))
-                    }
+                if (result.isSuccess) {
+                    try { libraryRepository.performSync() } catch(e: Exception) { timber.log.Timber.e(e, "Sync failed on login") }
+                    _uiState.value = AuthState.Success
+                } else {
+                    _uiState.value = AuthState.Error(authError(result.exceptionOrNull()?.message))
+                }
             }
         }
 
@@ -68,12 +69,12 @@ class AuthViewModel
             _uiState.value = AuthState.Loading
             viewModelScope.launch {
                 val result = authRepository.registerWithEmail(email, password)
-                _uiState.value =
-                    if (result.isSuccess) {
-                        AuthState.Success
-                    } else {
-                        AuthState.Error(authError(result.exceptionOrNull()?.message))
-                    }
+                if (result.isSuccess) {
+                    try { libraryRepository.performSync() } catch(e: Exception) { timber.log.Timber.e(e, "Sync failed on register") }
+                    _uiState.value = AuthState.Success
+                } else {
+                    _uiState.value = AuthState.Error(authError(result.exceptionOrNull()?.message))
+                }
             }
         }
 
@@ -82,12 +83,12 @@ class AuthViewModel
             _uiState.value = AuthState.Loading
             viewModelScope.launch {
                 val result = authRepository.signInWithGoogle(context)
-                _uiState.value =
-                    if (result.isSuccess) {
-                        AuthState.Success
-                    } else {
-                        AuthState.Error(authError(result.exceptionOrNull()?.message))
-                    }
+                if (result.isSuccess) {
+                    try { libraryRepository.performSync() } catch(e: Exception) { timber.log.Timber.e(e, "Sync failed on Google sign in") }
+                    _uiState.value = AuthState.Success
+                } else {
+                    _uiState.value = AuthState.Error(authError(result.exceptionOrNull()?.message))
+                }
             }
         }
 
