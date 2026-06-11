@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.mybookslibrary.domain.model.AuthStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
@@ -28,8 +29,9 @@ class UserPreferencesDataStore(
         private val LANGUAGE = stringPreferencesKey("language")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
-        private val LOGGED_IN_USER_ID = stringPreferencesKey("logged_in_user_id")
         private val PREFERRED_CHAPTER_LANGUAGE = stringPreferencesKey("preferred_chapter_language")
+        private val AUTH_STATUS = stringPreferencesKey("auth_status")
+        private val FIREBASE_UID = stringPreferencesKey("firebase_uid")
 
         private const val DEFAULT_QUALITY = "data"
         private const val DEFAULT_LANGUAGE = "en"
@@ -38,20 +40,51 @@ class UserPreferencesDataStore(
     }
 
     // Đọc prefs an toàn: file prefs hỏng (IOException) thì trả prefs rỗng thay vì ném,
-    // tránh crash ở các điểm gọi lúc khởi động (vd getLoggedInUserId).
+    // tránh crash ở các điểm gọi lúc khởi động.
     private val safeData: Flow<Preferences> =
         dataStore.data.catch { e ->
             if (e is IOException) emit(emptyPreferences()) else throw e
         }
 
-    // Chất lượng ảnh reader
+    // ─── Auth Status ───────────────────────────────────────────────
+
+    fun observeAuthStatus(): Flow<AuthStatus> = safeData.map {
+        AuthStatus.fromString(it[AUTH_STATUS])
+    }
+
+    suspend fun getAuthStatus(): AuthStatus =
+        AuthStatus.fromString(safeData.first()[AUTH_STATUS])
+
+    suspend fun updateAuthStatus(status: AuthStatus) {
+        dataStore.edit { it[AUTH_STATUS] = status.name }
+    }
+
+    // ─── Firebase UID ──────────────────────────────────────────────
+
+    fun observeFirebaseUid(): Flow<String?> = safeData.map { it[FIREBASE_UID] }
+
+    suspend fun getFirebaseUid(): String? = safeData.first()[FIREBASE_UID]
+
+    suspend fun updateFirebaseUid(uid: String?) {
+        dataStore.edit {
+            if (uid == null) {
+                it.remove(FIREBASE_UID)
+            } else {
+                it[FIREBASE_UID] = uid
+            }
+        }
+    }
+
+    // ─── Chất lượng ảnh reader ─────────────────────────────────────
+
     suspend fun getReaderQuality(): String = safeData.first()[READER_QUALITY] ?: DEFAULT_QUALITY
 
     suspend fun setReaderQuality(quality: String) {
         dataStore.edit { it[READER_QUALITY] = quality }
     }
 
-    // Ngôn ngữ
+    // ─── Ngôn ngữ ──────────────────────────────────────────────────
+
     fun observeLanguage(): Flow<String> = safeData.map { it[LANGUAGE] ?: DEFAULT_LANGUAGE }
 
     suspend fun getLanguage(): String = safeData.first()[LANGUAGE] ?: DEFAULT_LANGUAGE
@@ -67,7 +100,8 @@ class UserPreferencesDataStore(
         dataStore.edit { it[PREFERRED_CHAPTER_LANGUAGE] = language }
     }
 
-    // Chế độ giao diện: "system", "light", "dark"
+    // ─── Chế độ giao diện ──────────────────────────────────────────
+
     fun observeThemeMode(): Flow<String> = safeData.map { it[THEME_MODE] ?: DEFAULT_THEME }
 
     suspend fun getThemeMode(): String = safeData.first()[THEME_MODE] ?: DEFAULT_THEME
@@ -75,6 +109,8 @@ class UserPreferencesDataStore(
     suspend fun setThemeMode(mode: String) {
         dataStore.edit { it[THEME_MODE] = mode }
     }
+
+    // ─── Download ──────────────────────────────────────────────────
 
     fun observeDownloadOnlyOnWifi(): Flow<Boolean> = safeData.map {
         it[DOWNLOAD_ONLY_ON_WIFI] ?: DEFAULT_DOWNLOAD_ONLY_ON_WIFI
@@ -87,19 +123,7 @@ class UserPreferencesDataStore(
         dataStore.edit { it[DOWNLOAD_ONLY_ON_WIFI] = enabled }
     }
 
-    fun observeLoggedInUserId(): Flow<String?> = safeData.map { it[LOGGED_IN_USER_ID] }
-
-    suspend fun getLoggedInUserId(): String? = safeData.first()[LOGGED_IN_USER_ID]
-
-    suspend fun setLoggedInUserId(id: String?) {
-        dataStore.edit {
-            if (id == null) {
-                it.remove(LOGGED_IN_USER_ID)
-            } else {
-                it[LOGGED_IN_USER_ID] = id
-            }
-        }
-    }
+    // ─── Clear ─────────────────────────────────────────────────────
 
     suspend fun clearAll() {
         dataStore.edit { it.clear() }
