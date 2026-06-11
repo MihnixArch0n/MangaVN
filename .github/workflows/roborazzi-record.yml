@@ -20,6 +20,9 @@ concurrency:
   group: roborazzi-record-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseG1GC"
+
 jobs:
   record:
     if: github.event_name == 'workflow_dispatch' || github.event.label.name == 'record-screenshots'

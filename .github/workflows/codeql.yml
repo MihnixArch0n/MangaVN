@@ -16,9 +16,48 @@ concurrency:
   # Chỉ hủy run cũ trên PR; giữ run đầy đủ cho mỗi commit push main.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseG1GC"
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+
+      - id: filter
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="${{ github.event.before }}"
+            if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+              BASE="HEAD~1"
+            fi
+          fi
+
+          git diff --name-only "$BASE" HEAD | tee /tmp/changed.txt
+
+          # CodeQL java-kotlin scan chỉ cần chạy khi có thay đổi liên quan Kotlin/Java code/config
+          if grep -Eq '^(app/|gradle/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$|gradlew$|\.github/workflows/codeql\.yml$)' /tmp/changed.txt; then
+            echo "android=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "android=false" >> "$GITHUB_OUTPUT"
+          fi
+
   analyze:
     name: Analyze (java-kotlin)
+    needs: changes
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || needs.changes.outputs.android == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:

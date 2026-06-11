@@ -12,6 +12,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseG1GC"
+
 permissions:
   contents: read
 
