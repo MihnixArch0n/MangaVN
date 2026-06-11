@@ -70,7 +70,9 @@ class MainNavHostTest {
 
     @Test
     fun mainNavHost_signOut_navigatesToLogin() {
-        runBlocking { preferencesDataStore.updateAuthStatus(com.example.mybookslibrary.domain.model.AuthStatus.LOGGED_IN) }
+        runBlocking {
+            preferencesDataStore.updateAuthStatus(com.example.mybookslibrary.domain.model.AuthStatus.LOGGED_IN)
+        }
         composeRule.setContent {
             MainNavHost(authStatus = com.example.mybookslibrary.domain.model.AuthStatus.LOGGED_OUT)
         }

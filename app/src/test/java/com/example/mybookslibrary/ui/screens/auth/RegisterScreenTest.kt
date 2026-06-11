@@ -126,7 +126,8 @@ class RegisterScreenTest {
         // AuthState.Success → LaunchedEffect gọi resetState() + onRegisterSuccess()
         var successCalled = false
         val repo = mockk<AuthRepository>(relaxed = true)
-        coEvery { repo.registerWithEmail(any(), any()) } coAnswers { Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true)) }
+        coEvery { repo.registerWithEmail(any(), any()) } coAnswers
+            { Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true)) }
         val vm = AuthViewModel(repo)
         vm.register("newuser", "pass1")
 

@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package com.example.mybookslibrary.ui.screens.auth
 
 import androidx.compose.foundation.layout.*

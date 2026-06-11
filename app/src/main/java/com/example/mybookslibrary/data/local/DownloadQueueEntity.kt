@@ -19,7 +19,8 @@ class DownloadStatusConverters {
     fun fromStatus(status: DownloadStatus): String = status.name
 
     @TypeConverter
-    fun toStatus(raw: String): DownloadStatus = DownloadStatus.entries.firstOrNull { it.name == raw } ?: DownloadStatus.PENDING
+    fun toStatus(raw: String): DownloadStatus =
+        DownloadStatus.entries.firstOrNull { it.name == raw } ?: DownloadStatus.PENDING
 }
 
 @Entity(

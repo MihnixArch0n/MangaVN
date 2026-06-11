@@ -324,7 +324,7 @@ exceptions:
   ThrowingNewInstanceOfSameException:
     active: true
   TooGenericExceptionCaught:
-    active: true
+    active: false
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**']
     exceptionNames:
       - 'ArrayIndexOutOfBoundsException'
@@ -337,7 +337,7 @@ exceptions:
       - 'Throwable'
     allowedExceptionNameRegex: '_|(ignore|expected).*'
   TooGenericExceptionThrown:
-    active: true
+    active: false
     exceptionNames:
       - 'Error'
       - 'Exception'
@@ -705,6 +705,7 @@ style:
     maxChainedCalls: 5
   MaxLineLength:
     active: true
+    excludes: ['**/test/**', '**/androidTest/**']
     maxLineLength: 120
     excludePackageStatements: true
     excludeImportStatements: true

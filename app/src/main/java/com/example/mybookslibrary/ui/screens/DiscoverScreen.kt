@@ -21,11 +21,11 @@ import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModel
 @Suppress("unused", "LongMethod", "LongParameterList")
 @Composable
 fun DiscoverScreenContent(
+    modifier: Modifier = Modifier,
     onMangaClick: (MangaModel) -> Unit = {},
     onSearchClick: () -> Unit = {},
     onLibraryClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
-    modifier: Modifier = Modifier,
     vm: DiscoverViewModel = hiltViewModel(),
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()

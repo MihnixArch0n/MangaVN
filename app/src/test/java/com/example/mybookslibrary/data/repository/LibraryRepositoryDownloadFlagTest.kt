@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package com.example.mybookslibrary.data.repository
 
 import androidx.room.Room
@@ -36,7 +38,8 @@ class LibraryRepositoryDownloadFlagTest {
                 ).allowMainThreadQueries()
                 .build()
         chapterDao = db.chapterDao()
-        repository = LibraryRepository(db.libraryDao(), chapterDao, db, io.mockk.mockk(relaxed = true), io.mockk.mockk(relaxed = true), kotlinx.coroutines.test.TestScope())
+        repository =
+            LibraryRepository(db.libraryDao(), chapterDao, db, io.mockk.mockk(relaxed = true), io.mockk.mockk(relaxed = true), kotlinx.coroutines.test.TestScope())
     }
 
     @After

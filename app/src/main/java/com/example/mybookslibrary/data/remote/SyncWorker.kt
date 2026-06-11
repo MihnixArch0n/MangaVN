@@ -16,8 +16,7 @@ class SyncWorker @AssistedInject constructor(
     private val libraryRepository: LibraryRepository
 ) : CoroutineWorker(context, workerParams) {
 
-    override suspend fun doWork(): Result {
-        return try {
+    override suspend fun doWork(): Result = try {
             Timber.d("SyncWorker: Starting Firestore sync")
             libraryRepository.syncPendingItems()
             Timber.d("SyncWorker: Sync completed")
@@ -26,5 +25,4 @@ class SyncWorker @AssistedInject constructor(
             Timber.e(e, "SyncWorker: Sync failed")
             Result.retry()
         }
-    }
 }

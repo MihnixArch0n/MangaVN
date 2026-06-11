@@ -88,7 +88,9 @@ class SearchViewModel
 
         fun onToggleLanguage(code: String) = updateFilters { it.copy(languages = it.languages.toggle(code)) }
 
-        fun onToggleContentRating(value: String) = updateFilters { it.copy(contentRatings = it.contentRatings.toggle(value)) }
+        fun onToggleContentRating(value: String) = updateFilters {
+            it.copy(contentRatings = it.contentRatings.toggle(value))
+        }
 
         fun onToggleStatus(value: String) = updateFilters { it.copy(statuses = it.statuses.toggle(value)) }
 
@@ -139,7 +141,12 @@ class SearchViewModel
             }
         }
 
-        private fun List<String>.toggle(value: String): List<String> = if (contains(value)) this - value else this + value
+        private fun List<String>.toggle(value: String): List<String> = if (contains(value)) {
+            this - value
+        } else {
+            this +
+            value
+        }
 
         companion object {
             private const val DEBOUNCE_MS = 400L

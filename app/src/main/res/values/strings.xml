@@ -71,7 +71,6 @@
     <string name="status_favorite">Favorite</string>
 
     <!-- Manga Detail Screen -->
-    <string name="detail_synopsis">Synopsis</string>
     <string name="detail_chapters">Chapters</string>
     <string name="detail_chapters_error">Couldn\'t load chapters</string>
     <string name="detail_chapters_empty">No chapters available</string>
@@ -190,9 +189,6 @@
     <string name="auth_passwords_no_match">Passwords do not match</string>
     <string name="auth_have_account_login">Already have an account? Login</string>
     <string name="auth_error_empty_fields">Email and password cannot be empty</string>
-    <string name="auth_error_login_failed">Login failed</string>
-    <string name="auth_error_register_failed">Registration failed</string>
-    <string name="auth_error_google_signin_failed">Google Sign-In failed</string>
     <string name="auth_error_email_exists">Email already exists</string>
     <string name="auth_error_invalid_credentials">Invalid email or password</string>
     <string name="auth_error_google_save_failed">Failed to save Google account</string>

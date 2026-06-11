@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.verify.domain.DomainVerificationManager
 import android.content.pm.verify.domain.DomainVerificationUserState
-import android.net.Uri
 import android.os.Build
+import androidx.core.net.toUri
 import android.provider.Settings
 
 private const val MANGADEX_BASE_URL = "https://mangadex.org/title"
@@ -54,12 +54,12 @@ fun openAppLinkSettings(context: Context) {
     val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         Intent(
             Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS,
-            Uri.parse("package:${context.packageName}"),
+            "package:${context.packageName}".toUri(),
         )
     } else {
         Intent(
             Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.parse("package:${context.packageName}"),
+            "package:${context.packageName}".toUri(),
         )
     }
     context.startActivity(intent)

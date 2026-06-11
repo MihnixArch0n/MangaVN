@@ -14,6 +14,9 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Repository responsible for user authentication actions (Email, Google, Guest, Sign Out, Delete Account).
+ */
 @Singleton
 class AuthRepository
     @Inject
@@ -23,21 +26,44 @@ class AuthRepository
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
         private val googleSignInClient: GoogleSignInClient,
     ) {
+        /**
+         * Observes the current authentication status.
+         *
+         * @return A Flow emitting the current AuthStatus.
+         */
         fun observeAuthStatus(): Flow<AuthStatus> = preferencesDataStore.observeAuthStatus()
 
+        /**
+         * Gets the currently authenticated Firebase user, if any.
+         *
+         * @return The current FirebaseUser, or null if none.
+         */
         fun getCurrentUser(): FirebaseUser? = firebaseAuth.currentUser
 
+        /**
+         * Signs out the user from Firebase and resets the local authentication state.
+         */
         suspend fun signOut() {
             firebaseAuth.signOut()
             preferencesDataStore.updateAuthStatus(AuthStatus.LOGGED_OUT)
             preferencesDataStore.updateFirebaseUid(null)
         }
 
+        /**
+         * Transitions the user to guest mode.
+         */
         suspend fun continueAsGuest() {
             preferencesDataStore.updateAuthStatus(AuthStatus.GUEST)
             preferencesDataStore.updateFirebaseUid(null)
         }
 
+        /**
+         * Registers a new account using email and password.
+         *
+         * @param email The registration email.
+         * @param password The registration password.
+         * @return A Result containing the registered FirebaseUser on success.
+         */
         suspend fun registerWithEmail(
             email: String,
             password: String,
@@ -54,6 +80,13 @@ class AuthRepository
                 }
             }
 
+        /**
+         * Signs in an existing account using email and password.
+         *
+         * @param email The sign-in email.
+         * @param password The sign-in password.
+         * @return A Result containing the authenticated FirebaseUser on success.
+         */
         suspend fun signInWithEmail(
             email: String,
             password: String,
@@ -70,34 +103,45 @@ class AuthRepository
                 }
             }
 
+        /**
+         * Signs in the user using Google credentials retrieved via Credential Manager.
+         *
+         * @param context The Android Context to trigger Credential Manager.
+         * @return A Result containing the authenticated FirebaseUser on success.
+         */
         suspend fun signInWithGoogle(context: Context): Result<FirebaseUser> =
             withContext(ioDispatcher) {
                 try {
                     val account =
-                        googleSignInClient
-                            .getGoogleAccount(context)
-                            .getOrThrow()
+                         googleSignInClient
+                             .getGoogleAccount(context)
+                             .getOrThrow()
 
                     // account.googleId here is actually the ID Token from Credential Manager
                     val credential = GoogleAuthProvider.getCredential(account.googleId, null)
                     val result = firebaseAuth.signInWithCredential(credential).await()
                     val user = result.user ?: throw Exception("User is null after Google sign in")
-                    
+
                     preferencesDataStore.updateAuthStatus(AuthStatus.LOGGED_IN)
                     preferencesDataStore.updateFirebaseUid(user.uid)
                     Result.success(user)
                 } catch (e: Exception) {
-                    Result.failure(e)
+                     Result.failure(e)
                 }
             }
-            
+
+        /**
+         * Permanently deletes the current user account from Firebase Auth and resets local storage.
+         *
+         * @return A Result representing success or failure.
+         */
         suspend fun deleteAccount(): Result<Unit> =
             withContext(ioDispatcher) {
                 try {
                     // Xóa Firestore data sẽ được thực hiện ở UseCase/ViewModel (Task 4)
                     // Xóa Firebase Auth user
                     firebaseAuth.currentUser?.delete()?.await()
-                    
+
                     preferencesDataStore.updateAuthStatus(AuthStatus.LOGGED_OUT)
                     preferencesDataStore.updateFirebaseUid(null)
                     Result.success(Unit)
@@ -106,4 +150,3 @@ class AuthRepository
                 }
             }
     }
-

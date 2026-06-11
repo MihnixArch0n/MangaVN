@@ -52,7 +52,8 @@ abstract class AppDatabase : RoomDatabase() {
                             "mybooks_library.db",
                         )
                         .addMigrations(migration1To2)
-                        .fallbackToDestructiveMigration() // Dùng cho lần downgrade từ 6 -> 1 này. Các version sau (2, 3...) bắt buộc phải viết Migration.
+                        // Dùng cho lần downgrade từ 6 -> 1 này. Các version sau (2, 3...) bắt buộc phải viết Migration.
+                        .fallbackToDestructiveMigration()
                         .build()
 
                 instance = created
@@ -71,4 +72,3 @@ abstract class AppDatabase : RoomDatabase() {
             }
     }
 }
-

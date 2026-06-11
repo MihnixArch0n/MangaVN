@@ -46,8 +46,6 @@ class DataModuleTest {
         assertNotNull(DataModule.provideDownloadQueueDao(db))
     }
 
-
-
     @Test
     fun provideLibraryRepository_returnsNonNull() {
         val repo =

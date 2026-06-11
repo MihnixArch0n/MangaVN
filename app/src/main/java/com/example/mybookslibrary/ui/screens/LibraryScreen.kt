@@ -55,8 +55,8 @@ import com.example.mybookslibrary.ui.viewmodel.LibraryViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreenContent(
-    onOpenDetail: (mangaId: String) -> Unit = {},
     modifier: Modifier = Modifier,
+    onOpenDetail: (mangaId: String) -> Unit = {},
     vm: LibraryViewModel = hiltViewModel(),
 ) {
     val items by vm.libraryItems.collectAsStateWithLifecycle(initialValue = emptyList())

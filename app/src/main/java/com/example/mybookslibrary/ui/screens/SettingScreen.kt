@@ -195,7 +195,7 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
             item { SettingsSectionLabel(appString(R.string.settings_section_account)) }
             item {
                 var showDeleteAccountDialog by remember { mutableStateOf(false) }
-                
+
                 val signOutTitle =
                     if (uiState.signedOut) {
                         appString(R.string.settings_signed_out)

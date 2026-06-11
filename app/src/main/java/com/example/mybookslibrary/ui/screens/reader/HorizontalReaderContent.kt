@@ -262,7 +262,8 @@ private fun rememberHorizontalLayoutDirection(readingMode: ReadingMode): LayoutD
         else -> LayoutDirection.Ltr
     }
 
-private fun ReaderTapAction.isPageNavigation(): Boolean = this == ReaderTapAction.NEXT_PAGE || this == ReaderTapAction.PREVIOUS_PAGE
+private fun ReaderTapAction.isPageNavigation(): Boolean =
+    this == ReaderTapAction.NEXT_PAGE || this == ReaderTapAction.PREVIOUS_PAGE
 
 private data class HorizontalNavigationController(
     val coordinator: HorizontalPagerNavigationCoordinator,

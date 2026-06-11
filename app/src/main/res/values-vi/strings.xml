@@ -71,7 +71,6 @@
     <string name="status_favorite">Yêu thích</string>
 
     <!-- Chi tiết manga -->
-    <string name="detail_synopsis">Tóm tắt</string>
     <string name="detail_chapters">Danh sách chương</string>
     <string name="detail_chapters_error">Không tải được danh sách chương</string>
     <string name="detail_chapters_empty">Chưa có chương nào</string>
@@ -135,10 +134,19 @@
     <string name="settings_restore_subtitle">Nhập từ file sao lưu</string>
     <string name="settings_restore_success">Đã khôi phục %1$d mục</string>
     <string name="settings_restore_failed">Khôi phục thất bại: %1$s</string>
+    <string name="settings_sync">Đồng bộ đám mây</string>
+    <string name="settings_sync_subtitle">Nhấn để đồng bộ thư viện với Firestore</string>
+    <string name="settings_sync_syncing">Đang đồng bộ…</string>
+    <string name="settings_sync_success">Đồng bộ hoàn tất thành công</string>
+    <string name="settings_sync_failed">Đồng bộ thất bại</string>
     <string name="settings_sign_out">Đăng xuất</string>
     <string name="settings_signed_out">Đã đăng xuất</string>
     <string name="settings_sign_out_subtitle">Xóa toàn bộ dữ liệu</string>
     <string name="settings_signed_out_subtitle">Đã xóa dữ liệu</string>
+    <string name="settings_delete_account">Xoá tài khoản</string>
+    <string name="settings_delete_account_subtitle">Xoá vĩnh viễn tài khoản và dữ liệu của bạn</string>
+    <string name="settings_delete_account_confirm">Xoá tài khoản của tôi</string>
+    <string name="settings_delete_account_desc">Bạn có chắc chắn muốn xoá tài khoản không? Hành động này không thể hoàn tác và sẽ xoá toàn bộ dữ liệu thư viện của bạn khỏi đám mây.</string>
     <string name="action_cancel">Huỷ</string>
     <string name="settings_dark_mode">Chủ đề</string>
     <string name="settings_theme_system">Theo hệ thống</string>
@@ -169,9 +177,10 @@
     <!-- Màn hình đăng nhập / đăng ký -->
     <string name="auth_login_title">Đăng nhập</string>
     <string name="auth_welcome_back">Chào mừng trở lại!</string>
-    <string name="auth_username">Tên đăng nhập</string>
+    <string name="auth_email">Email</string>
     <string name="auth_password">Mật khẩu</string>
     <string name="auth_login_button">Đăng nhập</string>
+    <string name="auth_continue_guest">Tiếp tục với tư cách khách</string>
     <string name="auth_google_signin">Đăng nhập bằng Google</string>
     <string name="auth_no_account_register">Chưa có tài khoản? Đăng ký</string>
     <string name="auth_register_title">Đăng ký</string>
@@ -179,11 +188,8 @@
     <string name="auth_confirm_password">Xác nhận mật khẩu</string>
     <string name="auth_passwords_no_match">Mật khẩu không khớp</string>
     <string name="auth_have_account_login">Đã có tài khoản? Đăng nhập</string>
-    <string name="auth_error_empty_fields">Tên đăng nhập và mật khẩu không được để trống</string>
-    <string name="auth_error_login_failed">Đăng nhập thất bại</string>
-    <string name="auth_error_register_failed">Đăng ký thất bại</string>
-    <string name="auth_error_google_signin_failed">Đăng nhập Google thất bại</string>
-    <string name="auth_error_username_exists">Tên đăng nhập đã tồn tại</string>
-    <string name="auth_error_invalid_credentials">Tên đăng nhập hoặc mật khẩu không đúng</string>
+    <string name="auth_error_empty_fields">Email và mật khẩu không được để trống</string>
+    <string name="auth_error_email_exists">Email đã tồn tại</string>
+    <string name="auth_error_invalid_credentials">Email hoặc mật khẩu không đúng</string>
     <string name="auth_error_google_save_failed">Không thể lưu tài khoản Google</string>
 </resources>

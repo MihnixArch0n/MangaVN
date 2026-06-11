@@ -31,10 +31,10 @@ internal fun ReaderContentHost(
     state: ReaderState,
     listState: LazyListState,
     pagerState: PagerState,
-    readerBarColors: ReaderBarColors = readerBarColors(),
     onBackClick: () -> Unit,
     onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier,
+    readerBarColors: ReaderBarColors = readerBarColors(),
 ) {
     BoxWithConstraints(
         modifier =

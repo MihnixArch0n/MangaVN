@@ -19,7 +19,8 @@ class ChapterStatusConverters {
     fun fromStatus(status: ChapterStatus): String = status.name
 
     @TypeConverter
-    fun toStatus(raw: String): ChapterStatus = ChapterStatus.entries.firstOrNull { it.name == raw } ?: ChapterStatus.UNREAD
+    fun toStatus(raw: String): ChapterStatus =
+        ChapterStatus.entries.firstOrNull { it.name == raw } ?: ChapterStatus.UNREAD
 }
 
 @Entity(

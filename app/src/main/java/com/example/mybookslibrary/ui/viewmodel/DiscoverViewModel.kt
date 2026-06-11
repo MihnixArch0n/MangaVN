@@ -52,7 +52,9 @@ class DiscoverViewModel
                             _uiState.update {
                                 it.copy(
                                     isLoading = false,
-                                    error = throwable.message ?: getApplication<Application>().getString(R.string.error_load_discover),
+                                    error =
+                                        throwable.message
+                                            ?: getApplication<Application>().getString(R.string.error_load_discover),
                                 )
                             }
                         }

@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package com.example.mybookslibrary.data.repository
 
 import androidx.room.Room
@@ -11,7 +13,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,7 +38,8 @@ class LibraryRepositoryCoverageTest {
                     AppDatabase::class.java,
                 ).allowMainThreadQueries()
                 .build()
-        repository = LibraryRepository(db.libraryDao(), db.chapterDao(), db, io.mockk.mockk(relaxed = true), io.mockk.mockk(relaxed = true), kotlinx.coroutines.test.TestScope())
+        repository =
+            LibraryRepository(db.libraryDao(), db.chapterDao(), db, io.mockk.mockk(relaxed = true), io.mockk.mockk(relaxed = true), kotlinx.coroutines.test.TestScope())
     }
 
     @After

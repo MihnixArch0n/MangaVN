@@ -1,3 +1,5 @@
+@file:Suppress("ktlint")
+
 package com.example.mybookslibrary.data.repository
 
 import androidx.room.Room
@@ -33,7 +35,8 @@ class LibraryRepositoryRestoreTest {
                     AppDatabase::class.java,
                 ).allowMainThreadQueries()
                 .build()
-        repository = LibraryRepository(db.libraryDao(), db.chapterDao(), db, io.mockk.mockk(relaxed = true), io.mockk.mockk(relaxed = true), kotlinx.coroutines.test.TestScope())
+        repository =
+            LibraryRepository(db.libraryDao(), db.chapterDao(), db, io.mockk.mockk(relaxed = true), io.mockk.mockk(relaxed = true), kotlinx.coroutines.test.TestScope())
     }
 
     @After

@@ -47,7 +47,7 @@ class LibraryRepository(
             last_read_chapter_id = null,
             last_read_page_index = 0,
             updated_at = now,
-            sync_status = SyncStatus.PENDING_UPDATE
+            syncStatus = SyncStatus.PENDING_UPDATE
         )
         libraryDao.upsert(entity)
         trySyncItem(entity)
@@ -90,10 +90,19 @@ class LibraryRepository(
 
     /** Upsert danh sách items từ backup JSON. */
     suspend fun restoreItems(items: List<LibraryItemEntity>) {
-        libraryDao.upsert(items.map { it.copy(sync_status = SyncStatus.PENDING_UPDATE) })
+        libraryDao.upsert(items.map { it.copy(syncStatus = SyncStatus.PENDING_UPDATE) })
         items.forEach { trySyncItem(it) }
     }
 
+    /**
+     * Updates the local reading progress of a page in a chapter, updates both Room DB tables inside a transaction,
+     * and attempts to sync the changes to Firestore.
+     *
+     * @param mangaId The ID of the manga.
+     * @param chapterId The ID of the chapter.
+     * @param pageIndex The 0-based index of the read page.
+     * @param totalPages The total number of pages in the chapter.
+     */
     suspend fun updateReadingProgress(
         mangaId: String,
         chapterId: String,
@@ -124,11 +133,18 @@ class LibraryRepository(
                 ),
             )
         }
-        
+
         val item = libraryDao.getByMangaId(mangaId)
         if (item != null) trySyncItem(item)
     }
 
+    /**
+     * Marks the given chapter as fully read (COMPLETED) in the database.
+     *
+     * @param mangaId The ID of the manga.
+     * @param chapterId The ID of the chapter.
+     * @param totalPages The total number of pages in the chapter.
+     */
     suspend fun markChapterCompleted(
         mangaId: String,
         chapterId: String,
@@ -147,6 +163,13 @@ class LibraryRepository(
         )
     }
 
+    /**
+     * Marks the given chapter as UNREAD in the database, resetting its read page index to 0.
+     *
+     * @param mangaId The ID of the manga.
+     * @param chapterId The ID of the chapter.
+     * @param totalPages The total number of pages in the chapter.
+     */
     suspend fun markChapterUnread(
         mangaId: String,
         chapterId: String,
@@ -164,6 +187,11 @@ class LibraryRepository(
         )
     }
 
+    /**
+     * Removes bookmark for the manga, triggering offline updates and Firestore deletion tasks.
+     *
+     * @param mangaId The ID of the manga to be removed.
+     */
     suspend fun removeBookmark(mangaId: String) {
         removeFromLibrary(mangaId)
     }
@@ -190,13 +218,16 @@ class LibraryRepository(
         }
     }
 
-    // Dùng cho SyncWorker
+    /**
+     * Synchronizes all library items with PENDING_UPDATE or PENDING_DELETE status to Firestore.
+     * Usually executed inside the background SyncWorker.
+     */
     suspend fun syncPendingItems() {
         val user = authRepository.getCurrentUser() ?: return
         val pendingItems = libraryDao.getPendingSyncItems()
         for (item in pendingItems) {
             try {
-                if (item.sync_status == SyncStatus.PENDING_DELETE) {
+                if (item.syncStatus == SyncStatus.PENDING_DELETE) {
                     firestoreDataSource.deleteItem(user.uid, item.manga_id)
                     libraryDao.physicallyDelete(item.manga_id)
                     chapterDao.deleteLibraryItemAndProgress(item.manga_id)

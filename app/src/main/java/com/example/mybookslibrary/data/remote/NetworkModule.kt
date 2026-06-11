@@ -3,7 +3,6 @@
 package com.example.mybookslibrary.data.remote
 
 import android.content.Context
-import android.util.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,7 +32,7 @@ object NetworkModule {
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor { message ->
-            Log.d("OkHttp", message)
+            Timber.d(message)
         }.apply {
             level = HttpLoggingInterceptor.Level.BASIC
         }

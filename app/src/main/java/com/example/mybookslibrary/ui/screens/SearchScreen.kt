@@ -50,8 +50,8 @@ import com.example.mybookslibrary.ui.viewmodel.SearchViewModel
 @Suppress("unused", "LongMethod")
 @Composable
 fun SearchScreenContent(
-    onMangaClick: (MangaModel) -> Unit = {},
     modifier: Modifier = Modifier,
+    onMangaClick: (MangaModel) -> Unit = {},
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

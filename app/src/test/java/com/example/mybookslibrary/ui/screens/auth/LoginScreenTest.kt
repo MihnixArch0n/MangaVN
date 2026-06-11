@@ -76,7 +76,8 @@ class LoginScreenTest {
         // AuthState.Success → LaunchedEffect gọi resetState() + onLoginSuccess()
         var successCalled = false
         val repo = mockk<AuthRepository>(relaxed = true)
-        coEvery { repo.signInWithEmail(any(), any()) } coAnswers { Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true)) }
+        coEvery { repo.signInWithEmail(any(), any()) } coAnswers
+            { Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true)) }
         val vm = AuthViewModel(repo)
         vm.login("user", "pass")
 
@@ -93,7 +94,7 @@ class LoginScreenTest {
         val repo = mockk<AuthRepository>(relaxed = true)
         coEvery { repo.signInWithEmail(any(), any()) } coAnswers {
             delay(Long.MAX_VALUE)
-            Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
         }
         val vm = AuthViewModel(repo)
 

@@ -15,8 +15,12 @@ import javax.inject.Inject
 
 private fun authError(message: String?): UiText =
     when {
-        message?.contains("exists") == true || message?.contains("already in use") == true -> UiText.Resource(R.string.auth_error_email_exists)
-        message?.contains("password") == true || message?.contains("invalid credential") == true -> UiText.Resource(R.string.auth_error_invalid_credentials)
+        message?.contains("exists") == true ||
+            message?.contains("already in use") == true ->
+            UiText.Resource(R.string.auth_error_email_exists)
+        message?.contains("password") == true ||
+            message?.contains("invalid credential") == true ->
+            UiText.Resource(R.string.auth_error_invalid_credentials)
         message?.contains("Google") == true -> UiText.Resource(R.string.auth_error_google_save_failed)
         message == null -> UiText.Resource(R.string.error_unexpected)
         else -> UiText.Dynamic(message)

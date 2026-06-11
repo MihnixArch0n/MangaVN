@@ -37,7 +37,8 @@ class AuthViewModelTest {
     @Test
     fun login_thanhCong_phatSuccess() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.signInWithEmail("u", "p") } returns Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            coEvery { repository.signInWithEmail("u", "p") } returns
+                Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = AuthViewModel(repository)
 
             vm.login("u", "p")
@@ -49,7 +50,8 @@ class AuthViewModelTest {
     @Test
     fun login_thatBaiCoMessage_phatErrorMessage() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.signInWithEmail("u", "p") } returns Result.failure(IllegalStateException("sai mật khẩu"))
+            coEvery { repository.signInWithEmail("u", "p") } returns
+                Result.failure(IllegalStateException("sai mật khẩu"))
             val vm = AuthViewModel(repository)
 
             vm.login("u", "p")
@@ -73,7 +75,8 @@ class AuthViewModelTest {
     @Test
     fun login_dangLoading_boQuaLanGoiThuHai() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.signInWithEmail("u", "p") } returns Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            coEvery { repository.signInWithEmail("u", "p") } returns
+                Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = AuthViewModel(repository)
 
             // Lần 1 set Loading (chưa advance); lần 2 trúng guard `is Loading -> return`
@@ -111,7 +114,8 @@ class AuthViewModelTest {
     @Test
     fun register_thanhCong_phatSuccess() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.registerWithEmail("u", "p") } returns Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            coEvery { repository.registerWithEmail("u", "p") } returns
+                Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = AuthViewModel(repository)
 
             vm.register("u", "p")
@@ -135,7 +139,8 @@ class AuthViewModelTest {
     @Test
     fun register_thatBaiCoMessage_phatErrorMessage() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.registerWithEmail("u", "p") } returns Result.failure(IllegalStateException("user tồn tại"))
+            coEvery { repository.registerWithEmail("u", "p") } returns
+                Result.failure(IllegalStateException("user tồn tại"))
             val vm = AuthViewModel(repository)
 
             vm.register("u", "p")
@@ -148,7 +153,8 @@ class AuthViewModelTest {
     fun googleSignIn_thatBaiCoMessage_phatErrorMessage() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             val context = mockk<Context>()
-            coEvery { repository.signInWithGoogle(context) } returns Result.failure(IllegalStateException("huỷ đăng nhập"))
+            coEvery { repository.signInWithGoogle(context) } returns
+                Result.failure(IllegalStateException("huỷ đăng nhập"))
             val vm = AuthViewModel(repository)
 
             vm.googleSignIn(context)
@@ -161,7 +167,8 @@ class AuthViewModelTest {
     fun googleSignIn_thanhCong_phatSuccess() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             val context = mockk<Context>()
-            coEvery { repository.signInWithGoogle(context) } returns Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            coEvery { repository.signInWithGoogle(context) } returns
+                Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = AuthViewModel(repository)
 
             vm.googleSignIn(context)
@@ -197,7 +204,8 @@ class AuthViewModelTest {
     @Test
     fun register_dangLoading_boQuaLanGoiThuHai() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.registerWithEmail("u", "p") } returns Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            coEvery { repository.registerWithEmail("u", "p") } returns
+                Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = AuthViewModel(repository)
 
             vm.register("u", "p")
@@ -211,7 +219,8 @@ class AuthViewModelTest {
     fun googleSignIn_dangLoading_boQuaLanGoiThuHai() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             val context = mockk<Context>()
-            coEvery { repository.signInWithGoogle(context) } returns Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            coEvery { repository.signInWithGoogle(context) } returns
+                Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = AuthViewModel(repository)
 
             vm.googleSignIn(context)
@@ -224,7 +233,8 @@ class AuthViewModelTest {
     @Test
     fun resetState_veIdle() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.signInWithEmail("u", "p") } returns Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed=true))
+            coEvery { repository.signInWithEmail("u", "p") } returns
+                Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = AuthViewModel(repository)
             vm.login("u", "p")
             advanceUntilIdle()
