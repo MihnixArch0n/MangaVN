@@ -34,7 +34,11 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8 minify + resource shrink (issue #93): APK 56.4 MB → nhỏ hơn đáng kể.
+            // Keep rules cho thư viện nằm trong consumer rules của từng artifact;
+            // rule bổ sung app-specific tại proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
