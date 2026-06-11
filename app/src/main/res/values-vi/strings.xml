@@ -115,7 +115,12 @@
     <string name="settings_section_reading">Đọc truyện</string>
     <string name="settings_section_storage">Bộ nhớ</string>
     <string name="settings_section_data">Dữ liệu</string>
+    <string name="settings_section_links">Liên kết</string>
     <string name="settings_section_account">Tài khoản</string>
+    <string name="settings_open_links">Mở liên kết hỗ trợ</string>
+    <string name="settings_open_links_subtitle">Cho phép ứng dụng mở liên kết MangaDex</string>
+    <string name="settings_open_links_granted">Đã cấp quyền</string>
+    <string name="settings_open_links_grant">Cấp quyền</string>
     <string name="settings_image_quality">Chất lượng ảnh</string>
     <string name="settings_quality_original">Gốc</string>
     <string name="settings_quality_data_saver">Tiết kiệm dữ liệu</string>
