@@ -1,0 +1,41 @@
+# Validate PR title theo Conventional Commits (English) — vì repo squash-merge nên
+# PR TITLE chính là commit message cuối cùng trên main; commit-msg hook local chỉ
+# kiểm soát commit trên branch, không kiểm soát được title.
+# Chạy lại khi title được sửa (types: edited) → sửa title là check tự xanh lại.
+name: PR title lint
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions: {}
+
+jobs:
+  lint-title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate PR title theo Conventional Commits
+        env:
+          # Qua env var (KHÔNG inline vào script) để tránh script injection từ title
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          PATTERN='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+'
+          if printf '%s' "$TITLE" | grep -qE "$PATTERN"; then
+            echo "✅ PR title hợp lệ: $TITLE"
+            exit 0
+          fi
+          echo "❌ PR title không đúng Conventional Commits format."
+          echo ""
+          echo "   Squash merge dùng PR TITLE làm commit message trên main → title phải đúng format."
+          echo "   Format : <type>(<scope>): <description tiếng Anh>"
+          echo "   Types  : feat fix docs style refactor perf test build ci chore revert"
+          echo ""
+          echo "   Ví dụ  :"
+          echo "     feat(reader): add double-tap zoom"
+          echo "     fix(download): handle corrupted chapter pages"
+          echo ""
+          echo "   Nhận được: \"$TITLE\""
+          echo ""
+          echo "   Sửa title của PR (nút Edit cạnh tiêu đề) → check này tự chạy lại."
+          exit 1
