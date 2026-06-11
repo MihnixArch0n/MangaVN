@@ -75,6 +75,7 @@
     <string name="detail_chapters_error">Couldn\'t load chapters</string>
     <string name="detail_chapters_empty">No chapters available</string>
     <string name="detail_read_now">READ NOW</string>
+    <string name="detail_continue_reading">CONTINUE READING</string>
     <string name="detail_loading">LOADING…</string>
     <string name="detail_in_library">IN LIBRARY</string>
     <string name="detail_add_to_library">ADD TO LIBRARY</string>

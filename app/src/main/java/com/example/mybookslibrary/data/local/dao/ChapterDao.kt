@@ -42,6 +42,9 @@ abstract class ChapterDao {
     @Query("SELECT * FROM chapter_progress WHERE manga_id = :mangaId ORDER BY updated_at DESC")
     abstract fun getChapterProgressByManga(mangaId: String): Flow<List<ChapterProgressEntity>>
 
+    @Query("SELECT * FROM chapter_progress")
+    abstract suspend fun getAllProgress(): List<ChapterProgressEntity>
+
     @Query("SELECT * FROM chapter_progress WHERE chapter_id = :chapterId LIMIT 1")
     abstract suspend fun getChapterProgressByChapter(chapterId: String): ChapterProgressEntity?
 

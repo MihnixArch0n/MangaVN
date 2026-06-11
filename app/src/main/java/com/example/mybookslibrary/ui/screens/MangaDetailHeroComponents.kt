@@ -149,7 +149,15 @@ internal fun MangaDetailActions(
             ),
         ) {
             Text(
-                if (firstChapter != null) appString(R.string.detail_read_now) else appString(R.string.detail_loading),
+                if (firstChapter != null) {
+                    if (firstChapter.status == com.example.mybookslibrary.domain.model.ChapterReadingStatus.READING || firstChapter.status == com.example.mybookslibrary.domain.model.ChapterReadingStatus.COMPLETED) {
+                        appString(R.string.detail_continue_reading)
+                    } else {
+                        appString(R.string.detail_read_now)
+                    }
+                } else {
+                    appString(R.string.detail_loading)
+                },
                 style = MaterialTheme.typography.labelLarge,
             )
         }

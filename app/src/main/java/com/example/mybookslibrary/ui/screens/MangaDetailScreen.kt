@@ -78,25 +78,30 @@ fun MangaDetailScreen(
                 )
             }
             item {
+                val lastReadChapter = uiState.lastReadChapterId?.let { id -> uiState.chapters.find { it.chapterId == id } }
+                val readingChapter = uiState.chapters.find { it.status == ChapterReadingStatus.READING }
+                val firstUnreadChapter = uiState.chapters.find { it.status == ChapterReadingStatus.UNREAD }
                 val firstChapter = uiState.chapters.firstOrNull()
-                val firstChapterTitle = firstChapter?.let { buildChapterTitle(it) }.orEmpty()
+                
+                val targetChapter = lastReadChapter ?: readingChapter ?: firstUnreadChapter ?: firstChapter
+                val targetChapterTitle = targetChapter?.let { buildChapterTitle(it) }.orEmpty()
                 MangaDetailActions(
                     isInLibrary = uiState.isInLibrary,
-                    firstChapter = firstChapter,
-                    onReadNow = { firstChapter ->
-                        val startPageIndex = firstChapter.resumePageIndex()
+                    firstChapter = targetChapter,
+                    onReadNow = { chapter ->
+                        val startPageIndex = chapter.resumePageIndex()
                         Timber.d(
-                            "MangaDetail read-now: mangaId=%s chapterId=%s status=%s lastReadPage=%d " +
+                            "MangaDetail read-now/continue: mangaId=%s chapterId=%s status=%s lastReadPage=%d " +
                                 "startPageIndex=%d totalPages=%d",
                             mangaId,
-                            firstChapter.chapterId,
-                            firstChapter.status,
-                            firstChapter.lastReadPage,
+                            chapter.chapterId,
+                            chapter.status,
+                            chapter.lastReadPage,
                             startPageIndex,
-                            firstChapter.totalPages,
+                            chapter.totalPages,
                         )
                         viewModel.ensureInLibrary(displayTitle, displayCoverArt)
-                        onReadChapter(mangaId, firstChapter.chapterId, firstChapterTitle, startPageIndex)
+                        onReadChapter(mangaId, chapter.chapterId, targetChapterTitle, startPageIndex)
                     },
                     onToggleLibrary = {
                         viewModel.toggleLibrary(displayTitle, displayCoverArt)

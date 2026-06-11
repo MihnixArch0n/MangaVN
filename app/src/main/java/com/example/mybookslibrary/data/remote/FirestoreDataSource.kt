@@ -80,21 +80,60 @@ class FirestoreDataSource @Inject constructor(
         batch.commit().await()
     }
 
+    private fun getProgressCollection(userId: String) =
+        firestore.collection("users").document(userId).collection("progress")
+
+    /**
+     * Saves a list of chapter progress items to the user's Firestore collection in a batch.
+     */
+    suspend fun saveProgressList(userId: String, items: List<com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress>) {
+        if (items.isEmpty()) return
+        val batch = firestore.batch()
+        val collection = getProgressCollection(userId)
+
+        items.forEach { item ->
+            batch.set(collection.document(item.chapterId), item)
+        }
+
+        batch.commit().await()
+    }
+
+    /**
+     * Retrieves all chapter progress items from the user's Firestore collection.
+     */
+    suspend fun getAllProgress(userId: String): List<com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress> {
+        val snapshot = getProgressCollection(userId).get().await()
+        return snapshot.toObjects(com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress::class.java)
+    }
+
     /**
      * Deletes all user data including sub-collections and the user document from Firestore.
      *
      * @param userId The unique ID of the authenticated user.
      */
     suspend fun deleteAllUserData(userId: String) {
-        val collection = getLibraryCollection(userId)
-        val snapshot = collection.get().await()
-        if (!snapshot.isEmpty) {
+        // Delete Library collection
+        val libraryCollection = getLibraryCollection(userId)
+        val librarySnapshot = libraryCollection.get().await()
+        if (!librarySnapshot.isEmpty) {
             val batch = firestore.batch()
-            for (doc in snapshot.documents) {
+            for (doc in librarySnapshot.documents) {
                 batch.delete(doc.reference)
             }
             batch.commit().await()
         }
+
+        // Delete Progress collection
+        val progressCollection = getProgressCollection(userId)
+        val progressSnapshot = progressCollection.get().await()
+        if (!progressSnapshot.isEmpty) {
+            val batch = firestore.batch()
+            for (doc in progressSnapshot.documents) {
+                batch.delete(doc.reference)
+            }
+            batch.commit().await()
+        }
+
         firestore.collection("users").document(userId).delete().await()
     }
 }

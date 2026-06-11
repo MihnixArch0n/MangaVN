@@ -77,6 +77,9 @@ class LibraryRepository(
     /** Kiểm tra manga đã có trong thư viện chưa. */
     suspend fun isInLibrary(mangaId: String): Boolean = libraryDao.getByMangaId(mangaId) != null
 
+    /** Lấy LibraryItemEntity theo mangaId. */
+    suspend fun getLibraryItem(mangaId: String): LibraryItemEntity? = libraryDao.getByMangaId(mangaId)
+
     /** Xóa toàn bộ thư viện. Gọi khi sign out. */
     suspend fun clearAll() {
         libraryDao.deleteAll()
@@ -314,6 +317,60 @@ class LibraryRepository(
             for (mangaId in itemsToDeleteLocal) {
                 libraryDao.physicallyDelete(mangaId)
                 chapterDao.deleteLibraryItemAndProgress(mangaId)
+            }
+
+            // --- 3. Sync Chapter Progress ---
+            val remoteProgress = firestoreDataSource.getAllProgress(user.uid)
+            val remoteProgressMap = remoteProgress.associateBy { it.chapterId }
+            val localProgress = chapterDao.getAllProgress()
+            val localProgressMap = localProgress.associateBy { it.chapter_id }
+            
+            val progressToUpload = mutableListOf<com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress>()
+            val progressToUpsertLocal = mutableListOf<ChapterProgressEntity>()
+            
+            // Upload local progress that is newer or missing on remote
+            for (local in localProgress) {
+                val remote = remoteProgressMap[local.chapter_id]
+                if (remote == null || local.updated_at > remote.updatedAt) {
+                    progressToUpload.add(
+                        com.example.mybookslibrary.data.remote.models.FirestoreChapterProgress(
+                            chapterId = local.chapter_id,
+                            mangaId = local.manga_id,
+                            status = local.status.name,
+                            lastReadPage = local.last_read_page,
+                            totalPages = local.total_pages,
+                            updatedAt = local.updated_at
+                        )
+                    )
+                }
+            }
+            
+            // Download remote progress that is newer or missing locally
+            for (remote in remoteProgress) {
+                val local = localProgressMap[remote.chapterId]
+                if (local == null || remote.updatedAt > local.updated_at) {
+                    // Make sure the manga still exists locally before inserting to avoid FK constraint errors
+                    if (libraryDao.getByMangaId(remote.mangaId) != null) {
+                        progressToUpsertLocal.add(
+                            ChapterProgressEntity(
+                                chapter_id = remote.chapterId,
+                                manga_id = remote.mangaId,
+                                status = try { ChapterStatus.valueOf(remote.status) } catch(e: Exception) { ChapterStatus.UNREAD },
+                                last_read_page = remote.lastReadPage,
+                                total_pages = remote.totalPages,
+                                updated_at = remote.updatedAt,
+                                is_downloaded = local?.is_downloaded ?: false
+                            )
+                        )
+                    }
+                }
+            }
+            
+            if (progressToUpload.isNotEmpty()) {
+                firestoreDataSource.saveProgressList(user.uid, progressToUpload)
+            }
+            for (progress in progressToUpsertLocal) {
+                chapterDao.upsertChapterProgress(progress)
             }
             
         } catch (e: Exception) {
