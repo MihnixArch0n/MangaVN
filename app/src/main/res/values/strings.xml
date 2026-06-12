@@ -347,7 +347,13 @@
     <string name="downloads_empty_subtitle">Downloaded chapters will appear here for offline reading</string>
     <string name="downloads_delete">Delete</string>
     <string name="downloads_delete_confirm">Delete this downloaded chapter?</string>
-    <string name="downloads_chapter">Chapter %1$s</string>
+    <string name="downloads_not_in_library">No longer in library</string>
+    <string name="downloads_unknown_chapter">Unknown chapter</string>
+    <string name="downloads_total_size">Total size: %1$s</string>
+    <string name="downloads_delete_failed">Could not delete chapter. Please try again.</string>
+    <string name="cd_delete_download">Delete downloaded chapter</string>
+    <string name="notification_download_complete">Chapter downloaded</string>
+    <string name="notification_download_failed">Chapter download failed</string>
     <string name="profile_downloads">Downloads</string>
     <string name="profile_edit">Edit profile</string>
     <string name="profile_edit_title">Edit Profile</string>

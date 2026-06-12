@@ -65,7 +65,7 @@ class DownloadNotifierTest {
 
     @Test
     fun showFinishedNotification_postsWithIdOutsideProgressRange() {
-        notifier.showFinishedNotification("chapter-1", success = true, message = "Đã tải xong")
+        notifier.showFinishedNotification("chapter-1", success = true)
 
         val manager = context.getSystemService(NotificationManager::class.java)
         val posted = manager.activeNotifications.single()
@@ -77,7 +77,7 @@ class DownloadNotifierTest {
         val progressId =
             notifier.createForegroundInfo("chapter-1", progressPercent = 0, indeterminate = true).notificationId
 
-        notifier.showFinishedNotification("chapter-1", success = true, message = "Đã tải xong")
+        notifier.showFinishedNotification("chapter-1", success = true)
 
         val manager = context.getSystemService(NotificationManager::class.java)
         assertTrue(manager.activeNotifications.none { it.id == progressId })

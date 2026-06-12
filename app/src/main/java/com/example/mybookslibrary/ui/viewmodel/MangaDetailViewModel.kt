@@ -234,9 +234,9 @@ class MangaDetailViewModel
         }
 
         fun cancelChapterDownload(chapterId: String) {
-            if (chapterId.isBlank()) return
+            if (mangaId.isBlank() || chapterId.isBlank()) return
             launchSafe {
-                offlineDownloadManager.cancelDownload(chapterId)
+                offlineDownloadManager.cancelDownload(mangaId, chapterId)
             }
         }
 

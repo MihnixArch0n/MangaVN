@@ -90,9 +90,27 @@ abstract class ChapterDao {
     @Query("SELECT chapter_id FROM chapter_progress WHERE is_downloaded = 1")
     abstract suspend fun getDownloadedChapterIds(): List<String>
 
-    /** Observe tất cả chapter đã download — cho Download Manager. */
-    @Query("SELECT * FROM chapter_progress WHERE is_downloaded = 1 ORDER BY updated_at DESC")
-    abstract fun observeDownloadedChapters(): Flow<List<ChapterProgressEntity>>
+    /**
+     * Thông tin hiển thị cho các chapter đã tải (màn Downloads). Nguồn sự thật về
+     * "đã tải" là filesystem ([chapterIds] lấy từ DownloadedChapterCache) — query này
+     * chỉ map id sang title/volume/chapter để hiển thị.
+     *
+     * LEFT JOIN (không INNER) vì manga đã rời library vẫn còn file chiếm dung lượng —
+     * user phải thấy và xóa được; mangaTitle NULL = nhóm "Không còn trong thư viện".
+     * Filter PENDING_DELETE ngay tại vế JOIN để manga chờ xóa cũng rơi về nhóm đó.
+     */
+    @Query(
+        """
+        SELECT li.title AS mangaTitle, cm.volume, cm.chapter_number AS chapterNumber,
+               cm.chapter_id AS chapterId, cm.manga_id AS mangaId
+        FROM chapter_metadata cm
+        LEFT JOIN library_items li
+          ON li.manga_id = cm.manga_id AND li.sync_status != 'PENDING_DELETE'
+        WHERE cm.chapter_id IN (:chapterIds)
+        ORDER BY li.title IS NULL, li.title, CAST(cm.chapter_number AS REAL)
+        """,
+    )
+    abstract suspend fun getDownloadedChapterInfo(chapterIds: Set<String>): List<DownloadedChapterInfo>
 
     @Query("UPDATE chapter_progress SET is_downloaded = 0 WHERE is_downloaded = 1")
     abstract suspend fun clearDownloadedChapterFlags()
@@ -214,6 +232,25 @@ data class AdjacentChapter(
     @androidx.room.ColumnInfo(name = "volume") val volume: String?,
 ) {
     fun buildTitle(): String = buildString {
+        volume?.takeIf { it.isNotBlank() }?.let { append("Vol. $it ") }
+        chapterNumber?.takeIf { it.isNotBlank() }?.let { append("Ch. $it") }
+        if (isEmpty()) append("Oneshot")
+    }
+}
+
+/**
+ * Projection cho [ChapterDao.getDownloadedChapterInfo] — màn Downloads.
+ * [mangaTitle] NULL = manga không còn trong library (vẫn hiện để user xóa file).
+ */
+data class DownloadedChapterInfo(
+    val mangaTitle: String?,
+    val volume: String?,
+    val chapterNumber: String?,
+    val chapterId: String,
+    val mangaId: String,
+) {
+    /** "Vol. X Ch. Y" — cùng format với [AdjacentChapter.buildTitle]. */
+    fun buildChapterLabel(): String = buildString {
         volume?.takeIf { it.isNotBlank() }?.let { append("Vol. $it ") }
         chapterNumber?.takeIf { it.isNotBlank() }?.let { append("Ch. $it") }
         if (isEmpty()) append("Oneshot")

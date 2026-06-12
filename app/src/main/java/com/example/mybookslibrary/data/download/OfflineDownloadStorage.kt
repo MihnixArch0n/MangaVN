@@ -160,23 +160,50 @@ class OfflineDownloadStorage
                         .listFiles { file -> file.isDirectory }
                         .orEmpty()
                         .flatMap { mangaDir -> mangaDir.listFiles { file -> file.isDirectory }.orEmpty().asList() }
-                        .filter { chapterDir ->
-                            val pages = getValidPageFiles(chapterDir)
-                            val marker = File(chapterDir, COMPLETION_MARKER)
-                            if (marker.isFile && pages.isNotEmpty()) {
-                                val expected = runCatching { marker.readText().trim().toInt() }.getOrNull()
-                                if (expected != null) {
-                                    pages.size == expected && pageIndexFromName(pages.last().name) == pages.size - 1
-                                } else {
-                                    pageIndexFromName(pages.last().name) == pages.size - 1
-                                }
-                            } else {
-                                false
-                            }
-                        }.mapTo(linkedSetOf()) { chapterDir -> chapterDir.name }
+                        .filter { chapterDir -> isCompletedChapterDir(chapterDir) }
+                        .mapTo(linkedSetOf()) { chapterDir -> chapterDir.name }
                 Timber.d("scanDownloadedChapters: count=%d", downloadedIds.size)
                 downloadedIds
             }
+
+        /**
+         * Liệt kê chapter đã tải hoàn chỉnh kèm mangaId (từ dir cha) và dung lượng —
+         * cho màn Downloads. Filesystem là nguồn sự thật về "đã tải".
+         */
+        suspend fun listDownloadedChapters(): List<DownloadedChapterDirInfo> =
+            withContext(ioDispatcher) {
+                val result =
+                    rootDirectory()
+                        .listFiles { file -> file.isDirectory }
+                        .orEmpty()
+                        .flatMap { mangaDir ->
+                            mangaDir
+                                .listFiles { file -> file.isDirectory }
+                                .orEmpty()
+                                .filter { chapterDir -> isCompletedChapterDir(chapterDir) }
+                                .map { chapterDir ->
+                                    DownloadedChapterDirInfo(
+                                        mangaId = mangaDir.name,
+                                        chapterId = chapterDir.name,
+                                        sizeBytes = chapterDir.listFiles().orEmpty().sumOf { it.length() },
+                                    )
+                                }
+                        }
+                Timber.d("listDownloadedChapters: count=%d", result.size)
+                result
+            }
+
+        private fun isCompletedChapterDir(chapterDir: File): Boolean {
+            val pages = getValidPageFiles(chapterDir)
+            val marker = File(chapterDir, COMPLETION_MARKER)
+            if (!marker.isFile || pages.isEmpty()) return false
+            val expected = runCatching { marker.readText().trim().toInt() }.getOrNull()
+            return if (expected != null) {
+                pages.size == expected && pageIndexFromName(pages.last().name) == pages.size - 1
+            } else {
+                pageIndexFromName(pages.last().name) == pages.size - 1
+            }
+        }
 
         /**
          * Scans for chapters that have a completion marker but fail validity checks (e.g. missing pages).
@@ -190,22 +217,9 @@ class OfflineDownloadStorage
                     .forEach { mangaDir ->
                         val mangaId = mangaDir.name
                         mangaDir.listFiles { file -> file.isDirectory }.orEmpty().forEach { chapterDir ->
-                            val chapterId = chapterDir.name
-                            val pages = getValidPageFiles(chapterDir)
                             val marker = File(chapterDir, COMPLETION_MARKER)
-                            if (marker.isFile) {
-                                var isValid = false
-                                if (pages.isNotEmpty()) {
-                                    val expected = runCatching { marker.readText().trim().toInt() }.getOrNull()
-                                    isValid = if (expected != null) {
-                                        pages.size == expected && pageIndexFromName(pages.last().name) == pages.size - 1
-                                    } else {
-                                        pageIndexFromName(pages.last().name) == pages.size - 1
-                                    }
-                                }
-                                if (!isValid) {
-                                    corrupted.add(Pair(mangaId, chapterId))
-                                }
+                            if (marker.isFile && !isCompletedChapterDir(chapterDir)) {
+                                corrupted.add(Pair(mangaId, chapterDir.name))
                             }
                         }
                     }
@@ -268,6 +282,11 @@ class OfflineDownloadStorage
             Timber.d("deleteChapter start: mangaId=%s chapterId=%s dir=%s", mangaId, chapterId, chapterDir.absolutePath)
             if (!chapterDir.deleteRecursively()) {
                 throw IOException("Cannot delete offline chapter directory: ${chapterDir.absolutePath}")
+            }
+            // Dọn dir manga cha khi không còn chapter nào — tránh tích rác dir rỗng.
+            val mangaDir = chapterDir.parentFile
+            if (mangaDir != null && mangaDir.listFiles().isNullOrEmpty()) {
+                mangaDir.delete()
             }
             Timber.d("deleteChapter end: mangaId=%s chapterId=%s", mangaId, chapterId)
         }
@@ -333,3 +352,13 @@ class OfflineDownloadStorage
             const val UNKNOWN_SEGMENT = "unknown"
         }
     }
+
+/**
+ * Một chapter đã tải hoàn chỉnh trên filesystem — kết quả của
+ * [OfflineDownloadStorage.listDownloadedChapters].
+ */
+data class DownloadedChapterDirInfo(
+    val mangaId: String,
+    val chapterId: String,
+    val sizeBytes: Long,
+)

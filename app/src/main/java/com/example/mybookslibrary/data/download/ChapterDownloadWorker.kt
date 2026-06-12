@@ -45,16 +45,20 @@ class ChapterDownloadWorker @AssistedInject constructor(
         }
 
         Timber.d("ChapterDownloadWorker start: mangaId=%s chapterId=%s", mangaId, chapterId)
-        setForeground(
-            downloadNotifier.createForegroundInfo(
-                chapterId = chapterId,
-                progressPercent = 0,
-                indeterminate = true,
-            ),
-        )
-        offlineDownloadRepository.updateQueueStatus(chapterId, DownloadStatus.DOWNLOADING, 0)
+        // Android 12+ có thể chặn foreground khi app ở background — download vẫn phải
+        // chạy tiếp không cần notification, không được để throw làm queue kẹt PENDING.
+        runCatching {
+            setForeground(
+                downloadNotifier.createForegroundInfo(
+                    chapterId = chapterId,
+                    progressPercent = 0,
+                    indeterminate = true,
+                ),
+            )
+        }.onFailure { Timber.w(it, "setForeground bị chặn, tải tiếp không notification") }
 
         return try {
+            offlineDownloadRepository.updateQueueStatus(chapterId, DownloadStatus.DOWNLOADING, 0)
             val chapterDelivery = mangaRepository.getChapterDelivery(chapterId).getOrThrow()
             if (chapterDelivery.filenames.isEmpty()) {
                 throw IllegalStateException("Chapter has no pages")
@@ -66,13 +70,15 @@ class ChapterDownloadWorker @AssistedInject constructor(
                     refreshDelivery = { mangaRepository.getChapterDelivery(chapterId).getOrThrow() },
                 )
             val completedPages = AtomicInteger(0)
-            setForeground(
-                downloadNotifier.createForegroundInfo(
-                    chapterId = chapterId,
-                    progressPercent = 0,
-                    indeterminate = false,
-                ),
-            )
+            runCatching {
+                setForeground(
+                    downloadNotifier.createForegroundInfo(
+                        chapterId = chapterId,
+                        progressPercent = 0,
+                        indeterminate = false,
+                    ),
+                )
+            }
 
             (0 until failoverCoordinator.totalPages)
                 .asFlow()
@@ -116,19 +122,19 @@ class ChapterDownloadWorker @AssistedInject constructor(
                     chapterId,
                 )
             }
-            setProgress(workDataOf(KEY_PROGRESS_PERCENT to 100))
-            setForeground(
-                downloadNotifier.createForegroundInfo(
-                    chapterId = chapterId,
-                    progressPercent = 100,
-                    indeterminate = false,
-                ),
-            )
-            downloadNotifier.showFinishedNotification(
-                chapterId = chapterId,
-                success = true,
-                message = "Chapter download complete",
-            )
+            // Marker đã ghi = tải THÀNH CÔNG. Lỗi ở progress/notification sau điểm này
+            // không được rơi xuống catch (sẽ set ERROR + báo "failed" sai sự thật).
+            runCatching {
+                setProgress(workDataOf(KEY_PROGRESS_PERCENT to 100))
+                setForeground(
+                    downloadNotifier.createForegroundInfo(
+                        chapterId = chapterId,
+                        progressPercent = 100,
+                        indeterminate = false,
+                    ),
+                )
+                downloadNotifier.showFinishedNotification(chapterId = chapterId, success = true)
+            }.onFailure { Timber.w(it, "Notification kết thúc lỗi (download vẫn thành công)") }
             Timber.d(
                 "ChapterDownloadWorker success: mangaId=%s chapterId=%s pages=%d",
                 mangaId,
@@ -147,11 +153,7 @@ class ChapterDownloadWorker @AssistedInject constructor(
                 progressPercent = 0,
                 errorMessage = t.message,
             )
-            downloadNotifier.showFinishedNotification(
-                chapterId = chapterId,
-                success = false,
-                message = t.message ?: "Chapter download failed",
-            )
+            downloadNotifier.showFinishedNotification(chapterId = chapterId, success = false)
             Result.failure(workDataOf(KEY_ERROR to (t.message ?: "Download failed")))
         }
     }
@@ -175,13 +177,15 @@ class ChapterDownloadWorker @AssistedInject constructor(
             progressPercent = progress,
         )
         setProgress(workDataOf(KEY_PROGRESS_PERCENT to progress))
-        setForeground(
-            downloadNotifier.createForegroundInfo(
-                chapterId = chapterId,
-                progressPercent = progress,
-                indeterminate = false,
-            ),
-        )
+        runCatching {
+            setForeground(
+                downloadNotifier.createForegroundInfo(
+                    chapterId = chapterId,
+                    progressPercent = progress,
+                    indeterminate = false,
+                ),
+            )
+        }
     }
 
     companion object {

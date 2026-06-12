@@ -6,6 +6,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import androidx.work.await
 import androidx.work.workDataOf
 import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -70,11 +71,18 @@ class OfflineDownloadManager
             .addTag(chapterTag(chapterId))
             .build()
 
-        /** Hủy download đang chạy và xóa chapter khỏi queue. */
-        suspend fun cancelDownload(chapterId: String) {
-            Timber.d("cancelDownload: chapterId=%s", chapterId)
-            workManager.cancelUniqueWork(uniqueWorkName(chapterId))
+        /** Hủy download đang chạy, xóa chapter khỏi queue và dọn partial files. */
+        suspend fun cancelDownload(
+            mangaId: String,
+            chapterId: String,
+        ) {
+            Timber.d("cancelDownload: mangaId=%s chapterId=%s", mangaId, chapterId)
+            // await() chỉ chờ cancel request được WorkManager ghi nhận, KHÔNG chờ worker
+            // coroutine dừng hẳn — vẫn thu hẹp đáng kể cửa sổ race. Nếu worker kịp ghi
+            // thêm file sau khi dọn, scan corrupted lúc khởi động sẽ bắt và báo lỗi.
+            workManager.cancelUniqueWork(uniqueWorkName(chapterId)).await()
             repository.removeQueuedChapter(chapterId)
+            storage.deleteChapter(mangaId, chapterId)
         }
 
         /** Hủy download, xóa files đã tải và đánh dấu chapter chưa download. */
@@ -83,7 +91,7 @@ class OfflineDownloadManager
             chapterId: String,
         ) {
             Timber.d("deleteDownload: mangaId=%s chapterId=%s", mangaId, chapterId)
-            workManager.cancelUniqueWork(uniqueWorkName(chapterId))
+            workManager.cancelUniqueWork(uniqueWorkName(chapterId)).await()
             storage.deleteChapter(mangaId, chapterId)
             repository.markChapterNotDownloaded(chapterId)
         }

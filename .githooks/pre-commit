@@ -88,14 +88,17 @@ if [ $STATUS -ne 0 ]; then
     exit $STATUS
 fi
 
-echo ">>> unit test: chạy toàn bộ test JVM..."
-
-"$GRADLEW" :app:testDebugUnitTest --console=plain -q
-TEST_STATUS=$?
-
-if [ $TEST_STATUS -ne 0 ]; then
-    echo ""
-    echo "FAILED — có unit test fail, xem report tại:"
-    echo "  app/build/reports/tests/testDebugUnitTest/index.html"
-fi
-exit $TEST_STATUS
+# TODO(thang): TẠM DỪNG unit test ở pre-commit (2026-06-13) — chờ lâu khi commit liên tục.
+# CI (build-test) vẫn là gate bắt buộc chạy toàn bộ test. Bỏ comment để bật lại.
+# echo ">>> unit test: chạy toàn bộ test JVM..."
+#
+# "$GRADLEW" :app:testDebugUnitTest --console=plain -q
+# TEST_STATUS=$?
+#
+# if [ $TEST_STATUS -ne 0 ]; then
+#     echo ""
+#     echo "FAILED — có unit test fail, xem report tại:"
+#     echo "  app/build/reports/tests/testDebugUnitTest/index.html"
+# fi
+# exit $TEST_STATUS
+exit 0

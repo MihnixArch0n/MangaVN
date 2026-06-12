@@ -95,7 +95,7 @@ class OfflineDownloadManagerTest {
         runBlocking {
             val repository = mockk<OfflineDownloadRepository>(relaxed = true)
 
-            manager(repository).cancelDownload(CHAPTER_ID)
+            manager(repository).cancelDownload(MANGA_ID, CHAPTER_ID)
 
             coVerify { repository.removeQueuedChapter(CHAPTER_ID) }
         }

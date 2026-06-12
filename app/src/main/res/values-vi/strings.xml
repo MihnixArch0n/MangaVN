@@ -346,7 +346,13 @@
     <string name="downloads_empty_subtitle">Chương đã tải sẽ hiện ở đây để đọc ngoại tuyến</string>
     <string name="downloads_delete">Xóa</string>
     <string name="downloads_delete_confirm">Xóa chương đã tải này?</string>
-    <string name="downloads_chapter">Chương %1$s</string>
+    <string name="downloads_not_in_library">Không còn trong thư viện</string>
+    <string name="downloads_unknown_chapter">Chapter không xác định</string>
+    <string name="downloads_total_size">Tổng dung lượng: %1$s</string>
+    <string name="downloads_delete_failed">Không xóa được chương. Vui lòng thử lại.</string>
+    <string name="cd_delete_download">Xóa chương đã tải</string>
+    <string name="notification_download_complete">Đã tải xong chương</string>
+    <string name="notification_download_failed">Tải chương thất bại</string>
     <string name="profile_downloads">Tải xuống</string>
     <string name="profile_edit">Chỉnh sửa hồ sơ</string>
     <string name="profile_edit_title">Chỉnh sửa hồ sơ</string>

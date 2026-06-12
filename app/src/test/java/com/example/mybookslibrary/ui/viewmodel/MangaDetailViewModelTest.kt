@@ -51,7 +51,7 @@ class MangaDetailViewModelTest {
             viewModel.cancelChapterDownload(CHAPTER_ID)
             advanceUntilIdle()
 
-            coVerify(exactly = 1) { manager.cancelDownload(CHAPTER_ID) }
+            coVerify(exactly = 1) { manager.cancelDownload(MANGA_ID, CHAPTER_ID) }
         }
 
     @Test
@@ -109,7 +109,7 @@ class MangaDetailViewModelTest {
     private fun mockManager(): OfflineDownloadManager {
         val manager = mockk<OfflineDownloadManager>()
         coEvery { manager.enqueueDownload(any(), any()) } just Runs
-        coEvery { manager.cancelDownload(any()) } just Runs
+        coEvery { manager.cancelDownload(any(), any()) } just Runs
         coEvery { manager.deleteDownload(any(), any()) } just Runs
         return manager
     }

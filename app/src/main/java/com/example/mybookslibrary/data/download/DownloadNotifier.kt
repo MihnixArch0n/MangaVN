@@ -73,15 +73,18 @@ class DownloadNotifier
         internal fun showFinishedNotification(
             chapterId: String,
             success: Boolean,
-            message: String,
         ) {
             ensureNotificationChannel()
+            // Text qua resources (i18n) + generic — không expose exception message nội bộ
+            val title =
+                context.getString(
+                    if (success) R.string.notification_download_complete else R.string.notification_download_failed,
+                )
             val notification =
                 NotificationCompat
                     .Builder(context, NOTIFICATION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_stat_name)
-                    .setContentTitle(if (success) "Download complete" else "Download failed")
-                    .setContentText(message)
+                    .setContentTitle(title)
                     .setAutoCancel(true)
                     .setOnlyAlertOnce(false)
                     .build()
