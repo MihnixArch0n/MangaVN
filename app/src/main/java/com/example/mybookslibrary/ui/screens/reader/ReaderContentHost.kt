@@ -99,6 +99,7 @@ private fun ReaderPages(
                 pages = state.pages,
                 listState = listState,
                 onEvent = onEvent,
+                selectedPageIndex = state.selectedPageActionTarget?.pageIndex,
                 modifier = Modifier.fillMaxSize(),
             )
         }

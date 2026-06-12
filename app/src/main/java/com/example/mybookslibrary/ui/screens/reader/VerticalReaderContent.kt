@@ -34,6 +34,7 @@ internal fun VerticalReaderContent(
     listState: LazyListState,
     onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier,
+    selectedPageIndex: Int? = null,
     onZoomFractionChanged: (Float?) -> Unit = {},
 ) {
     val zoomableState = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f))
@@ -90,6 +91,7 @@ internal fun VerticalReaderContent(
                 WebtoonPageItem(
                     imageUrl = page,
                     index = index,
+                    isSelected = index == selectedPageIndex,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

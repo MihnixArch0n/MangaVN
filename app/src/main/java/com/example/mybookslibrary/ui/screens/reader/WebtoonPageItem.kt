@@ -6,6 +6,7 @@
 package com.example.mybookslibrary.ui.screens.reader
 
 import com.example.mybookslibrary.ui.theme.Dimens
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -31,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,12 +55,17 @@ fun WebtoonPageItem(
     imageUrl: String,
     index: Int,
     modifier: Modifier = Modifier,
+    isSelected: Boolean = false,
 ) {
     val context = LocalContext.current
     var aspectRatio by remember(imageUrl) { mutableStateOf<Float?>(null) }
     var retryHash by remember(imageUrl) { mutableIntStateOf(0) }
     var isLoading by remember(imageUrl) { mutableStateOf(true) }
     var isError by remember(imageUrl) { mutableStateOf(false) }
+    val selectionAlpha by animateFloatAsState(
+        targetValue = if (isSelected) SELECTED_PAGE_OVERLAY_ALPHA else 0f,
+        label = "webtoonPageSelection",
+    )
     val retryPageLoad =
         remember(imageUrl, index) {
             {
@@ -117,6 +124,14 @@ fun WebtoonPageItem(
             ReaderPageLoadingOverlay(pageNumber = index + 1)
         }
 
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .alpha(selectionAlpha)
+                    .background(Color.Black),
+        )
+
         if (isError) {
             Box(
                 modifier =
@@ -155,6 +170,8 @@ fun WebtoonPageItem(
         }
     }
 }
+
+private const val SELECTED_PAGE_OVERLAY_ALPHA = 0.32f
 
 @Preview(name = "Webtoon Page Item", showBackground = true)
 @Composable

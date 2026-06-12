@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import com.example.mybookslibrary.ui.util.FakeImageLoader
@@ -121,5 +122,22 @@ class VerticalReaderContentTest {
         composeRule.waitUntil(timeoutMillis = 5_000) { received != null }
 
         assertTrue(received is ReaderEvent.TapOnScreen)
+    }
+
+    @Test
+    fun longPress_dispatchesCorrectPageForSelection() {
+        var received: ReaderEvent? = null
+        composeRule.setContent {
+            VerticalReaderContent(
+                pages = listOf("https://x/p0.jpg", "https://x/p1.jpg"),
+                listState = rememberLazyListState(),
+                onEvent = { received = it },
+            )
+        }
+
+        composeRule.onRoot().performTouchInput { longClick(bottomCenter) }
+        composeRule.waitUntil(timeoutMillis = 5_000) { received is ReaderEvent.PageLongPressed }
+
+        assertTrue((received as ReaderEvent.PageLongPressed).pageIndex == 1)
     }
 }
