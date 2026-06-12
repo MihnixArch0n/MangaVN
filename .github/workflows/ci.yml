@@ -475,24 +475,28 @@ jobs:
           title: Combined Coverage (unit + emulator)
           update-comment: true
 
+      # madrapps chỉ chạy trên PR (cần PR context, trên push trả output rỗng → so sánh
+      # '' < 75 thành 0 < 75 → fail oan). Push main: tính thẳng từ XML bằng bash.
       - name: Gate combined overall (push main)
-        id: combined-overall
         if: github.event_name != 'pull_request'
-        uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920 # v1.8.0
-        with:
-          paths: ${{ github.workspace }}/app/build/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 75
-          title: Combined Coverage (unit + emulator)
-          update-comment: false
+        run: |
+          XML=app/build/reports/jacoco/jacocoCombinedReport/jacocoCombinedReport.xml
+          if [ ! -f "$XML" ]; then
+            echo "::error::Không có combined coverage XML."
+            exit 1
+          fi
+          COUNTER=$(grep -o 'type="INSTRUCTION" missed="[0-9]*" covered="[0-9]*"' "$XML" | tail -1)
+          MISSED=$(echo "$COUNTER" | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+          COVERED=$(echo "$COUNTER" | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+          PCT=$(awk "BEGIN{printf \"%.2f\", $COVERED*100/($MISSED+$COVERED)}")
+          echo "Combined coverage tổng (INSTRUCTION): ${PCT}% (ngưỡng 75%)"
+          awk "BEGIN{exit !($PCT >= 75.0)}" || { echo "::error::Combined coverage ${PCT}% dưới ngưỡng 75%"; exit 1; }
 
-      - name: Fail nếu combined coverage vi phạm ngưỡng
+      - name: Fail nếu combined coverage vi phạm ngưỡng (PR)
         if: >
-          ${{ (github.event_name == 'pull_request' &&
-               (steps.combined-coverage.outputs.coverage-changed-files < 60.0 ||
-                steps.combined-coverage.outputs.coverage-overall < 75.0)) ||
-              (github.event_name != 'pull_request' &&
-               steps.combined-overall.outputs.coverage-overall < 75.0) }}
+          ${{ github.event_name == 'pull_request' &&
+              (steps.combined-coverage.outputs.coverage-changed-files < 60.0 ||
+               steps.combined-coverage.outputs.coverage-overall < 75.0) }}
         run: |
           echo "Combined coverage code mới: ${{ steps.combined-coverage.outputs.coverage-changed-files }}% (ngưỡng 60%)"
           echo "Combined coverage tổng: ${{ steps.combined-coverage.outputs.coverage-overall }}% (ngưỡng 75%)"
