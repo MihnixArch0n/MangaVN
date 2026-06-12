@@ -15,18 +15,23 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import com.composables.icons.lucide.ArrowLeft
 import com.composables.icons.lucide.BookOpen
@@ -35,9 +40,16 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Scroll
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +58,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.theme.Alphas
@@ -55,6 +68,10 @@ import com.example.mybookslibrary.ui.util.appString
 import timber.log.Timber
 
 private const val DARK_READER_BAR_CONTAINER_ALPHA = 0.94f
+private val READER_SLIDER_THUMB_SIZE = 20.dp
+private val READER_SLIDER_TRACK_HEIGHT = 4.dp
+private val READER_SLIDER_LABEL_SIZE = 40.dp
+private val READER_SLIDER_LABEL_OFFSET = (-44).dp
 
 internal data class ReaderBarColors(
     val container: Color,
@@ -201,7 +218,7 @@ private fun ReaderBottomBarPreview() {
 /**
  * Bottom reader overlay bar anchored inside the parent [BoxScope].
  *
- * Displays the current page counter, the pages label, and a reading-mode toggle button.
+ * Displays the current page counter, a quick page slider, and a reading-mode toggle button.
  * The page counter is rendered as one-based and clamped to the valid range.
  *
  * @param isVisible Controls the animated visibility of the bar.
@@ -209,6 +226,7 @@ private fun ReaderBottomBarPreview() {
  * @param totalPages Total number of pages available in the chapter.
  * @param currentReadingMode Active reading mode used to choose the toggle icon and label.
  * @param onToggleReadingMode Called when the mode toggle button is tapped.
+ * @param onPageSelected Called with the zero-based target page after the slider is released.
  */
 @Composable
 internal fun BoxScope.ReaderBottomBar(
@@ -218,6 +236,7 @@ internal fun BoxScope.ReaderBottomBar(
     currentReadingMode: ReadingMode,
     colors: ReaderBarColors = readerBarColors(),
     onToggleReadingMode: () -> Unit,
+    onPageSelected: (Int) -> Unit = {},
 ) {
     ReaderBottomBar(
         isVisible = isVisible,
@@ -229,18 +248,37 @@ internal fun BoxScope.ReaderBottomBar(
             ),
         colors = colors,
         onToggleReadingMode = onToggleReadingMode,
+        onPageSelected = onPageSelected,
     )
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 internal fun BoxScope.ReaderBottomBar(
     isVisible: Boolean,
     state: ReaderBottomBarState,
     colors: ReaderBarColors = readerBarColors(),
     onToggleReadingMode: () -> Unit,
+    onPageSelected: (Int) -> Unit = {},
 ) {
     val safeTotalPages = state.totalPages.coerceAtLeast(1)
     val displayPage = (state.currentPage + 1).coerceIn(1, safeTotalPages)
+    val currentPageIndex = displayPage - 1
+    var sliderPage by remember(currentPageIndex, safeTotalPages) {
+        mutableFloatStateOf(currentPageIndex.toFloat())
+    }
+    val sliderInteractionSource = remember { MutableInteractionSource() }
+    val isSliderDragged by sliderInteractionSource.collectIsDraggedAsState()
+    val sliderThumbColor = MaterialTheme.colorScheme.primary
+    val sliderLabelContentColor = MaterialTheme.colorScheme.onPrimary
+    val sliderColors =
+        SliderDefaults.colors(
+            thumbColor = sliderThumbColor,
+            activeTrackColor = sliderThumbColor,
+            inactiveTrackColor = colors.secondaryContent.copy(alpha = Alphas.ContainerSelected),
+            activeTickColor = Color.Transparent,
+            inactiveTickColor = Color.Transparent,
+        )
     val nextReadingModeRes =
         when (state.currentReadingMode) {
             ReadingMode.VERTICAL -> R.string.reader_mode_ltr
@@ -282,13 +320,24 @@ internal fun BoxScope.ReaderBottomBar(
                 style = MaterialTheme.typography.titleMedium,
                 color = colors.content,
             )
-            Text(
-                text = appString(R.string.reader_pages_label),
-                style = MaterialTheme.typography.bodySmall,
-                color = colors.secondaryContent,
-                modifier = Modifier.padding(start = Dimens.SpacingXs),
+            ReaderPageSlider(
+                page = sliderPage,
+                totalPages = safeTotalPages,
+                isEnabled = state.totalPages > 1,
+                interactionSource = sliderInteractionSource,
+                isDragged = isSliderDragged,
+                thumbColor = sliderThumbColor,
+                labelContentColor = sliderLabelContentColor,
+                sliderColors = sliderColors,
+                onPageChange = { sliderPage = it },
+                onPageChangeFinished = {
+                    onPageSelected(sliderPage.toInt().coerceIn(0, safeTotalPages - 1))
+                },
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = Dimens.SpacingSm),
             )
-            Spacer(modifier = Modifier.weight(1f))
             TextButton(
                 onClick = {
                     Timber.v("ReaderBottomBar toggle clicked: currentMode=%s", state.currentReadingMode)
@@ -312,6 +361,84 @@ internal fun BoxScope.ReaderBottomBar(
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(start = Dimens.SpacingSm),
                 )
+            }
+        }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ReaderPageSlider(
+    page: Float,
+    totalPages: Int,
+    isEnabled: Boolean,
+    interactionSource: MutableInteractionSource,
+    isDragged: Boolean,
+    thumbColor: Color,
+    labelContentColor: Color,
+    sliderColors: androidx.compose.material3.SliderColors,
+    onPageChange: (Float) -> Unit,
+    onPageChangeFinished: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val pageFraction = if (totalPages > 1) page / (totalPages - 1) else 0f
+        val thumbCenter =
+            READER_SLIDER_THUMB_SIZE / 2 +
+                (maxWidth - READER_SLIDER_THUMB_SIZE) * pageFraction
+        val labelOffset = thumbCenter - READER_SLIDER_LABEL_SIZE / 2
+
+        Slider(
+            value = page,
+            onValueChange = onPageChange,
+            onValueChangeFinished = onPageChangeFinished,
+            valueRange = 0f..(totalPages - 1).toFloat(),
+            steps = (totalPages - 2).coerceAtLeast(0),
+            enabled = isEnabled,
+            interactionSource = interactionSource,
+            thumb = {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(READER_SLIDER_THUMB_SIZE)
+                            .clip(CircleShape)
+                            .background(thumbColor),
+                )
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    sliderState = sliderState,
+                    colors = sliderColors,
+                    modifier = Modifier.height(READER_SLIDER_TRACK_HEIGHT),
+                    thumbTrackGapSize = 0.dp,
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        AnimatedVisibility(
+            visible = isDragged,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = labelOffset, y = READER_SLIDER_LABEL_OFFSET),
+        ) {
+            Surface(
+                color = thumbColor,
+                contentColor = labelContentColor,
+                shape = CircleShape,
+                modifier = Modifier.size(READER_SLIDER_LABEL_SIZE),
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = (page.toInt() + 1).toString(),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
             }
         }
     }

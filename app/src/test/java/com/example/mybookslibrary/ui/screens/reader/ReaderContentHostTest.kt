@@ -89,7 +89,7 @@ class ReaderContentHostTest {
     fun overlay_visible_showsBars() {
         host(ReaderState(pages = listOf("p0"), isOverlayVisible = true, chapterTitle = "Chapter 7"))
         composeRule.onNodeWithText("Chapter 7").assertIsDisplayed()
-        composeRule.onNodeWithText("Pages").assertIsDisplayed()
+        composeRule.onNodeWithText("1 / 1").assertIsDisplayed()
     }
 
     @Test
@@ -123,12 +123,12 @@ class ReaderContentHostTest {
             ReaderState(pages = listOf("p0"), isOverlayVisible = true, currentReadingMode = ReadingMode.LTR),
             onEvent = { event = it },
         )
-        composeRule.onNodeWithText("Pages").assertIsDisplayed()
+        composeRule.onNodeWithText("1 / 1").assertIsDisplayed()
         // BottomBar toggle → CycleReadingMode
         composeRule.onNodeWithText("1 / 1").performClick()
         composeRule.waitForIdle()
         // Clique em "1 / 1" não é o botão — verifica via toggle button com content description
         // O teste verifica que a composição não crasha e o overlay está visível
-        composeRule.onNodeWithText("Pages").assertIsDisplayed()
+        composeRule.onNodeWithText("1 / 1").assertIsDisplayed()
     }
 }

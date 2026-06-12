@@ -149,6 +149,9 @@ private fun BoxWithConstraintsScope.ReaderOverlayBars(
         onToggleReadingMode = {
             onEvent(ReaderEvent.CycleReadingMode)
         },
+        onPageSelected = { pageIndex ->
+            onEvent(ReaderEvent.JumpToPage(pageIndex))
+        },
     )
 }
 
