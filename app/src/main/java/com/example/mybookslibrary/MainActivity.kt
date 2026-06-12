@@ -75,10 +75,10 @@ class MainActivity : ComponentActivity() {
             val authSession by authSessionFlow.collectAsStateWithLifecycle(initialValue = AuthSession.Loading)
             val onboardingDone by preferencesDataStore
                 .observeOnboardingWelcomeDone()
-                .collectAsStateWithLifecycle(initialValue = true)
+                .collectAsStateWithLifecycle(initialValue = null)
             val tourDone by preferencesDataStore
                 .observeInAppTourDone()
-                .collectAsStateWithLifecycle(initialValue = true)
+                .collectAsStateWithLifecycle(initialValue = null)
             val onboardingScope = rememberCoroutineScope()
 
             val darkTheme =
@@ -103,37 +103,39 @@ class MainActivity : ComponentActivity() {
                 LocalWindowWidthSizeClass provides windowSizeClass.widthSizeClass,
             ) {
                 MyBooksLibraryTheme(darkTheme = darkTheme) {
-                    when (val session = authSession) {
-                        AuthSession.Loading -> AuthLoadingScreen()
-                        is AuthSession.Ready -> {
-                            LaunchedEffect(session.authStatus) {
-                                if (session.authStatus == AuthStatus.LOGGED_IN) {
-                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                        try {
-                                            libraryRepository.performSync()
-                                        } catch (e: Exception) {
-                                            timber.log.Timber.e(e, "Error syncing on app open or login")
-                                        }
+                    val session = authSession
+                    val resolvedOnboarding = onboardingDone
+                    val resolvedTour = tourDone
+                    if (session !is AuthSession.Ready || resolvedOnboarding == null || resolvedTour == null) {
+                        AuthLoadingScreen()
+                    } else {
+                        LaunchedEffect(session.authStatus) {
+                            if (session.authStatus == AuthStatus.LOGGED_IN) {
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    try {
+                                        libraryRepository.performSync()
+                                    } catch (e: Exception) {
+                                        timber.log.Timber.e(e, "Error syncing on app open or login")
                                     }
                                 }
                             }
-                            MainNavHost(
-                                authStatus = session.authStatus,
-                                incomingMangaId = incomingMangaId,
-                                onboardingWelcomeDone = onboardingDone,
-                                onWelcomeDone = {
-                                    onboardingScope.launch {
-                                        preferencesDataStore.setOnboardingWelcomeDone(true)
-                                    }
-                                },
-                                inAppTourDone = tourDone,
-                                onTourDone = {
-                                    onboardingScope.launch {
-                                        preferencesDataStore.setInAppTourDone(true)
-                                    }
-                                },
-                            )
                         }
+                        MainNavHost(
+                            authStatus = session.authStatus,
+                            incomingMangaId = incomingMangaId,
+                            onboardingWelcomeDone = resolvedOnboarding,
+                            onWelcomeDone = {
+                                onboardingScope.launch {
+                                    preferencesDataStore.setOnboardingWelcomeDone(true)
+                                }
+                            },
+                            inAppTourDone = resolvedTour,
+                            onTourDone = {
+                                onboardingScope.launch {
+                                    preferencesDataStore.setInAppTourDone(true)
+                                }
+                            },
+                        )
                     }
                 }
             }

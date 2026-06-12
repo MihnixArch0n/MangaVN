@@ -25,6 +25,7 @@ jobs:
     outputs:
       android: ${{ steps.filter.outputs.android }}
       emulator: ${{ steps.filter.outputs.emulator }}
+      ui: ${{ steps.filter.outputs.ui }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -59,6 +60,13 @@ jobs:
             echo "emulator=true" >> "$GITHUB_OUTPUT"
           else
             echo "emulator=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Screenshot verify chỉ cần khi thay đổi UI, theme, hoặc golden images.
+          if grep -Eq '^app/src/(main/java/.*/ui/|main/res/|test/screenshots/)' /tmp/changed.txt; then
+            echo "ui=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ui=false" >> "$GITHUB_OUTPUT"
           fi
 
   wrapper-validation:
@@ -171,17 +179,52 @@ jobs:
             echo '{"project_info":{"project_number":"123456789","project_id":"mock-project-id","storage_bucket":"mock.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:123456789:android:123456789","android_client_info":{"package_name":"com.example.mybookslibrary"}},"oauth_client":[{"client_id":"123456789-test.apps.googleusercontent.com","client_type":3}],"api_key":[{"current_key":"mock-api-key"}],"services":{"appinvite_service":{"status":1,"other_platform_oauth_client":[{"client_id":"123456789-test.apps.googleusercontent.com","client_type":3}]}}}]}' > app/google-services.json
           fi
 
-      # Một Gradle invocation cho phần JVM/build để không mất configuration time nhiều lần.
-      # verifyRoborazziDebug sinh testDebugUnitTest.exec; jacocoTestReport dùng lại kết quả đó.
-      - name: Unit test + screenshots + coverage + APK builds
+      - name: Unit test + coverage + APK builds
+        env:
+          RUN_SCREENSHOTS: ${{ needs.changes.outputs.ui }}
         run: |
+          TEST_TASK=":app:testDebugUnitTest"
+          if [ "$RUN_SCREENSHOTS" = "true" ]; then
+            TEST_TASK=":app:verifyRoborazziDebug"
+          fi
           ./gradlew \
-            :app:verifyRoborazziDebug \
+            $TEST_TASK \
             :app:jacocoCoverageVerification \
             :app:jacocoTestReport \
             :app:assembleDebug \
             :app:assembleRelease \
             --console=plain
+
+      - name: Upload Roborazzi report
+        if: failure() && needs.changes.outputs.ui == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: roborazzi-report
+          path: |
+            app/build/reports/roborazzi/
+            app/build/outputs/roborazzi/
+          if-no-files-found: ignore
+
+      - name: Comment screenshot diff lên PR
+        if: failure() && github.event_name == 'pull_request' && needs.changes.outputs.ui == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DIFFS=$(find app/build/outputs/roborazzi -name '*_compare.png' 2>/dev/null | sed 's|.*/||; s|_compare\.png$||')
+          [ -z "$DIFFS" ] && exit 0
+          {
+            echo "<!-- roborazzi-diff -->"
+            echo "## Screenshot verify FAILED"
+            echo ""
+            echo "Golden bị lệch:"
+            echo "$DIFFS" | sed 's/^/- `/; s/$/`/'
+            echo ""
+            echo "Ảnh diff: tải artifact **roborazzi-report** tại ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "UI đổi có chủ đích? → gắn label \`record-screenshots\` vào PR để re-record goldens."
+          } > /tmp/roborazzi-comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file /tmp/roborazzi-comment.md
+        continue-on-error: true
 
       - name: Hiển thị JVM coverage thực tế từ XML
         if: always()
@@ -237,44 +280,7 @@ jobs:
             echo "::warning::APK size ${SIZE_MB} MB vượt ngưỡng 50 MB"
           fi
 
-      - name: Upload Roborazzi report
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: roborazzi-report
-          path: |
-            app/build/reports/roborazzi/
-            app/build/outputs/roborazzi/
-          if-no-files-found: ignore
-
-      # Comment danh sách golden bị lệch + link artifact thẳng lên PR — đỡ phải mở
-      # log tìm artifact tay khi screenshot verify fail.
-      - name: Comment screenshot diff lên PR
-        if: failure() && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          DIFFS=$(find app/build/outputs/roborazzi -name '*_compare.png' 2>/dev/null | sed 's|.*/||; s|_compare\.png$||')
-          [ -z "$DIFFS" ] && exit 0
-          {
-            echo "<!-- roborazzi-diff -->"
-            echo "## 📸 Screenshot verify FAILED"
-            echo ""
-            echo "Golden bị lệch:"
-            echo "$DIFFS" | sed 's/^/- `/; s/$/`/'
-            echo ""
-            echo "Ảnh diff: tải artifact **roborazzi-report** tại ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            echo ""
-            echo "UI đổi có chủ đích? → gắn label \`record-screenshots\` vào PR để re-record goldens."
-          } > /tmp/roborazzi-comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --body-file /tmp/roborazzi-comment.md
-        continue-on-error: true
-
-      # Gate coverage per-package (jacocoCoverageVerification trong build.gradle.kts).
-      # Trước đây task này KHÔNG được gọi ở đâu (chỉ wire vào `check` mà CI không chạy)
-      # → gate giấy: main từng vi phạm 76.8% < 80% mà không ai biết.
-      - name: Gate per-package coverage
-        run: ./gradlew :app:jacocoCoverageVerification --console=plain
+      # jacocoCoverageVerification đã chạy trong Gradle invocation ở trên — không gọi lại.
 
       - name: Upload unit test exec
         if: always()

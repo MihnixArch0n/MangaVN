@@ -56,7 +56,6 @@ fun SettingScreenContent(
     val context = LocalContext.current
     val bottomNavPadding = LocalBottomNavPadding.current
     var showSignOutConfirm by remember { mutableStateOf(false) }
-    var showDeleteAccountConfirm by remember { mutableStateOf(false) }
 
     val backupLauncher =
         rememberLauncherForActivityResult(
@@ -179,10 +178,12 @@ fun SettingScreenContent(
                         null -> appString(R.string.settings_restore_subtitle)
                     }
                 SettingsCard {
-                    SettingsRow(appString(R.string.settings_sync), syncSub) {
-                        if (!uiState.isSyncing) viewModel.forceSync()
+                    if (!uiState.isGuest) {
+                        SettingsRow(appString(R.string.settings_sync), syncSub) {
+                            if (!uiState.isSyncing) viewModel.forceSync()
+                        }
+                        SettingsDivider()
                     }
-                    SettingsDivider()
                     SettingsRow(appString(R.string.settings_backup), backupSub) {
                         backupLauncher.launch("kanso_library_backup.json")
                     }
@@ -239,32 +240,29 @@ fun SettingScreenContent(
                         appString(R.string.settings_sign_out_subtitle)
                     }
                 SettingsCard {
-                    SettingsRow(
-                        title = appString(R.string.settings_change_password),
-                        subtitle = appString(R.string.settings_change_password_subtitle),
-                        onClick = onChangePasswordClick,
-                    )
-                    SettingsDivider()
+                    if (!uiState.isGuest) {
+                        SettingsRow(
+                            title = appString(R.string.settings_change_password),
+                            subtitle = appString(R.string.settings_change_password_subtitle),
+                            onClick = onChangePasswordClick,
+                        )
+                        SettingsDivider()
+                    }
                     SettingsRow(
                         title = signOutTitle,
                         subtitle = signOutSub,
                         titleColor = MaterialTheme.colorScheme.error,
                         onClick = { showSignOutConfirm = true },
                     )
-                    SettingsDivider()
-                    SettingsRow(
-                        title = appString(R.string.settings_delete_account),
-                        subtitle = appString(R.string.settings_delete_account_subtitle),
-                        titleColor = MaterialTheme.colorScheme.error,
-                        onClick = { showDeleteAccountConfirm = true },
-                    )
-                    SettingsDivider()
-                    SettingsRow(
-                        title = appString(R.string.settings_delete_account),
-                        subtitle = appString(R.string.settings_delete_account_subtitle),
-                        titleColor = MaterialTheme.colorScheme.error,
-                        onClick = { showDeleteAccountDialog = true },
-                    )
+                    if (!uiState.isGuest) {
+                        SettingsDivider()
+                        SettingsRow(
+                            title = appString(R.string.settings_delete_account),
+                            subtitle = appString(R.string.settings_delete_account_subtitle),
+                            titleColor = MaterialTheme.colorScheme.error,
+                            onClick = { showDeleteAccountDialog = true },
+                        )
+                    }
                 }
 
                 if (showDeleteAccountDialog) {
@@ -323,29 +321,6 @@ fun SettingScreenContent(
         )
     }
 
-    if (showDeleteAccountConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteAccountConfirm = false },
-            title = { Text(appString(R.string.delete_account_confirm_title)) },
-            text = { Text(appString(R.string.delete_account_confirm_body)) },
-            confirmButton = {
-                com.example.mybookslibrary.ui.screens.components.AppButton(
-                    text = appString(R.string.settings_delete_account),
-                    onClick = {
-                        showDeleteAccountConfirm = false
-                        viewModel.deleteAccount()
-                    },
-                )
-            },
-            dismissButton = {
-                com.example.mybookslibrary.ui.screens.components.AppButton(
-                    text = appString(R.string.action_cancel),
-                    onClick = { showDeleteAccountConfirm = false },
-                    style = com.example.mybookslibrary.ui.screens.components.AppButtonStyle.Text,
-                )
-            },
-        )
-    }
 }
 
 @Composable

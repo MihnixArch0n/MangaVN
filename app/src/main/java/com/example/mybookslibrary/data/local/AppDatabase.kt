@@ -54,6 +54,7 @@ abstract class AppDatabase : RoomDatabase() {
                         )
                         .addMigrations(migration5To1, migration1To2, migration6To2)
                         .fallbackToDestructiveMigration()
+                        .fallbackToDestructiveMigrationOnDowngrade()
                         .build()
 
                 instance = created
@@ -64,14 +65,21 @@ abstract class AppDatabase : RoomDatabase() {
         @Suppress("MagicNumber")
         val migration5To1 =
             object : Migration(5, 1) {
-                override fun migrate(db: SupportSQLiteDatabase) = Unit
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "ALTER TABLE `library_items` ADD COLUMN `sync_status` TEXT NOT NULL DEFAULT 'SYNCED'"
+                    )
+                }
             }
 
-        // Users on v6 (branch ui-redesign trước merge Firebase) đã có is_favorite → no-op
         @Suppress("MagicNumber")
         val migration6To2 =
             object : Migration(6, 2) {
-                override fun migrate(db: SupportSQLiteDatabase) = Unit
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        "ALTER TABLE `library_items` ADD COLUMN `sync_status` TEXT NOT NULL DEFAULT 'SYNCED'"
+                    )
+                }
             }
 
         @Suppress("MagicNumber")

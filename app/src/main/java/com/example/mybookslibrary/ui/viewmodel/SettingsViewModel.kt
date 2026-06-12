@@ -48,6 +48,7 @@ data class SettingsUiState(
     val restoreResult: BackupRestoreResult? = null,
     val isSyncing: Boolean = false,
     val syncSuccess: Boolean? = null,
+    val isGuest: Boolean = false,
 )
 
 @OptIn(coil3.annotation.ExperimentalCoilApi::class)
@@ -70,7 +71,8 @@ class SettingsViewModel
                 val q = preferencesDataStore.getReaderQuality()
                 val t = preferencesDataStore.getThemeMode()
                 val l = preferencesDataStore.getLanguage()
-                _uiState.update { it.copy(quality = q, themeMode = t, language = l) }
+                val guest = authRepository.getCurrentUser() == null
+                _uiState.update { it.copy(quality = q, themeMode = t, language = l, isGuest = guest) }
             }
         }
 

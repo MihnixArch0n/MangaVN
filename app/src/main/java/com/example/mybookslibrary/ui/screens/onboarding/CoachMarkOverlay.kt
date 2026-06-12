@@ -73,6 +73,7 @@ fun CoachMarkOverlay(
     val currentStep = state.currentStep.coerceIn(0, steps.lastIndex)
     val step = steps[currentStep]
     val targetRect = state.getTargetRect(step.key)
+    if (targetRect == null) return
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
