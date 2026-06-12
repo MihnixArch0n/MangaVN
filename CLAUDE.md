@@ -39,6 +39,7 @@ JAVA_HOME="C:/Program Files/Java/jdk-21.0.10" ./gradlew assembleDebug
 - Compose tests: dùng `createAndroidComposeRule<ComponentActivity>()` (KHÔNG dùng `junit4.v2.createComposeRule` — không generate coverage ổn định; KHÔNG dùng `createEmptyComposeRule` với HiltAndroidTest).
 - HiltAndroidTest: `@UninstallModules` để swap fake repository.
 - Mỗi test file Compose cần `@HiltAndroidTest` + `@RunWith(AndroidJUnit4::class)`.
+- **Viết instrumented feature-e2e mới (androidTest) → PHẢI thêm entry vào `.github/e2e-test-map.json`** (selective e2e: PR không đụng feature thì skip test đó trên emulator). Quên thêm = test vẫn chạy mọi PR (fail-open, vô hại nhưng phí thời gian). Test mapping local: `sh .github/test-e2e-map.sh`.
 
 ## Screenshot Tests (Roborazzi)
 - Golden images tại `app/src/test/screenshots/` — record/verify **CHỈ trên CI Linux**, KHÔNG record local (Windows render font khác → ảnh lệch). CI là source of truth.

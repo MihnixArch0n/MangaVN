@@ -26,6 +26,8 @@ jobs:
       android: ${{ steps.filter.outputs.android }}
       emulator: ${{ steps.filter.outputs.emulator }}
       ui: ${{ steps.filter.outputs.ui }}
+      # Danh sách FQCN feature-e2e cần exclude (comma-separated) — xem .github/e2e-test-map.json
+      notclass: ${{ steps.filter.outputs.notclass }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -68,6 +70,25 @@ jobs:
           else
             echo "ui=false" >> "$GITHUB_OUTPUT"
           fi
+
+          # Selective feature e2e (fail-open) — mapping khai báo tại .github/e2e-test-map.json.
+          # Build danh sách notClass: feature nào PR KHÔNG đụng paths thì exclude test của nó.
+          # PR match globalPaths (build files/DI/manifest/ci) hoặc push main → chạy ĐỦ suite.
+          # Thêm feature e2e mới = thêm entry vào map file, KHÔNG sửa workflow.
+          NOTCLASS=""
+          MAP=.github/e2e-test-map.json
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -f "$MAP" ] && jq -e . "$MAP" > /dev/null 2>&1; then
+            GLOBAL=$(jq -r '.globalPaths' "$MAP")
+            if ! grep -Eq "$GLOBAL" /tmp/changed.txt; then
+              while IFS=$'\t' read -r CLASS PATHS_RE; do
+                if ! grep -Eq "$PATHS_RE" /tmp/changed.txt; then
+                  NOTCLASS="${NOTCLASS:+$NOTCLASS,}$CLASS"
+                  echo "Selective e2e: PR không đụng feature của $CLASS -> exclude"
+                fi
+              done < <(jq -r '.features[] | [.testClass, .paths] | @tsv' "$MAP")
+            fi
+          fi
+          echo "notclass=$NOTCLASS" >> "$GITHUB_OUTPUT"
 
   wrapper-validation:
     needs: changes
@@ -439,6 +460,10 @@ jobs:
 
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
+        env:
+          # Selective feature e2e: core suite (smoke/navigation/migration) LUÔN chạy;
+          # feature e2e exclude theo mapping .github/e2e-test-map.json (job changes tính sẵn).
+          NOTCLASS: ${{ needs.changes.outputs.notclass }}
         with:
           api-level: 34
           arch: x86_64
@@ -449,7 +474,13 @@ jobs:
           # Tắt animation hệ thống: giảm flakiness do transition chưa xong khi assert.
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --console=plain
+          script: |
+            ARGS=""
+            if [ -n "$NOTCLASS" ]; then
+              echo "Bỏ qua feature e2e không liên quan PR này: $NOTCLASS"
+              ARGS="-Pandroid.testInstrumentationRunnerArguments.notClass=$NOTCLASS"
+            fi
+            ./gradlew connectedDebugAndroidTest $ARGS --console=plain
 
       - name: Download unit exec từ build-test
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1 (Node 24)
