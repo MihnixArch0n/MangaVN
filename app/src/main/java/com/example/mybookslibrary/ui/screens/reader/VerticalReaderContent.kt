@@ -34,6 +34,7 @@ internal fun VerticalReaderContent(
     listState: LazyListState,
     onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier,
+    onZoomFractionChanged: (Float?) -> Unit = {},
 ) {
     val zoomableState = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f))
     var containerWidthPx by remember { mutableIntStateOf(0) }
@@ -44,6 +45,7 @@ internal fun VerticalReaderContent(
             .distinctUntilChanged()
             .collect { zoomFraction ->
                 Timber.v("Reader webtoon global zoom changed: zoomFraction=%s", zoomFraction)
+                onZoomFractionChanged(zoomFraction)
             }
     }
 
@@ -88,12 +90,6 @@ internal fun VerticalReaderContent(
                 WebtoonPageItem(
                     imageUrl = page,
                     index = index,
-                    onTap = { x, y, width, height ->
-                        onEvent(ReaderEvent.TapOnScreen(x, y, width, height))
-                    },
-                    onLongPress = { url, pageIndex ->
-                        onEvent(ReaderEvent.PageLongPressed(url, pageIndex))
-                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

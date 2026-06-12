@@ -55,20 +55,6 @@ class WebtoonPageItemTest {
     }
 
     @Test
-    fun rendersWithoutCrash_longPressCallback() {
-        var pressed = false
-        composeRule.setContent {
-            WebtoonPageItem(
-                imageUrl = "https://example.com/w.jpg",
-                index = 0,
-                onLongPress = { _, _ -> pressed = true },
-            )
-        }
-        composeRule.waitForIdle()
-        assert(!pressed) // không tự bấm
-    }
-
-    @Test
     fun errorState_showsRetryButton() {
         FakeImageLoader.reset()
         FakeImageLoader.installFailing()

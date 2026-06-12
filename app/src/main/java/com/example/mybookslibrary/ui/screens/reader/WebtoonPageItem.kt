@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,17 +53,12 @@ fun WebtoonPageItem(
     imageUrl: String,
     index: Int,
     modifier: Modifier = Modifier,
-    onTap: (x: Float, y: Float, width: Float, height: Float) -> Unit = { _, _, _, _ -> },
-    onLongPress: ((String, Int) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var aspectRatio by remember(imageUrl) { mutableStateOf<Float?>(null) }
     var retryHash by remember(imageUrl) { mutableIntStateOf(0) }
     var isLoading by remember(imageUrl) { mutableStateOf(true) }
     var isError by remember(imageUrl) { mutableStateOf(false) }
-    var pageWidthPx by remember(imageUrl) { mutableIntStateOf(0) }
-    var pageHeightPx by remember(imageUrl) { mutableIntStateOf(0) }
-
     val retryPageLoad =
         remember(imageUrl, index) {
             {
@@ -110,31 +104,7 @@ fun WebtoonPageItem(
         }
 
     Box(
-        modifier =
-            imageModifier
-                .onSizeChanged {
-                    pageWidthPx = it.width
-                    pageHeightPx = it.height
-                }.combinedClickable(
-                    onClick = {
-                        Timber.v(
-                            "Reader webtoon page tap: page=%d width=%d height=%d",
-                            index + 1,
-                            pageWidthPx,
-                            pageHeightPx,
-                        )
-                        onTap(
-                            pageWidthPx / 2f,
-                            pageHeightPx / 2f,
-                            pageWidthPx.toFloat(),
-                            pageHeightPx.toFloat(),
-                        )
-                    },
-                    onLongClick = {
-                        Timber.v("Reader webtoon page long-click: page=%d url=%s", index + 1, imageUrl)
-                        onLongPress?.invoke(imageUrl, index)
-                    },
-                ),
+        modifier = imageModifier,
     ) {
         AsyncImage(
             model = imageRequest,
@@ -155,10 +125,7 @@ fun WebtoonPageItem(
                         .background(Color.Black.copy(alpha = Alphas.EmphasisHigh))
                         .combinedClickable(
                             onClick = retryPageLoad,
-                            onLongClick = {
-                                Timber.v("Reader webtoon error long-click: page=%d url=%s", index + 1, imageUrl)
-                                onLongPress?.invoke(imageUrl, index)
-                            },
+                            onLongClick = {},
                         ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -203,8 +170,6 @@ private fun WebtoonPageItemPreview() {
             WebtoonPageItem(
                 imageUrl = "https://example.com/preview-page.jpg",
                 index = 0,
-                onTap = { _, _, _, _ -> },
-                onLongPress = { _, _ -> },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
