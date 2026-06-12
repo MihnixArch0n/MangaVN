@@ -115,6 +115,21 @@ class ReaderViewModelCoverageTest {
         )
     }
 
+    @Test
+    fun retryLoadPages_loadsAgainAfterFailure() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns
+            Result.failure(IllegalStateException("offline")) andThen
+            Result.success(listOf("page-0"))
+
+        val vm = build()
+        advanceUntilIdle()
+        vm.onEvent(ReaderEvent.RetryLoadPages)
+        advanceUntilIdle()
+
+        assertEquals(listOf("page-0"), vm.state.value.pages)
+        assertEquals(null, vm.state.value.error)
+    }
+
     // ---- helper: build VM đã tải 8 trang network ----
     private fun loadedVm(startPageIndex: Int = 0): ReaderViewModel {
         coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns

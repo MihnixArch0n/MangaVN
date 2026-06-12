@@ -9,20 +9,26 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import com.example.mybookslibrary.ui.screens.components.LoadingIndicator
-import com.example.mybookslibrary.ui.screens.components.LoadingSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.screens.reader.components.PageActionBottomSheet
+import com.example.mybookslibrary.ui.screens.components.LoadingIndicator
+import com.example.mybookslibrary.ui.screens.components.LoadingSize
+import com.example.mybookslibrary.ui.theme.Dimens
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.viewmodel.ReaderState
@@ -70,7 +76,11 @@ private fun ReaderContentBody(
 ) {
     when {
         state.isLoading -> ReaderCenteredProgress()
-        state.error != null -> ReaderCenteredMessage(appString(R.string.error_prefix, state.error))
+        state.error != null ->
+            ReaderErrorState(
+                message = appString(R.string.error_prefix, state.error),
+                onRetry = { onEvent(ReaderEvent.RetryLoadPages) },
+            )
         state.pages.isEmpty() -> ReaderCenteredMessage(appString(R.string.error_load_pages))
         else -> ReaderPages(state = state, listState = listState, pagerState = pagerState, onEvent = onEvent)
     }
@@ -109,7 +119,7 @@ private fun ReaderPages(
 @Composable
 private fun ReaderCenteredProgress() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        LoadingIndicator(size = LoadingSize.Large, color = MaterialTheme.colorScheme.surface)
+        LoadingIndicator(size = LoadingSize.Large, color = Color.White)
     }
 }
 
@@ -119,8 +129,35 @@ private fun ReaderCenteredMessage(message: String) {
         Text(
             text = message,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.surface,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(Dimens.SpacingXl),
         )
+    }
+}
+
+@Composable
+private fun ReaderErrorState(
+    message: String,
+    onRetry: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(Dimens.SpacingXl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+        )
+        Button(
+            onClick = onRetry,
+            modifier = Modifier.padding(top = Dimens.SpacingLg),
+        ) {
+            Text(appString(R.string.action_retry))
+        }
     }
 }
 
@@ -133,12 +170,12 @@ private fun BoxWithConstraintsScope.ReaderOverlayBars(
 ) {
     ReaderTopBar(
         chapterTitle = state.chapterTitle,
-        isVisible = state.isOverlayVisible,
+        isVisible = state.isOverlayVisible || state.error != null,
         colors = readerBarColors,
         onBackClick = onBackClick,
     )
     ReaderBottomBar(
-        isVisible = state.isOverlayVisible,
+        isVisible = state.isOverlayVisible && state.pages.isNotEmpty(),
         state =
             ReaderBottomBarState(
                 currentPage = state.lastReadPageIndex,

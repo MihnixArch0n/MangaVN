@@ -124,6 +124,7 @@ constructor(
 
     fun onEvent(event: ReaderEvent) {
         when (event) {
+            ReaderEvent.RetryLoadPages -> loadChapterPages()
             ReaderEvent.ToggleOverlay -> toggleOverlay()
             is ReaderEvent.ChangeReadingMode -> changeReadingMode(event.mode)
             ReaderEvent.CycleReadingMode -> cycleReadingMode()

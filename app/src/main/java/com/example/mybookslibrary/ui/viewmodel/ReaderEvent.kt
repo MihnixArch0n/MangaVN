@@ -3,6 +3,7 @@ package com.example.mybookslibrary.ui.viewmodel
 import com.example.mybookslibrary.domain.model.ReadingMode
 
 sealed interface ReaderEvent {
+    data object RetryLoadPages : ReaderEvent
     data object ToggleOverlay : ReaderEvent
 
     data class ChangeReadingMode(
