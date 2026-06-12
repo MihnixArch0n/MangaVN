@@ -78,8 +78,33 @@ class LibraryRepository(
     /** Kiểm tra manga đã có trong thư viện chưa. */
     suspend fun isInLibrary(mangaId: String): Boolean = libraryDao.getByMangaId(mangaId) != null
 
-    /** Lấy LibraryItemEntity theo mangaId. */
+    /** Lấy library item theo mangaId, null nếu chưa có trong thư viện. */
     suspend fun getLibraryItem(mangaId: String): LibraryItemEntity? = libraryDao.getByMangaId(mangaId)
+
+    /**
+     * Bật/tắt yêu thích. Manga chưa có trong thư viện mà được yêu thích → tự thêm vào
+     * thư viện trước (yêu thích ngụ ý muốn giữ trong thư viện).
+     */
+    suspend fun setFavorite(
+        mangaId: String,
+        title: String,
+        coverUrl: String,
+        isFavorite: Boolean,
+    ) {
+        database.withTransaction {
+            val updatedRows = libraryDao.updateFavorite(mangaId, isFavorite)
+            if (updatedRows == 0 && isFavorite) {
+                libraryDao.upsert(
+                    LibraryItemEntity(
+                        manga_id = mangaId,
+                        title = title,
+                        cover_url = coverUrl,
+                        is_favorite = true,
+                    ),
+                )
+            }
+        }
+    }
 
     /** Xóa toàn bộ thư viện. Gọi khi sign out. */
     suspend fun clearAll() {
@@ -136,6 +161,11 @@ class LibraryRepository(
                     updated_at = now,
                 ),
             )
+
+            // Chỉ khi một chapter vừa COMPLETED thì trạng thái truyện mới có thể đổi
+            if (isCompleted) {
+                recomputeLibraryStatus(mangaId)
+            }
         }
 
         val item = libraryDao.getByMangaId(mangaId)
@@ -155,16 +185,25 @@ class LibraryRepository(
         totalPages: Int,
     ) {
         val boundedTotalPages = totalPages.coerceAtLeast(0)
-        chapterDao.upsertReadingProgress(
-            ChapterProgressEntity(
-                chapter_id = chapterId,
-                manga_id = mangaId,
-                status = ChapterStatus.COMPLETED,
-                last_read_page = boundedTotalPages,
-                total_pages = boundedTotalPages,
-                updated_at = System.currentTimeMillis(),
-            ),
+        Timber.d(
+            "markChapterCompleted: mangaId=%s chapterId=%s totalPages=%d",
+            mangaId,
+            chapterId,
+            boundedTotalPages,
         )
+        database.withTransaction {
+            chapterDao.upsertReadingProgress(
+                ChapterProgressEntity(
+                    chapter_id = chapterId,
+                    manga_id = mangaId,
+                    status = ChapterStatus.COMPLETED,
+                    last_read_page = boundedTotalPages,
+                    total_pages = boundedTotalPages,
+                    updated_at = System.currentTimeMillis(),
+                ),
+            )
+            recomputeLibraryStatus(mangaId)
+        }
     }
 
     /**
@@ -179,16 +218,49 @@ class LibraryRepository(
         chapterId: String,
         totalPages: Int,
     ) {
-        chapterDao.upsertReadingProgress(
-            ChapterProgressEntity(
-                chapter_id = chapterId,
-                manga_id = mangaId,
-                status = ChapterStatus.UNREAD,
-                last_read_page = 0,
-                total_pages = totalPages.coerceAtLeast(0),
-                updated_at = System.currentTimeMillis(),
-            ),
+        Timber.d(
+            "markChapterUnread: mangaId=%s chapterId=%s totalPages=%d",
+            mangaId,
+            chapterId,
+            totalPages.coerceAtLeast(0),
         )
+        database.withTransaction {
+            chapterDao.upsertReadingProgress(
+                ChapterProgressEntity(
+                    chapter_id = chapterId,
+                    manga_id = mangaId,
+                    status = ChapterStatus.UNREAD,
+                    last_read_page = 0,
+                    total_pages = totalPages.coerceAtLeast(0),
+                    updated_at = System.currentTimeMillis(),
+                ),
+            )
+            recomputeLibraryStatus(mangaId)
+        }
+    }
+
+    /**
+     * Tính lại trạng thái đọc của truyện: tất cả số chương khả dụng đều có ít nhất
+     * một bản dịch COMPLETED → COMPLETED, ngược lại → READING. Gọi trong transaction
+     * cùng với thao tác ghi chapter progress để trạng thái luôn nhất quán.
+     */
+    private suspend fun recomputeLibraryStatus(mangaId: String) {
+        val totalChapters = chapterDao.countAvailableChapterNumbers(mangaId)
+        val unfinishedChapters = chapterDao.countUnfinishedChapterNumbers(mangaId)
+        val newStatus =
+            if (totalChapters > 0 && unfinishedChapters == 0) {
+                LibraryStatus.COMPLETED
+            } else {
+                LibraryStatus.READING
+            }
+        Timber.d(
+            "recomputeLibraryStatus: mangaId=%s total=%d unfinished=%d -> %s",
+            mangaId,
+            totalChapters,
+            unfinishedChapters,
+            newStatus,
+        )
+        libraryDao.updateStatus(mangaId, newStatus)
     }
 
     /**

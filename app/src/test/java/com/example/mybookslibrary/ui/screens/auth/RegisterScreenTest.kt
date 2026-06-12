@@ -1,4 +1,4 @@
-﻿package com.example.mybookslibrary.ui.screens.auth
+package com.example.mybookslibrary.ui.screens.auth
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -67,7 +67,7 @@ class RegisterScreenTest {
         }
 
         composeRule.onNodeWithText("Email").performTextInput("user1")
-        composeRule.onNodeWithText("Password").performTextInput("pass123")
+        composeRule.onNodeWithText("Password").performTextInput("Abc@123423")
         composeRule.onNodeWithText("Confirm Password").performTextInput("different")
 
         composeRule.onNodeWithText("Passwords do not match").assertIsDisplayed()
@@ -80,8 +80,8 @@ class RegisterScreenTest {
         }
 
         composeRule.onNodeWithText("Email").performTextInput("user1")
-        composeRule.onNodeWithText("Password").performTextInput("pass123")
-        composeRule.onNodeWithText("Confirm Password").performTextInput("pass123")
+        composeRule.onNodeWithText("Password").performTextInput("Abc@123423")
+        composeRule.onNodeWithText("Confirm Password").performTextInput("Abc@123423")
 
         composeRule.onNode(hasText("Register") and hasClickAction()).assertIsEnabled()
     }
@@ -104,7 +104,8 @@ class RegisterScreenTest {
         }
 
         // TextButton ở cuối Column — viewport nhỏ có thể chưa scroll tới → assertExists (đã compose)
-        composeRule.onNodeWithText("Already have an account? Login").assertExists()
+        composeRule.onNodeWithText("Do you already have an account?").assertExists()
+        composeRule.onNodeWithText("Login").assertExists()
     }
 
     @Test
@@ -117,8 +118,8 @@ class RegisterScreenTest {
             RegisterScreen(onRegisterSuccess = {}, onNavigateToLogin = {}, viewModel = vm)
         }
         composeRule.onNodeWithText("Email").performTextInput("existing")
-        composeRule.onNodeWithText("Password").performTextInput("pass1")
-        composeRule.onNodeWithText("Confirm Password").performTextInput("pass1")
+        composeRule.onNodeWithText("Password").performTextInput("Abc@1234")
+        composeRule.onNodeWithText("Confirm Password").performTextInput("Abc@1234")
         composeRule.onNode(hasText("Register") and hasClickAction()).performClick()
         composeRule.waitForIdle()
         composeRule.onNodeWithText("Email already taken").assertIsDisplayed()
@@ -132,7 +133,7 @@ class RegisterScreenTest {
         coEvery { repo.registerWithEmail(any(), any()) } coAnswers
             { Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true)) }
         val vm = AuthViewModel(repo, libraryRepository)
-        vm.register("newuser", "pass1")
+        vm.register("newuser", "Abc@1234")
 
         composeRule.setContent {
             RegisterScreen(onRegisterSuccess = { successCalled = true }, onNavigateToLogin = {}, viewModel = vm)

@@ -1,4 +1,4 @@
-﻿package com.example.mybookslibrary.ui.screens
+package com.example.mybookslibrary.ui.screens
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed

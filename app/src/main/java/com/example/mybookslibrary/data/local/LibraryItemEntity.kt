@@ -35,6 +35,7 @@ class LibraryStatusConverters {
         }
 }
 
+@Suppress("ConstructorParameterNaming")
 @Entity(tableName = "library_items")
 data class LibraryItemEntity(
     @PrimaryKey
@@ -45,5 +46,6 @@ data class LibraryItemEntity(
     @ColumnInfo(name = "last_read_chapter_id") val last_read_chapter_id: String? = null,
     @ColumnInfo(name = "last_read_page_index") val last_read_page_index: Int = 0,
     @ColumnInfo(name = "updated_at") val updated_at: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "is_favorite", defaultValue = "0") val is_favorite: Boolean = false,
     @ColumnInfo(name = "sync_status") val syncStatus: SyncStatus = SyncStatus.PENDING_UPDATE,
 )

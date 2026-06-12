@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.mybookslibrary.domain.model.AuthStatus
@@ -30,11 +31,18 @@ class UserPreferencesDataStore(
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
         private val PREFERRED_CHAPTER_LANGUAGE = stringPreferencesKey("preferred_chapter_language")
+        private val ONBOARDING_WELCOME_DONE = booleanPreferencesKey("onboarding_welcome_done")
+        private val READER_HINT_DONE = booleanPreferencesKey("reader_hint_done")
+        private val IN_APP_TOUR_DONE = booleanPreferencesKey("in_app_tour_done")
+        private val FIRST_OPEN_TIME = longPreferencesKey("first_open_time")
+        private val RATE_APP_DISMISSED = booleanPreferencesKey("rate_app_dismissed")
+        private val DISPLAY_NAME = stringPreferencesKey("display_name")
+        private val AVATAR_URI = stringPreferencesKey("avatar_uri")
         private val AUTH_STATUS = stringPreferencesKey("auth_status")
         private val FIREBASE_UID = stringPreferencesKey("firebase_uid")
 
         private const val DEFAULT_QUALITY = "data"
-        private const val DEFAULT_LANGUAGE = "en"
+        private const val DEFAULT_LANGUAGE = "vi"
         private const val DEFAULT_THEME = "system"
         private const val DEFAULT_DOWNLOAD_ONLY_ON_WIFI = true
     }
@@ -124,6 +132,61 @@ class UserPreferencesDataStore(
     }
 
     // ─── Clear ─────────────────────────────────────────────────────
+
+    /** Onboarding: welcome carousel đã xem xong. */
+    fun observeOnboardingWelcomeDone(): Flow<Boolean> =
+        safeData.map { it[ONBOARDING_WELCOME_DONE] ?: false }
+
+    suspend fun setOnboardingWelcomeDone(done: Boolean) {
+        dataStore.edit { it[ONBOARDING_WELCOME_DONE] = done }
+    }
+
+    /** Onboarding: reader hint đã xem xong. */
+    fun observeReaderHintDone(): Flow<Boolean> =
+        safeData.map { it[READER_HINT_DONE] ?: false }
+
+    suspend fun setReaderHintDone(done: Boolean) {
+        dataStore.edit { it[READER_HINT_DONE] = done }
+    }
+
+    /** In-app guided tour (coach marks) đã hoàn thành. */
+    fun observeInAppTourDone(): Flow<Boolean> =
+        safeData.map { it[IN_APP_TOUR_DONE] ?: false }
+
+    suspend fun setInAppTourDone(done: Boolean) {
+        dataStore.edit { it[IN_APP_TOUR_DONE] = done }
+    }
+
+    suspend fun getFirstOpenTime(): Long {
+        val stored = safeData.first()[FIRST_OPEN_TIME]
+        if (stored == null) {
+            val now = System.currentTimeMillis()
+            dataStore.edit { it[FIRST_OPEN_TIME] = now }
+            return now
+        }
+        return stored
+    }
+
+    fun observeRateAppDismissed(): Flow<Boolean> =
+        safeData.map { it[RATE_APP_DISMISSED] ?: false }
+
+    suspend fun setRateAppDismissed(dismissed: Boolean) {
+        dataStore.edit { it[RATE_APP_DISMISSED] = dismissed }
+    }
+
+    fun observeDisplayName(): Flow<String> =
+        safeData.map { it[DISPLAY_NAME] ?: "" }
+
+    suspend fun setDisplayName(name: String) {
+        dataStore.edit { it[DISPLAY_NAME] = name }
+    }
+
+    fun observeAvatarUri(): Flow<String> =
+        safeData.map { it[AVATAR_URI] ?: "" }
+
+    suspend fun setAvatarUri(uri: String) {
+        dataStore.edit { it[AVATAR_URI] = uri }
+    }
 
     suspend fun clearAll() {
         dataStore.edit { it.clear() }

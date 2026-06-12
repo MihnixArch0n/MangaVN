@@ -131,21 +131,27 @@ class TapZoneEvaluatorTest {
     @Test
     fun `VERTICAL - tap at left zone returns TOGGLE_OVERLAY`() {
         val result =
-            evaluator(x = 100f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL)
+            evaluator(
+                x = 100f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL,
+            )
         assertEquals(ReaderTapAction.TOGGLE_OVERLAY, result)
     }
 
     @Test
     fun `VERTICAL - tap at center returns TOGGLE_OVERLAY`() {
         val result =
-            evaluator(x = 500f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL)
+            evaluator(
+                x = 500f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL,
+            )
         assertEquals(ReaderTapAction.TOGGLE_OVERLAY, result)
     }
 
     @Test
     fun `VERTICAL - tap at right zone returns TOGGLE_OVERLAY`() {
         val result =
-            evaluator(x = 900f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL)
+            evaluator(
+                x = 900f, y = 500f, screenWidth = totalWidth, screenHeight = totalHeight, mode = ReadingMode.VERTICAL,
+            )
         assertEquals(ReaderTapAction.TOGGLE_OVERLAY, result)
     }
 

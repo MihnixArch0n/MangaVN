@@ -6,6 +6,7 @@
 
 package com.example.mybookslibrary.ui.screens.reader
 
+import com.example.mybookslibrary.ui.theme.Dimens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -15,8 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BrokenImage
+import com.composables.icons.lucide.ImageOff
+import com.composables.icons.lucide.Lucide
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import coil3.request.ImageRequest
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.ui.theme.Alphas
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
 import me.saket.telephoto.zoomable.ZoomSpec
@@ -184,24 +186,24 @@ private fun MangaPageRetryOverlay(onRetry: () -> Unit) {
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = ERROR_OVERLAY_ALPHA))
+                .background(Color.Black.copy(alpha = Alphas.EmphasisHigh))
                 .clickable(onClick = onRetry),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
-                imageVector = Icons.Filled.BrokenImage,
+                imageVector = Lucide.ImageOff,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = ERROR_ICON_ALPHA),
-                modifier = Modifier.size(48.dp),
+                tint = Color.White.copy(alpha = Alphas.EmphasisHigh),
+                modifier = Modifier.size(Dimens.IconXl),
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(Dimens.SpacingMd))
             Text(
                 text = appString(R.string.reader_loading_failed),
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = ERROR_TEXT_ALPHA),
+                color = Color.White.copy(alpha = Alphas.EmphasisMedium),
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(Dimens.SpacingXs))
             Button(onClick = onRetry) {
                 Text(
                     text = appString(R.string.reader_tap_to_retry),
@@ -215,9 +217,6 @@ private fun MangaPageRetryOverlay(onRetry: () -> Unit) {
 
 private fun displayPage(index: Int): Int = index + 1
 
-private const val ERROR_OVERLAY_ALPHA = 0.7f
-private const val ERROR_ICON_ALPHA = 0.7f
-private const val ERROR_TEXT_ALPHA = 0.6f
 private const val FILE_URI_PREFIX = "file:"
 private const val PREVIEW_PAGE_URL = "https://example.com/preview-page.jpg"
 

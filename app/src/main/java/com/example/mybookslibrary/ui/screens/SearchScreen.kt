@@ -11,19 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,15 +27,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
+import com.composables.icons.lucide.Filter
+import com.composables.icons.lucide.Lucide
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.navigation.LocalBottomNavPadding
+import com.example.mybookslibrary.ui.navigation.LucideSearchIcon
+import com.example.mybookslibrary.ui.screens.components.EmptyState
+import com.example.mybookslibrary.ui.screens.components.ErrorState
+import com.example.mybookslibrary.ui.screens.components.SearchSkeletonLoading
+import com.example.mybookslibrary.ui.screens.components.MangaCoverCard
+import com.example.mybookslibrary.ui.screens.components.StyledBadge
+import com.example.mybookslibrary.ui.theme.Dimens
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.SearchViewModel
 
@@ -67,14 +65,14 @@ fun SearchScreenContent(
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding),
         ) {
-            Column(Modifier.padding(horizontal = 24.dp)) {
-                Spacer(Modifier.height(24.dp))
+            Column(Modifier.padding(horizontal = Dimens.ScreenPaddingCompact)) {
+                Spacer(Modifier.height(Dimens.SpacingXl))
                 Text(
                     appString(R.string.search_title),
                     style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(Dimens.SpacingLg + Dimens.SpacingXs))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
                         value = uiState.query,
@@ -87,105 +85,84 @@ fun SearchScreenContent(
                             )
                         },
                         leadingIcon = {
-                            Icon(Icons.Filled.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Icon(
+                                LucideSearchIcon,
+                                null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         },
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
                         singleLine = true,
                         colors =
-                        OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            cursorColor = MaterialTheme.colorScheme.primary,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        ),
+                            OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                cursorColor = MaterialTheme.colorScheme.primary,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            ),
                     )
-                    Spacer(Modifier.width(8.dp))
-                    BadgedBox(
-                        badge = {
-                            if (uiState.activeFilterCount > 0) {
-                                Badge { Text("${uiState.activeFilterCount}") }
-                            }
-                        },
-                    ) {
+                    Spacer(Modifier.width(Dimens.SpacingSm))
+                    Box {
                         IconButton(onClick = viewModel::onOpenFilterSheet) {
                             Icon(
-                                Icons.Filled.FilterList,
+                                Lucide.Filter,
                                 contentDescription = appString(R.string.cd_filter),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         }
+                        if (uiState.activeFilterCount > 0) {
+                            StyledBadge(
+                                count = uiState.activeFilterCount,
+                                modifier = Modifier.align(Alignment.TopEnd),
+                            )
+                        }
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Dimens.SpacingSm))
             }
 
             when {
                 uiState.isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                    }
+                    SearchSkeletonLoading(Modifier.fillMaxSize())
                 }
                 uiState.error != null -> {
-                    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                appString(R.string.search_error_title),
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                appString(R.string.search_error_subtitle),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
-                        }
-                    }
+                    ErrorState(
+                        message = appString(R.string.search_error_title),
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
                 uiState.query.length < 2 && uiState.activeFilterCount == 0 -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                appString(R.string.search_prompt_title),
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                appString(R.string.search_prompt_subtitle),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            )
-                        }
-                    }
+                    EmptyState(
+                        title = appString(R.string.search_prompt_title),
+                        subtitle = appString(R.string.search_prompt_subtitle),
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
                 uiState.results.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
+                    EmptyState(
+                        title =
                             if (uiState.query.isBlank()) {
                                 appString(R.string.search_no_results_filter)
                             } else {
                                 appString(R.string.search_no_results, uiState.query)
                             },
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
                 else -> {
                     LazyColumn(
                         contentPadding =
                             PaddingValues(
-                                start = 24.dp,
-                                end = 24.dp,
-                                top = 8.dp,
-                                bottom = bottomNavPadding + 16.dp,
+                                start = Dimens.ScreenPaddingCompact,
+                                end = Dimens.ScreenPaddingCompact,
+                                top = Dimens.SpacingSm,
+                                bottom = bottomNavPadding + Dimens.SpacingLg,
                             ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingMd),
                     ) {
                         items(uiState.results, key = { it.id }) { manga ->
                             SearchResultItem(manga) { onMangaClick(manga) }
@@ -210,41 +187,34 @@ fun SearchScreenContent(
 }
 
 @Composable
-private fun SearchResultItem(manga: MangaModel, onClick: () -> Unit,) {
+private fun SearchResultItem(manga: MangaModel, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = MaterialTheme.shapes.large,
+        elevation = CardDefaults.cardElevation(defaultElevation = Dimens.BorderThin),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(Dimens.SpacingMd),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Card(
-                modifier = Modifier.size(56.dp, 84.dp),
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            ) {
-                AsyncImage(
-                    model = manga.coverArt,
-                    contentDescription = manga.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-            Spacer(Modifier.width(16.dp))
+            MangaCoverCard(
+                coverUrl = manga.coverArt,
+                contentDescription = manga.title,
+                width = Dimens.IconXxl,
+            )
+            Spacer(Modifier.width(Dimens.SpacingLg))
             Column(Modifier.weight(1f)) {
                 Text(
                     manga.title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (manga.tags.isNotEmpty()) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(Dimens.SpacingXs))
                     Text(
                         manga.tags.take(3).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,

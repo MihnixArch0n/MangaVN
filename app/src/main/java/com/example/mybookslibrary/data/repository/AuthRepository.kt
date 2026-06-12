@@ -128,6 +128,30 @@ class AuthRepository
             }
 
         /**
+         * Đổi mật khẩu Firebase Auth. Re-authenticate trước khi update
+         * vì Firebase yêu cầu recent login cho thao tác nhạy cảm.
+         */
+        suspend fun changePassword(
+            currentPassword: String,
+            newPassword: String,
+        ): Result<Unit> =
+            withContext(ioDispatcher) {
+                try {
+                    val user = firebaseAuth.currentUser
+                        ?: return@withContext Result.failure(IllegalStateException("Not signed in"))
+                    val email = user.email
+                        ?: return@withContext Result.failure(IllegalStateException("No email on account"))
+                    val credential = com.google.firebase.auth.EmailAuthProvider
+                        .getCredential(email, currentPassword)
+                    user.reauthenticate(credential).await()
+                    user.updatePassword(newPassword).await()
+                    Result.success(Unit)
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+            }
+
+        /**
          * Permanently deletes the current user account from Firebase Auth and resets local storage.
          *
          * @return A Result representing success or failure.

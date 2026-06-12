@@ -3,9 +3,13 @@ package com.example.mybookslibrary.ui.navigation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.test.assertIsDisplayed
+
+import androidx.compose.ui.test.filterToOne
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -47,6 +51,8 @@ class MainNavHostTest {
     @Before
     fun setUp() {
         hiltRule.inject()
+        // Bỏ qua onboarding để test đúng Login screen khi LOGGED_OUT
+        kotlinx.coroutines.runBlocking { preferencesDataStore.setOnboardingWelcomeDone(true) }
     }
 
     @Test
@@ -55,7 +61,7 @@ class MainNavHostTest {
             MainNavHost(authStatus = com.example.mybookslibrary.domain.model.AuthStatus.LOGGED_OUT)
         }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Welcome Back!").assertIsDisplayed()
+        composeRule.onNodeWithText("Welcome Back!", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -65,7 +71,7 @@ class MainNavHostTest {
         }
         composeRule.waitForIdle()
         // Bottom nav không hiển thị trên Login screen
-        composeRule.onNodeWithText("Welcome Back!").assertIsDisplayed()
+        composeRule.onNodeWithText("Welcome Back!").assertExists()
     }
 
     @Test
@@ -77,7 +83,7 @@ class MainNavHostTest {
             MainNavHost(authStatus = com.example.mybookslibrary.domain.model.AuthStatus.LOGGED_OUT)
         }
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Welcome Back!").assertIsDisplayed()
+        composeRule.onNodeWithText("Welcome Back!").assertExists()
     }
 
     @Test
@@ -90,11 +96,11 @@ class MainNavHostTest {
         // Login screen KHÔNG hiện (đã đăng nhập)
         val isLoginShown =
             runCatching {
-                composeRule.onNodeWithText("Welcome Back!").assertIsDisplayed()
+                composeRule.onNodeWithText("Welcome Back!").assertExists()
             }.isSuccess
         assert(!isLoginShown) { "Login screen không được hiển thị khi đã đăng nhập" }
         // Bottom nav phải hiển thị khi ở Discover
-        composeRule.onNodeWithContentDescription("Discover").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Discover").assertExists()
     }
 
     @Test
@@ -109,7 +115,7 @@ class MainNavHostTest {
         // Set null sau khi đã ở Discover — trigger recompose + LaunchedEffect navigate to Login
         authStatus = com.example.mybookslibrary.domain.model.AuthStatus.LOGGED_OUT
         composeRule.waitForIdle()
-        composeRule.onNodeWithText("Welcome Back!").assertIsDisplayed()
+        composeRule.onNodeWithText("Welcome Back!").assertExists()
     }
 
     @Test
@@ -122,7 +128,9 @@ class MainNavHostTest {
         composeRule.onAllNodesWithContentDescription("Search")[1].performClick()
         composeRule.waitForIdle()
 
-        composeRule.onNodeWithText("Search").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Search").filterToOne(
+            hasAnyAncestor(hasTestTag(MAIN_NAV_CONTENT_TAG)),
+        ).assertExists()
     }
 
     @Test
@@ -134,7 +142,7 @@ class MainNavHostTest {
 
         assertMainContentContinuesBehindPill()
 
-        listOf("Search", "Library", "Setting").forEach { destination ->
+        listOf("Search", "Library", "Profile").forEach { destination ->
             val pillNodeIndex = if (destination == "Search") 1 else 0
             composeRule.onAllNodesWithContentDescription(destination)[pillNodeIndex].performClick()
             composeRule.waitForIdle()

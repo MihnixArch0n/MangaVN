@@ -4,15 +4,17 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.mybookslibrary.ui.theme.Dimens
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.navigation.LocalBottomNavPadding
@@ -26,9 +28,12 @@ fun DiscoverScreenContent(
     onSearchClick: () -> Unit = {},
     onLibraryClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
+    onReadingHistoryClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     vm: DiscoverViewModel = hiltViewModel(),
 ) {
     val uiState by vm.uiState.collectAsStateWithLifecycle()
+    val continueReading by vm.continueReading.collectAsStateWithLifecycle()
     val expandedPopular = remember { mutableStateOf(false) }
     val expandedNew = remember { mutableStateOf(false) }
     val expandedExplore = remember { mutableStateOf(false) }
@@ -46,35 +51,47 @@ fun DiscoverScreenContent(
                 onSearchClick = onSearchClick,
                 onLibraryClick = onLibraryClick,
                 onProfileClick = onProfileClick,
+                onHistoryClick = onReadingHistoryClick,
+                onSettingsClick = onSettingsClick,
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
-        when {
-            uiState.isLoading ->
-                DiscoverLoadingState(
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .consumeWindowInsets(innerPadding),
-                )
-            uiState.error != null ->
-                DiscoverErrorState(
-                    modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .consumeWindowInsets(innerPadding),
-                    onRetry = vm::loadDiscover,
-                )
-            else ->
-                DiscoverContentList(
-                    modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .consumeWindowInsets(innerPadding),
-                    contentPadding = PaddingValues(bottom = bottomNavPadding + 16.dp),
+        @OptIn(ExperimentalMaterial3Api::class)
+        PullToRefreshBox(
+            isRefreshing = uiState.isLoading && uiState.items.isNotEmpty(),
+            onRefresh = { vm.loadDiscover() },
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
+        ) {
+            when {
+                uiState.isLoading && uiState.items.isEmpty() ->
+                    DiscoverLoadingState(Modifier.fillMaxSize())
+                uiState.error != null && uiState.items.isEmpty() ->
+                    DiscoverErrorState(
+                        modifier = Modifier.fillMaxSize(),
+                        onRetry = vm::loadDiscover,
+                    )
+                else ->
+                    DiscoverContentList(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = bottomNavPadding + Dimens.SpacingLg),
+                    continueReading = continueReading,
+                    onContinueReadingClick = { item ->
+                        onMangaClick(
+                            MangaModel(
+                                id = item.manga_id,
+                                title = item.title,
+                                coverArt = item.cover_url,
+                                description = "",
+                                tags = emptyList(),
+                            ),
+                        )
+                    },
+                    onReadingHistoryClick = onReadingHistoryClick,
                     spotlight = items.firstOrNull(),
                     popularItems = popularItems,
                     newItems = newItems,
@@ -87,6 +104,7 @@ fun DiscoverScreenContent(
                     onToggleExplore = { expandedExplore.value = !expandedExplore.value },
                     onMangaClick = onMangaClick,
                 )
+            }
         }
     }
 }

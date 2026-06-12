@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- System splash + window background trước khi Compose load.
+         Light variant: nền Cinema light; Compose theme tiếp quản ngay khi setContent. -->
     <style name="Theme.MyBooksLibrary" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/kanso_paper</item>
+        <item name="android:windowBackground">@color/cinema_background_light</item>
     </style>
 </resources>

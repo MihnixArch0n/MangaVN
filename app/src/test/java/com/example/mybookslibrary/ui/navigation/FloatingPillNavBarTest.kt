@@ -38,7 +38,7 @@ class FloatingPillNavBarTest {
         composeRule.onNodeWithContentDescription("Discover").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Search").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Library").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("Setting").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Profile").assertIsDisplayed()
     }
 
     @Test

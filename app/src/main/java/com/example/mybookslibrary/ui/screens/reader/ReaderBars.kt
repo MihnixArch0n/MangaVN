@@ -25,12 +25,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.AutoStories
-import androidx.compose.material.icons.filled.ImportContacts
 import androidx.compose.material3.Icon
+import com.composables.icons.lucide.ArrowLeft
+import com.composables.icons.lucide.BookOpen
+import com.composables.icons.lucide.BookOpenCheck
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Scroll
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,9 +43,10 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ReadingMode
+import com.example.mybookslibrary.ui.theme.Alphas
+import com.example.mybookslibrary.ui.theme.Dimens
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
 import timber.log.Timber
@@ -75,7 +76,7 @@ internal fun readerBarColors(
             container = colorScheme.background,
             content = colorScheme.onBackground,
             secondaryContent = colorScheme.onSurfaceVariant,
-            controlContainer = colorScheme.onBackground.copy(alpha = 0.08f),
+            controlContainer = colorScheme.onBackground.copy(alpha = Alphas.ContainerFaint),
         )
     }
 
@@ -83,7 +84,7 @@ internal fun readerBarColors(
         container = colorScheme.surface.copy(alpha = DARK_READER_BAR_CONTAINER_ALPHA),
         content = colorScheme.onSurface,
         secondaryContent = colorScheme.onSurfaceVariant,
-        controlContainer = colorScheme.onSurface.copy(alpha = 0.12f),
+        controlContainer = colorScheme.onSurface.copy(alpha = Alphas.ContainerSelected),
     )
 }
 
@@ -116,7 +117,7 @@ internal fun BoxScope.ReaderTopBar(
                     .background(colors.container)
                     .consumeReaderOverlayGestures()
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                    .padding(horizontal = Dimens.SpacingSm, vertical = Dimens.SpacingMd),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = {
@@ -126,16 +127,16 @@ internal fun BoxScope.ReaderTopBar(
                 Box(
                     modifier =
                         Modifier
-                            .size(36.dp)
+                            .size(Dimens.ControlButton)
                             .clip(CircleShape)
                             .background(colors.controlContainer),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
+                        Lucide.ArrowLeft,
                         contentDescription = appString(R.string.cd_back),
                         tint = colors.content,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(Dimens.IconMd),
                     )
                 }
             }
@@ -145,7 +146,7 @@ internal fun BoxScope.ReaderTopBar(
                 color = colors.content,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(start = 8.dp),
+                modifier = Modifier.weight(1f).padding(start = Dimens.SpacingSm),
             )
         }
     }
@@ -247,9 +248,9 @@ internal fun BoxScope.ReaderBottomBar(
     // Icon and content description cycle: VERTICAL → LTR → RTL
     val modeIcon =
         when (state.currentReadingMode) {
-            ReadingMode.VERTICAL -> Icons.AutoMirrored.Filled.MenuBook
-            ReadingMode.LTR -> Icons.Filled.ImportContacts
-            ReadingMode.RTL -> Icons.Filled.AutoStories
+            ReadingMode.VERTICAL -> Lucide.BookOpen
+            ReadingMode.LTR -> Lucide.BookOpenCheck
+            ReadingMode.RTL -> Lucide.Scroll
         }
 
     AnimatedVisibility(
@@ -265,7 +266,7 @@ internal fun BoxScope.ReaderBottomBar(
                     .background(colors.container)
                     .consumeReaderOverlayGestures()
                     .navigationBarsPadding()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                    .padding(horizontal = Dimens.ScreenPaddingCompact, vertical = Dimens.SpacingSm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -278,7 +279,7 @@ internal fun BoxScope.ReaderBottomBar(
                 text = appString(R.string.reader_pages_label),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.secondaryContent,
-                modifier = Modifier.padding(end = 8.dp),
+                modifier = Modifier.padding(end = Dimens.SpacingSm),
             )
             IconButton(onClick = {
                 Timber.v("ReaderBottomBar toggle clicked: currentMode=%s", state.currentReadingMode)
@@ -292,7 +293,7 @@ internal fun BoxScope.ReaderBottomBar(
                             appString(nextReadingModeRes),
                         ),
                     tint = colors.content,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(Dimens.IconDefault),
                 )
             }
         }

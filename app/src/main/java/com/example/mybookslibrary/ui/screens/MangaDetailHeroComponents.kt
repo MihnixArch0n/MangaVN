@@ -1,6 +1,5 @@
 package com.example.mybookslibrary.ui.screens
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,22 +13,12 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -43,12 +32,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.composables.icons.lucide.ArrowLeft
+import com.composables.icons.lucide.Heart
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Share2
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
+import com.example.mybookslibrary.ui.screens.components.AppButton
+import com.example.mybookslibrary.ui.screens.components.AppButtonStyle
+import com.example.mybookslibrary.ui.theme.Alphas
+import com.example.mybookslibrary.ui.theme.CoverShape
+import com.example.mybookslibrary.ui.theme.Dimens
+import com.example.mybookslibrary.ui.theme.statusColors
 import com.example.mybookslibrary.ui.util.appString
 
 @Composable
-internal fun MangaDetailBackdrop(mangaId: String, coverUrl: String?,) {
+internal fun MangaDetailBackdrop(mangaId: String, coverUrl: String?) {
     Box(modifier = Modifier.fillMaxWidth().height(DetailDimensions.BackdropHeight)) {
         AsyncImage(
             model = coverRequest(mangaId, coverUrl),
@@ -56,39 +55,40 @@ internal fun MangaDetailBackdrop(mangaId: String, coverUrl: String?,) {
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().blur(radius = DetailDimensions.BlurRadius),
         )
+        // Scrim gradient — fade nền background lên cover blur
         Box(
             modifier =
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors =
-                        listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            MaterialTheme.colorScheme.background,
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    MaterialTheme.colorScheme.background.copy(alpha = Alphas.EmphasisFaint),
+                                    MaterialTheme.colorScheme.background,
+                                ),
+                            startY = 120f,
                         ),
-                        startY = 120f,
                     ),
-                ),
         )
     }
 }
 
 @Composable
-internal fun MangaDetailHeader(mangaId: String, title: String, coverUrl: String?, tags: List<String>,) {
+internal fun MangaDetailHeader(mangaId: String, title: String, coverUrl: String?, tags: List<String>) {
     Row(
         modifier =
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .offset(y = DetailDimensions.CoverRowOffset),
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Dimens.ScreenPaddingCompact)
+                .offset(y = DetailDimensions.CoverRowOffset),
         verticalAlignment = Alignment.Bottom,
     ) {
         Card(
             modifier = Modifier.size(DetailDimensions.CoverWidth, DetailDimensions.CoverHeight),
-            shape = RoundedCornerShape(16.dp),
+            shape = CoverShape,
             elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         ) {
             AsyncImage(
                 model = coverRequest(mangaId, coverUrl),
@@ -97,31 +97,39 @@ internal fun MangaDetailHeader(mangaId: String, title: String, coverUrl: String?
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        Column(modifier = Modifier.padding(start = 20.dp, bottom = 8.dp).weight(1f)) {
+        Column(
+            modifier = Modifier.padding(start = Dimens.SpacingLg + Dimens.SpacingXs, bottom = Dimens.SpacingSm)
+                .weight(1f),
+        ) {
             if (tags.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSm)) {
                     tags.take(2).forEach { tag ->
                         Box(
                             modifier =
-                            Modifier
-                                .clip(RoundedCornerShape(24.dp))
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
-                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                                Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = Alphas.EmphasisMedium),
+                                        MaterialTheme.shapes.extraLarge,
+                                    )
+                                    .padding(
+                                        horizontal = Dimens.SpacingSm + Dimens.SpacingXs,
+                                        vertical = Dimens.SpacingXs,
+                                    ),
                         ) {
                             Text(
                                 tag,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                         }
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Dimens.SpacingSm))
             }
             Text(
                 title,
                 style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -136,90 +144,54 @@ internal fun MangaDetailActions(
     onReadNow: (ChapterWithProgressModel) -> Unit,
     onToggleLibrary: () -> Unit,
 ) {
-    Column(modifier = Modifier.padding(horizontal = 24.dp).offset(y = DetailDimensions.ActionOffset)) {
-        Button(
-            onClick = { firstChapter?.let(onReadNow) },
-            enabled = firstChapter != null,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors =
-            ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-        ) {
-            Text(
-                if (firstChapter != null) {
-                    if (
-                        firstChapter.status == com.example.mybookslibrary.domain.model.ChapterReadingStatus.READING ||
-                        firstChapter.status == com.example.mybookslibrary.domain.model.ChapterReadingStatus.COMPLETED
-                    ) {
-                        appString(R.string.detail_continue_reading)
-                    } else {
-                        appString(R.string.detail_read_now)
-                    }
+    Column(
+        modifier = Modifier
+            .padding(horizontal = Dimens.ScreenPaddingCompact)
+            .offset(y = DetailDimensions.ActionOffset),
+    ) {
+        AppButton(
+            text = if (firstChapter !=
+                null) {
+                    appString(R.string.detail_read_now)
                 } else {
                     appString(R.string.detail_loading)
                 },
-                style = MaterialTheme.typography.labelLarge,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        OutlinedButton(
+            onClick = { firstChapter?.let(onReadNow) },
+            enabled = firstChapter != null,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(Dimens.SpacingMd))
+        AppButton(
+            text = if (isInLibrary) {
+                appString(R.string.detail_in_library)
+            } else {
+                appString(R.string.detail_add_to_library)
+            },
             onClick = onToggleLibrary,
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-            shape = RoundedCornerShape(16.dp),
-            border =
-            BorderStroke(
-                1.dp,
-                if (isInLibrary) {
-                    MaterialTheme.colorScheme.tertiary
-                } else {
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
-                },
-            ),
-            colors =
-            ButtonDefaults.outlinedButtonColors(
-                contentColor =
-                if (isInLibrary) {
-                    MaterialTheme.colorScheme.tertiary
-                } else {
-                    MaterialTheme.colorScheme.primary
-                },
-            ),
-        ) {
-            Icon(
-                if (isInLibrary) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                if (isInLibrary) appString(R.string.detail_in_library) else appString(R.string.detail_add_to_library),
-                style = MaterialTheme.typography.labelLarge,
-            )
-        }
+            style = AppButtonStyle.Secondary,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
 @Composable
-internal fun DetailBackButton(onBackClick: () -> Unit, modifier: Modifier = Modifier,) {
+internal fun DetailBackButton(onBackClick: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         onClick = onBackClick,
-        modifier = modifier.statusBarsPadding().padding(8.dp),
+        modifier = modifier.statusBarsPadding().padding(Dimens.SpacingSm),
     ) {
         Box(
             modifier =
-            Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = Alphas.EmphasisHigh)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
+                Lucide.ArrowLeft,
                 appString(R.string.cd_back),
-                tint = MaterialTheme.colorScheme.onPrimary,
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -230,20 +202,20 @@ internal fun DetailBackButton(onBackClick: () -> Unit, modifier: Modifier = Modi
 internal fun DetailShareButton(onShareClick: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         onClick = onShareClick,
-        modifier = modifier.statusBarsPadding().padding(8.dp),
+        modifier = modifier.statusBarsPadding().padding(Dimens.SpacingSm),
     ) {
         Box(
             modifier =
-            Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)),
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = Alphas.EmphasisHigh)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                Icons.Filled.Share,
-                contentDescription = "Share manga",
-                tint = MaterialTheme.colorScheme.onPrimary,
+                Lucide.Share2,
+                contentDescription = appString(R.string.cd_share),
+                tint = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -251,9 +223,49 @@ internal fun DetailShareButton(onShareClick: () -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-private fun coverRequest(mangaId: String, coverUrl: String?,): ImageRequest = ImageRequest
-    .Builder(LocalContext.current)
-    .data(coverUrl)
-    .placeholderMemoryCacheKey("cover_$mangaId")
-    .memoryCacheKey("cover_$mangaId")
-    .build()
+internal fun DetailFavoriteButton(
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    IconButton(
+        onClick = onToggleFavorite,
+        modifier = modifier.statusBarsPadding().padding(Dimens.SpacingSm),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = Alphas.EmphasisHigh)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Lucide.Heart,
+                contentDescription =
+                    if (isFavorite) {
+                        appString(R.string.cd_favorite_remove)
+                    } else {
+                        appString(R.string.cd_favorite_add)
+                    },
+                // Cùng màu semantic với StatusChip FAVORITE
+                tint =
+                    if (isFavorite) {
+                        MaterialTheme.statusColors.favorite
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun coverRequest(mangaId: String, coverUrl: String?): ImageRequest =
+    ImageRequest
+        .Builder(LocalContext.current)
+        .data(coverUrl)
+        .placeholderMemoryCacheKey("cover_$mangaId")
+        .memoryCacheKey("cover_$mangaId")
+        .build()

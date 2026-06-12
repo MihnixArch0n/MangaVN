@@ -2,6 +2,7 @@ package com.example.mybookslibrary.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.mybookslibrary.data.download.OfflineDownloadManager
+import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.usecase.ChapterListResult
@@ -45,12 +46,24 @@ class MangaDetailViewModelCoverageTest {
     private val userPreferencesDataStore = mockk<UserPreferencesDataStore>(relaxed = true)
 
     // Default an toàn cho init (loadMangaDetail + observeChapters + checkLibraryStatus).
-    private fun stubInitDefaults(inLibrary: Boolean = false) {
+    private fun stubInitDefaults(
+        inLibrary: Boolean = false,
+        isFavorite: Boolean = false,
+    ) {
         coEvery { manga.getMangaDetail(MANGA_ID) } returns Result.failure(IllegalStateException("x"))
         every { useCase(MANGA_ID) } returns flowOf(ChapterListResult(emptyList(), emptyList(), ""))
         every { userPreferencesDataStore.observePreferredChapterLanguage() } returns flowOf("")
         coEvery { library.getLibraryItem(MANGA_ID) } returns
-            if (inLibrary) mockk(relaxed = true) else null
+            if (inLibrary) {
+                LibraryItemEntity(
+                    manga_id = MANGA_ID,
+                    title = "T",
+                    cover_url = "",
+                    is_favorite = isFavorite,
+                )
+            } else {
+                null
+            }
     }
 
     private fun build() =
@@ -160,6 +173,69 @@ class MangaDetailViewModelCoverageTest {
             vm.toggleLibrary("Title", "cover")
             advanceUntilIdle()
             assertFalse(vm.uiState.value.isInLibrary)
+            coVerify { library.removeFromLibrary(MANGA_ID) }
+        }
+
+    @Test
+    fun toggleFavorite_chuaYeuThich_setFavoriteVaThemVaoLibrary() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubInitDefaults(inLibrary = false)
+            val vm = build()
+            advanceUntilIdle()
+
+            vm.toggleFavorite("Title", "cover")
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.isFavorite)
+            // Yêu thích manga chưa có trong thư viện -> repository tự thêm -> state phản ánh
+            assertTrue(vm.uiState.value.isInLibrary)
+            coVerify {
+                library.setFavorite(
+                    mangaId = MANGA_ID,
+                    title = "Title",
+                    coverUrl = "cover",
+                    isFavorite = true,
+                )
+            }
+        }
+
+    @Test
+    fun toggleFavorite_dangYeuThich_boYeuThich() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubInitDefaults(inLibrary = true, isFavorite = true)
+            val vm = build()
+            advanceUntilIdle()
+            assertTrue(vm.uiState.value.isFavorite)
+
+            vm.toggleFavorite("Title", "cover")
+            advanceUntilIdle()
+
+            assertFalse(vm.uiState.value.isFavorite)
+            // Bỏ yêu thích không xóa khỏi thư viện
+            assertTrue(vm.uiState.value.isInLibrary)
+            coVerify {
+                library.setFavorite(
+                    mangaId = MANGA_ID,
+                    title = "Title",
+                    coverUrl = "cover",
+                    isFavorite = false,
+                )
+            }
+        }
+
+    @Test
+    fun toggleLibrary_xoaKhoiThuVien_resetCaFavorite() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubInitDefaults(inLibrary = true, isFavorite = true)
+            val vm = build()
+            advanceUntilIdle()
+
+            vm.toggleLibrary("Title", "cover")
+            advanceUntilIdle()
+
+            // Row bị xóa -> mất luôn cờ yêu thích
+            assertFalse(vm.uiState.value.isInLibrary)
+            assertFalse(vm.uiState.value.isFavorite)
             coVerify { library.removeFromLibrary(MANGA_ID) }
         }
 

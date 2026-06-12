@@ -4,14 +4,18 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.data.local.LibraryItemEntity
+import com.example.mybookslibrary.data.local.dao.LibraryDao
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.di.IoDispatcher
 import com.example.mybookslibrary.domain.model.MangaModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,10 +33,15 @@ class DiscoverViewModel
     constructor(
         application: Application,
         private val repository: MangaRepository,
+        private val libraryDao: LibraryDao,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : AndroidViewModel(application) {
         private val _uiState = MutableStateFlow(DiscoverUiState())
         val uiState: StateFlow<DiscoverUiState> = _uiState.asStateFlow()
+
+        val continueReading: StateFlow<List<LibraryItemEntity>> =
+            libraryDao.observeRecentlyReading()
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(SUBSCRIPTION_TIMEOUT), emptyList())
 
         init {
             loadDiscover()
@@ -60,5 +69,9 @@ class DiscoverViewModel
                         }
                 }
             }
+        }
+
+        companion object {
+            private const val SUBSCRIPTION_TIMEOUT = 5000L
         }
     }

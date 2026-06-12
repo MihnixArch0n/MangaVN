@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="kanso_paper">#FFF9F8F6</color>
+    <!-- Đối ứng token Compose trong ui/theme/Color.kt — đổi giá trị phải đổi CẢ HAI nơi.
+         Dùng cho splash (themes.xml) và brand drawable (ic_brand_logo, ic_launcher_*). -->
+    <color name="cinema_background_light">#FFF7F7F9</color>
+    <color name="cinema_background_dark">#FF0E0F13</color>
+    <color name="cinema_primary">#FFFF5A3C</color>
+    <color name="cinema_tertiary">#FFFFC24B</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
 </resources>

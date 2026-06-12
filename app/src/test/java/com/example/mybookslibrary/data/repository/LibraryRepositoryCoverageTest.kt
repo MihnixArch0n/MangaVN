@@ -4,6 +4,7 @@ package com.example.mybookslibrary.data.repository
 
 import androidx.room.Room
 import com.example.mybookslibrary.data.local.AppDatabase
+import com.example.mybookslibrary.data.local.ChapterMetadataEntity
 import com.example.mybookslibrary.data.local.ChapterProgressEntity
 import com.example.mybookslibrary.data.local.ChapterStatus
 import com.example.mybookslibrary.data.local.LibraryItemEntity
@@ -174,6 +175,116 @@ class LibraryRepositoryCoverageTest {
             assertFalse(repository.isInLibrary(MANGA_ID))
             org.junit.Assert.assertNotNull(db.chapterDao().getChapterProgressByChapter(CHAPTER_ID))
         }
+
+    @Test
+    fun setFavorite_mangaDaCoTrongThuVien_batCoYeuThich() =
+        runTest {
+            repository.addToLibrary(MANGA_ID, title = "Manga", coverUrl = "c")
+
+            repository.setFavorite(MANGA_ID, title = "Manga", coverUrl = "c", isFavorite = true)
+
+            assertTrue(repository.getLibraryItem(MANGA_ID)!!.is_favorite)
+        }
+
+    @Test
+    fun setFavorite_mangaChuaCoTrongThuVien_tuThemVoiCoYeuThich() =
+        runTest {
+            repository.setFavorite(MANGA_ID, title = "Manga", coverUrl = "c", isFavorite = true)
+
+            val item = repository.getLibraryItem(MANGA_ID)!!
+            assertTrue(item.is_favorite)
+            assertEquals("Manga", item.title)
+        }
+
+    @Test
+    fun setFavorite_tatCoYeuThich_giuNguyenItemTrongThuVien() =
+        runTest {
+            repository.setFavorite(MANGA_ID, title = "Manga", coverUrl = "c", isFavorite = true)
+
+            repository.setFavorite(MANGA_ID, title = "Manga", coverUrl = "c", isFavorite = false)
+
+            val item = repository.getLibraryItem(MANGA_ID)!!
+            assertFalse(item.is_favorite)
+        }
+
+    @Test
+    fun updateReadingProgress_docHetTatCaChuong_statusThanhCompleted() =
+        runTest {
+            repository.addToLibrary(MANGA_ID, title = "Manga", coverUrl = "c")
+            insertMetadata(metadata("c1", chapterNumber = "1"), metadata("c2", chapterNumber = "2"))
+
+            // Đọc hết c1 (trang cuối) — còn c2 nên vẫn READING
+            repository.updateReadingProgress(MANGA_ID, "c1", pageIndex = 9, totalPages = 10)
+            assertEquals(LibraryStatus.READING, repository.getLibraryItem(MANGA_ID)!!.status)
+
+            // Đọc hết c2 — toàn bộ chương xong -> COMPLETED
+            repository.updateReadingProgress(MANGA_ID, "c2", pageIndex = 9, totalPages = 10)
+            assertEquals(LibraryStatus.COMPLETED, repository.getLibraryItem(MANGA_ID)!!.status)
+        }
+
+    @Test
+    fun markChapterUnread_sauKhiHoanThanh_statusQuayVeReading() =
+        runTest {
+            repository.addToLibrary(MANGA_ID, title = "Manga", coverUrl = "c")
+            insertMetadata(metadata("c1", chapterNumber = "1"))
+            repository.updateReadingProgress(MANGA_ID, "c1", pageIndex = 9, totalPages = 10)
+            assertEquals(LibraryStatus.COMPLETED, repository.getLibraryItem(MANGA_ID)!!.status)
+
+            repository.markChapterUnread(MANGA_ID, "c1", totalPages = 10)
+
+            assertEquals(LibraryStatus.READING, repository.getLibraryItem(MANGA_ID)!!.status)
+        }
+
+    @Test
+    fun markChapterCompleted_motBanDichXong_chuongDoTinhLaDaDoc() =
+        runTest {
+            repository.addToLibrary(MANGA_ID, title = "Manga", coverUrl = "c")
+            // Cùng chương "1" có 2 bản dịch — chỉ cần đọc 1 bản là tính xong chương
+            insertMetadata(
+                metadata("c1-en", chapterNumber = "1", language = "en"),
+                metadata("c1-vi", chapterNumber = "1", language = "vi"),
+            )
+
+            repository.markChapterCompleted(MANGA_ID, "c1-en", totalPages = 10)
+
+            assertEquals(LibraryStatus.COMPLETED, repository.getLibraryItem(MANGA_ID)!!.status)
+        }
+
+    @Test
+    fun chuongUnavailable_khongTinhVaoDieuKienHoanThanh() =
+        runTest {
+            repository.addToLibrary(MANGA_ID, title = "Manga", coverUrl = "c")
+            insertMetadata(
+                metadata("c1", chapterNumber = "1"),
+                metadata("c2", chapterNumber = "2", unavailable = true),
+            )
+
+            repository.markChapterCompleted(MANGA_ID, "c1", totalPages = 10)
+
+            assertEquals(LibraryStatus.COMPLETED, repository.getLibraryItem(MANGA_ID)!!.status)
+        }
+
+    private suspend fun insertMetadata(vararg chapters: ChapterMetadataEntity) {
+        db.chapterDao().syncChapterMetadata(MANGA_ID, chapters.toList(), emptySet())
+    }
+
+    private fun metadata(
+        chapterId: String,
+        chapterNumber: String?,
+        language: String = "en",
+        unavailable: Boolean = false,
+    ) = ChapterMetadataEntity(
+        chapterId = chapterId,
+        mangaId = MANGA_ID,
+        volume = null,
+        chapterNumber = chapterNumber,
+        title = null,
+        pages = 10,
+        isUnavailable = unavailable,
+        translatedLanguage = language,
+        feedOrder = 0,
+        updatedAt = 1L,
+    )
 
     @Test
     fun restoreItems_insertsAllItems() =

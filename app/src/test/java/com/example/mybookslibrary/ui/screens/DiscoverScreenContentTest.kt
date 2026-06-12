@@ -10,6 +10,7 @@ import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.ui.util.FakeImageLoader
 import com.example.mybookslibrary.ui.viewmodel.DiscoverViewModel
+import com.example.mybookslibrary.data.local.dao.LibraryDao
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
@@ -45,20 +46,23 @@ class DiscoverScreenContentTest {
     private fun loadingVm(): DiscoverViewModel {
         val repo = mockk<MangaRepository>()
         every { repo.getDiscoverManga(any(), any()) } returns flowOf()
-        return DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
+                val dao = mockk<LibraryDao> { every { observeRecentlyReading() } returns flowOf(emptyList()) }
+        return DiscoverViewModel(application, repo, dao, UnconfinedTestDispatcher())
     }
 
     private fun errorVm(): DiscoverViewModel {
         val repo = mockk<MangaRepository>()
         every { repo.getDiscoverManga(any(), any()) } returns
             flowOf(Result.failure(IllegalStateException("network error")))
-        return DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
+                val dao = mockk<LibraryDao> { every { observeRecentlyReading() } returns flowOf(emptyList()) }
+        return DiscoverViewModel(application, repo, dao, UnconfinedTestDispatcher())
     }
 
     private fun loadedVm(items: List<MangaModel>): DiscoverViewModel {
         val repo = mockk<MangaRepository>()
         every { repo.getDiscoverManga(any(), any()) } returns flowOf(Result.success(items))
-        return DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
+                val dao = mockk<LibraryDao> { every { observeRecentlyReading() } returns flowOf(emptyList()) }
+        return DiscoverViewModel(application, repo, dao, UnconfinedTestDispatcher())
     }
 
     @Test
@@ -88,7 +92,8 @@ class DiscoverScreenContentTest {
     fun errorState_withNullMessage_showsGenericError() {
         val repo = mockk<MangaRepository>()
         every { repo.getDiscoverManga(any(), any()) } returns flowOf(Result.failure(RuntimeException()))
-        val vm = DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
+        val dao = mockk<LibraryDao> { every { observeRecentlyReading() } returns flowOf(emptyList()) }
+        val vm = DiscoverViewModel(application, repo, dao, UnconfinedTestDispatcher())
         composeRule.setContent { DiscoverScreenContent(vm = vm) }
         composeRule.onNodeWithText("Couldn't load home screen").assertIsDisplayed()
     }
@@ -177,7 +182,8 @@ class DiscoverScreenContentTest {
                 flowOf(Result.failure(RuntimeException("network err"))),
                 flowOf(Result.success(items)),
             )
-        val vm = DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
+        val dao = mockk<LibraryDao> { every { observeRecentlyReading() } returns flowOf(emptyList()) }
+        val vm = DiscoverViewModel(application, repo, dao, UnconfinedTestDispatcher())
 
         composeRule.setContent { DiscoverScreenContent(vm = vm) }
         composeRule.waitForIdle()
@@ -198,7 +204,8 @@ class DiscoverScreenContentTest {
                 flowOf(Result.failure(RuntimeException("fail"))),
                 flowOf(Result.success(items)),
             )
-        val vm = DiscoverViewModel(application, repo, UnconfinedTestDispatcher())
+        val dao = mockk<LibraryDao> { every { observeRecentlyReading() } returns flowOf(emptyList()) }
+        val vm = DiscoverViewModel(application, repo, dao, UnconfinedTestDispatcher())
 
         composeRule.setContent { DiscoverScreenContent(vm = vm) }
         composeRule.waitForIdle()

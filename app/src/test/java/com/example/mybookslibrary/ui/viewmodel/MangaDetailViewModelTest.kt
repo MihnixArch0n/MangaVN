@@ -93,7 +93,7 @@ class MangaDetailViewModelTest {
         every { getChapterListWithProgressUseCase(MANGA_ID) } returns
             flowOf(ChapterListResult(emptyList(), emptyList(), ""))
         every { userPreferencesDataStore.observePreferredChapterLanguage() } returns flowOf("")
-        coEvery { libraryRepository.isInLibrary(MANGA_ID) } returns false
+        coEvery { libraryRepository.getLibraryItem(MANGA_ID) } returns null
 
         return MangaDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf("mangaId" to MANGA_ID)),

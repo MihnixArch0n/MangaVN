@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark variant của splash/window background — tránh flash nền trắng
+         khi mở app ở dark mode trước khi Compose vẽ (đối ứng values/themes.xml). -->
+    <style name="Theme.MyBooksLibrary" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/cinema_background_dark</item>
+    </style>
+</resources>

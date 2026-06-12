@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.lifecycle.SavedStateHandle
 import com.example.mybookslibrary.data.download.OfflineDownloadManager
+import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.usecase.ChapterListResult
@@ -70,7 +71,12 @@ class MangaDetailScreenTest {
                 Result.success(MangaModel("m1", title, "Desc", null, emptyList()))
         }
         every { useCase(any()) } returns flowOf(ChapterListResult(chapters, availableLanguages, selectedLanguage))
-        coEvery { libraryRepo.isInLibrary(any()) } returns inLibrary
+        coEvery { libraryRepo.getLibraryItem(any()) } returns
+            if (inLibrary) {
+                LibraryItemEntity(manga_id = "m1", title = title, cover_url = "")
+            } else {
+                null
+            }
         coEvery { mangaRepo.getChapterPages(any()) } returns Result.success(emptyList())
         return MangaDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf("mangaId" to "m1")),

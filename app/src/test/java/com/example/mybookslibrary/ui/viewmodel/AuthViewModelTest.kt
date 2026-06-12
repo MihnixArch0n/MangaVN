@@ -118,11 +118,11 @@ class AuthViewModelTest {
     @Test
     fun register_thanhCong_phatSuccess() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.registerWithEmail("u", "p") } returns
+            coEvery { repository.registerWithEmail(any(), any()) } returns
                 Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = viewModel()
 
-            vm.register("u", "p")
+            vm.register("u", "Abc@1234")
             advanceUntilIdle()
 
             assertEquals(AuthState.Success, vm.uiState.value)
@@ -131,10 +131,10 @@ class AuthViewModelTest {
     @Test
     fun register_thatBaiNullMessage_dungFallback() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.registerWithEmail("u", "p") } returns Result.failure(RuntimeException())
+            coEvery { repository.registerWithEmail(any(), any()) } returns Result.failure(RuntimeException())
             val vm = viewModel()
 
-            vm.register("u", "p")
+            vm.register("u", "Abc@1234")
             advanceUntilIdle()
 
             assertEquals(AuthState.Error(UiText.Resource(R.string.error_unexpected)), vm.uiState.value)
@@ -143,11 +143,11 @@ class AuthViewModelTest {
     @Test
     fun register_thatBaiCoMessage_phatErrorMessage() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.registerWithEmail("u", "p") } returns
+            coEvery { repository.registerWithEmail(any(), any()) } returns
                 Result.failure(IllegalStateException("user tồn tại"))
             val vm = viewModel()
 
-            vm.register("u", "p")
+            vm.register("u", "Abc@1234")
             advanceUntilIdle()
 
             assertEquals(AuthState.Error(UiText.Dynamic("user tồn tại")), vm.uiState.value)
@@ -208,15 +208,15 @@ class AuthViewModelTest {
     @Test
     fun register_dangLoading_boQuaLanGoiThuHai() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
-            coEvery { repository.registerWithEmail("u", "p") } returns
+            coEvery { repository.registerWithEmail(any(), any()) } returns
                 Result.success(mockk<com.google.firebase.auth.FirebaseUser>(relaxed = true))
             val vm = viewModel()
 
-            vm.register("u", "p")
-            vm.register("u", "p") // trúng guard is Loading -> return
+            vm.register("u", "Abc@1234")
+            vm.register("u", "Abc@1234") // trúng guard is Loading -> return
             advanceUntilIdle()
 
-            coVerify(exactly = 1) { repository.registerWithEmail("u", "p") }
+            coVerify(exactly = 1) { repository.registerWithEmail(any(), any()) }
         }
 
     @Test

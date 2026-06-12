@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 /**
  * Instrumented navigation test dùng HiltAndroidTest.
- * createAndroidComposeRule v1 — v2 và createEmptyComposeRule đều gây
+ * createAndroidComposeRule v1 — v2 và empty compose rule đều gây
  * "No compose hierarchies" với HiltAndroidTest trên project này.
  * Activity launch trước @Before nên không thể reset DataStore để ảnh hưởng
  * startDestination — dùng conditional pattern để handle cả hai initial state.

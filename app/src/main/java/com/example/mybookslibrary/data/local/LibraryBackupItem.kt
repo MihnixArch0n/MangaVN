@@ -14,6 +14,7 @@ data class LibraryBackupItem(
     @SerialName("last_read_chapter_id") val lastReadChapterId: String = "",
     @SerialName("last_read_page_index") val lastReadPageIndex: Int = 0,
     @SerialName("updated_at") val updatedAt: Long? = null,
+    @SerialName("is_favorite") val isFavorite: Boolean = false,
 ) {
     /**
      * Converts a valid backup item to a Room entity, or returns null when required fields are absent.
@@ -27,6 +28,7 @@ data class LibraryBackupItem(
             last_read_chapter_id = lastReadChapterId.ifBlank { null },
             last_read_page_index = lastReadPageIndex,
             updated_at = updatedAt ?: System.currentTimeMillis(),
+            is_favorite = isFavorite,
         )
 }
 
@@ -42,4 +44,5 @@ fun LibraryItemEntity.toBackupItem() =
         lastReadChapterId = last_read_chapter_id.orEmpty(),
         lastReadPageIndex = last_read_page_index,
         updatedAt = updated_at,
+        isFavorite = is_favorite,
     )

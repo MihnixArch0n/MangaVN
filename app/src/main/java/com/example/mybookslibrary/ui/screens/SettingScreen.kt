@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.widthIn
+import com.example.mybookslibrary.ui.theme.Dimens
+import com.example.mybookslibrary.ui.util.adaptiveMaxWidth
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.R
@@ -43,10 +47,16 @@ import com.example.mybookslibrary.util.openAppLinkSettings
 
 @Suppress("unused", "CyclomaticComplexMethod", "LongMethod")
 @Composable
-fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewModel = hiltViewModel(),) {
+fun SettingScreenContent(
+    modifier: Modifier = Modifier,
+    onChangePasswordClick: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val bottomNavPadding = LocalBottomNavPadding.current
+    var showSignOutConfirm by remember { mutableStateOf(false) }
+    var showDeleteAccountConfirm by remember { mutableStateOf(false) }
 
     val backupLauncher =
         rememberLauncherForActivityResult(
@@ -67,27 +77,27 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(innerPadding).consumeWindowInsets(innerPadding),
+            contentAlignment = Alignment.TopCenter,
+        ) {
         androidx.compose.foundation.lazy.LazyColumn(
-            modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .consumeWindowInsets(innerPadding),
+            modifier = Modifier.widthIn(max = adaptiveMaxWidth()),
             contentPadding =
                 PaddingValues(
-                    start = 24.dp,
-                    end = 24.dp,
-                    top = 16.dp,
-                    bottom = bottomNavPadding + 16.dp,
+                    start = Dimens.ScreenPaddingCompact,
+                    end = Dimens.ScreenPaddingCompact,
+                    top = Dimens.SpacingLg,
+                    bottom = bottomNavPadding + Dimens.SpacingLg,
                 ),
         ) {
             item {
                 Text(
                     appString(R.string.settings_title),
                     style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(Dimens.SpacingXxl))
             }
 
             item { SettingsSectionLabel(appString(R.string.settings_section_appearance)) }
@@ -113,7 +123,7 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                         viewModel.setLanguage(if (uiState.language == "vi") "en" else "vi")
                     }
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(Dimens.SpacingXl))
             }
 
             item { SettingsSectionLabel(appString(R.string.settings_section_reading)) }
@@ -129,7 +139,7 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                 SettingsCard {
                     SettingsRow(appString(R.string.settings_image_quality), qualityLabel) { viewModel.toggleQuality() }
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(Dimens.SpacingXl))
             }
 
             item { SettingsSectionLabel(appString(R.string.settings_section_storage)) }
@@ -145,7 +155,7 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                 SettingsCard {
                     SettingsRow(appString(R.string.settings_clear_cache), cacheSubtitle) { viewModel.clearImageCache() }
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(Dimens.SpacingXl))
             }
 
             item { SettingsSectionLabel(appString(R.string.settings_section_data)) }
@@ -181,7 +191,7 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                         restoreLauncher.launch(arrayOf("application/json"))
                     }
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(Dimens.SpacingXl))
             }
 
             item { SettingsSectionLabel(appString(R.string.settings_section_links)) }
@@ -189,7 +199,25 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                 SettingsCard {
                     OpenLinksRow(context = context)
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(Dimens.SpacingXl))
+            }
+
+            item { SettingsSectionLabel(appString(R.string.settings_about)) }
+            item {
+                val versionName =
+                    try {
+                        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "—"
+                    } catch (_: Exception) {
+                        "—"
+                    }
+                SettingsCard {
+                    SettingsRow(
+                        title = appString(R.string.about_version, versionName),
+                        subtitle = appString(R.string.settings_about_subtitle),
+                        onClick = {},
+                    )
+                }
+                Spacer(Modifier.height(Dimens.SpacingXl))
             }
 
             item { SettingsSectionLabel(appString(R.string.settings_section_account)) }
@@ -212,10 +240,23 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                     }
                 SettingsCard {
                     SettingsRow(
+                        title = appString(R.string.settings_change_password),
+                        subtitle = appString(R.string.settings_change_password_subtitle),
+                        onClick = onChangePasswordClick,
+                    )
+                    SettingsDivider()
+                    SettingsRow(
                         title = signOutTitle,
                         subtitle = signOutSub,
-                        titleColor = MaterialTheme.colorScheme.tertiary,
-                        onClick = viewModel::signOut,
+                        titleColor = MaterialTheme.colorScheme.error,
+                        onClick = { showSignOutConfirm = true },
+                    )
+                    SettingsDivider()
+                    SettingsRow(
+                        title = appString(R.string.settings_delete_account),
+                        subtitle = appString(R.string.settings_delete_account_subtitle),
+                        titleColor = MaterialTheme.colorScheme.error,
+                        onClick = { showDeleteAccountConfirm = true },
                     )
                     SettingsDivider()
                     SettingsRow(
@@ -255,6 +296,55 @@ fun SettingScreenContent(modifier: Modifier = Modifier, viewModel: SettingsViewM
                 }
             }
         }
+        }
+    }
+
+    if (showSignOutConfirm) {
+        AlertDialog(
+            onDismissRequest = { showSignOutConfirm = false },
+            title = { Text(appString(R.string.sign_out_confirm_title)) },
+            text = { Text(appString(R.string.sign_out_confirm_body)) },
+            confirmButton = {
+                com.example.mybookslibrary.ui.screens.components.AppButton(
+                    text = appString(R.string.settings_sign_out),
+                    onClick = {
+                        showSignOutConfirm = false
+                        viewModel.signOut()
+                    },
+                )
+            },
+            dismissButton = {
+                com.example.mybookslibrary.ui.screens.components.AppButton(
+                    text = appString(R.string.action_cancel),
+                    onClick = { showSignOutConfirm = false },
+                    style = com.example.mybookslibrary.ui.screens.components.AppButtonStyle.Text,
+                )
+            },
+        )
+    }
+
+    if (showDeleteAccountConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountConfirm = false },
+            title = { Text(appString(R.string.delete_account_confirm_title)) },
+            text = { Text(appString(R.string.delete_account_confirm_body)) },
+            confirmButton = {
+                com.example.mybookslibrary.ui.screens.components.AppButton(
+                    text = appString(R.string.settings_delete_account),
+                    onClick = {
+                        showDeleteAccountConfirm = false
+                        viewModel.deleteAccount()
+                    },
+                )
+            },
+            dismissButton = {
+                com.example.mybookslibrary.ui.screens.components.AppButton(
+                    text = appString(R.string.action_cancel),
+                    onClick = { showDeleteAccountConfirm = false },
+                    style = com.example.mybookslibrary.ui.screens.components.AppButtonStyle.Text,
+                )
+            },
+        )
     }
 }
 
@@ -264,18 +354,16 @@ private fun SettingsSectionLabel(title: String) {
         title.uppercase(),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(bottom = 8.dp, start = 4.dp),
+        modifier = Modifier.padding(bottom = Dimens.SpacingSm, start = Dimens.SpacingXs),
     )
 }
 
 @Composable
 private fun SettingsCard(content: @Composable () -> Unit) {
     Card(
-        shape =
-        androidx.compose.foundation.shape
-            .RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.fillMaxWidth()) { content() }
@@ -294,13 +382,13 @@ private fun SettingsRow(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = Dimens.SpacingXl, vertical = Dimens.SpacingLg),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium, color = titleColor)
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(Dimens.SpacingXxs))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
@@ -315,9 +403,9 @@ private fun SettingsDivider() {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(1.dp)
-            .padding(horizontal = 20.dp)
-            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.12f)),
+            .height(Dimens.BorderThin)
+            .padding(horizontal = Dimens.SpacingXl)
+            .background(MaterialTheme.colorScheme.outlineVariant),
     )
 }
 
@@ -352,17 +440,17 @@ private fun OpenLinksRow(context: android.content.Context) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = Dimens.SpacingXl, vertical = Dimens.SpacingMd),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+        Column(Modifier.weight(1f).padding(end = Dimens.SpacingMd)) {
             Text(
                 appString(R.string.settings_open_links),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.height(2.dp))
+            Spacer(Modifier.height(Dimens.SpacingXxs))
             Text(
                 appString(R.string.settings_open_links_subtitle),
                 style = MaterialTheme.typography.bodySmall,
@@ -379,7 +467,7 @@ private fun OpenLinksRow(context: android.content.Context) {
                 disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             ),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                horizontal = 16.dp, vertical = 8.dp,
+                horizontal = Dimens.SpacingLg, vertical = Dimens.SpacingSm,
             ),
         ) {
             Text(

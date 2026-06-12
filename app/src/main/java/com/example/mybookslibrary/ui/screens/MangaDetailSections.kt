@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,14 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,19 +34,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.composables.icons.lucide.ChevronDown
+import com.composables.icons.lucide.ChevronUp
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Star
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.ui.theme.Dimens
+import com.example.mybookslibrary.ui.theme.Elevations
 import com.example.mybookslibrary.ui.util.appString
+import androidx.compose.material3.Icon as M3Icon
 
 @Composable
 internal fun PublisherSection(description: String) {
     var expanded by remember { mutableStateOf(false) }
-    Column(modifier = Modifier.padding(horizontal = 24.dp).offset(y = DetailDimensions.SynopsisOffset)) {
+    Column(
+        modifier = Modifier.padding(horizontal = Dimens.ScreenPaddingCompact)
+            .offset(y = DetailDimensions.SynopsisOffset),
+    ) {
         Text(
             appString(R.string.detail_from_publisher),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(Dimens.SpacingMd))
         Box(modifier = Modifier.animateContentSize().clickable { expanded = !expanded }) {
             Text(
                 description,
@@ -66,7 +71,7 @@ internal fun PublisherSection(description: String) {
                 appString(R.string.action_more),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(top = 8.dp).clickable { expanded = true },
+                modifier = Modifier.padding(top = Dimens.SpacingSm).clickable { expanded = true },
             )
         }
     }
@@ -74,25 +79,25 @@ internal fun PublisherSection(description: String) {
 
 @Composable
 internal fun FirstChapterPreviewSection(pageUrls: List<String>) {
-    Spacer(Modifier.height(32.dp).offset(y = DetailDimensions.SynopsisOffset))
+    Spacer(Modifier.height(Dimens.SpacingXxl).offset(y = DetailDimensions.SynopsisOffset))
     Column(modifier = Modifier.fillMaxWidth().offset(y = DetailDimensions.SynopsisOffset)) {
         Text(
             appString(R.string.detail_from_book),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 24.dp),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = Dimens.ScreenPaddingCompact),
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Dimens.SpacingLg))
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = Dimens.ScreenPaddingCompact),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingLg),
             modifier = Modifier.fillMaxWidth(),
         ) {
             items(pageUrls) { pageUrl ->
                 Card(
-                    shape = RoundedCornerShape(8.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                    modifier = Modifier.width(200.dp).height(300.dp),
+                    shape = MaterialTheme.shapes.small,
+                    elevation = CardDefaults.cardElevation(defaultElevation = Elevations.Dialog),
+                    modifier = Modifier.width(160.dp).aspectRatio(2f / 3f),
                 ) {
                     AsyncImage(
                         model = pageUrl,
@@ -113,13 +118,15 @@ internal fun CustomerReviewsSection(onReviewClick: () -> Unit) {
         Text(
             appString(R.string.detail_customer_reviews),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 24.dp).clickable(onClick = onReviewClick),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .padding(horizontal = Dimens.ScreenPaddingCompact)
+                .clickable(onClick = onReviewClick),
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(Dimens.SpacingLg))
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(horizontal = Dimens.ScreenPaddingCompact),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingLg),
             modifier = Modifier.fillMaxWidth(),
         ) {
             items(dummyReviews) { review ->
@@ -134,15 +141,21 @@ internal fun CustomerReviewsSection(onReviewClick: () -> Unit) {
 }
 
 @Composable
-private fun ReviewCard(review: DummyReview, modifier: Modifier = Modifier, onClick: () -> Unit,) {
+private fun ReviewCard(review: DummyReview, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
         modifier = modifier.clickable(onClick = onClick),
     ) {
-        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+        Column(modifier = Modifier.padding(Dimens.SpacingLg).fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(review.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(
+                    review.title,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 Spacer(Modifier.weight(1f))
                 Text(
                     review.date,
@@ -150,20 +163,24 @@ private fun ReviewCard(review: DummyReview, modifier: Modifier = Modifier, onCli
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(Dimens.SpacingXs))
             Row {
                 repeat(REVIEW_STAR_COUNT) {
-                    Icon(
-                        Icons.Filled.Star,
+                    M3Icon(
+                        Lucide.Star,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(Dimens.IconXs),
                     )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            Text(review.body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Dimens.SpacingSm))
+            Text(
+                review.body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(Dimens.SpacingSm))
             Text(
                 review.username,
                 style = MaterialTheme.typography.labelMedium,
@@ -174,7 +191,7 @@ private fun ReviewCard(review: DummyReview, modifier: Modifier = Modifier, onCli
 }
 
 @Composable
-internal fun ChaptersHeader(expanded: Boolean, modifier: Modifier = Modifier,) {
+internal fun ChaptersHeader(expanded: Boolean, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -184,14 +201,15 @@ internal fun ChaptersHeader(expanded: Boolean, modifier: Modifier = Modifier,) {
             Text(
                 appString(R.string.detail_chapters),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onSurface,
             )
-            Icon(
-                imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            M3Icon(
+                imageVector = if (expanded) Lucide.ChevronUp else Lucide.ChevronDown,
                 contentDescription = appString(R.string.cd_expand_chapters),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(Dimens.SpacingMd))
     }
 }
 
@@ -201,11 +219,11 @@ internal fun DetailMessage(message: String) {
         message,
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 24.dp),
+        modifier = Modifier.padding(horizontal = Dimens.ScreenPaddingCompact),
     )
 }
 
-data class DummyReview(val title: String, val body: String, val date: String, val username: String,)
+data class DummyReview(val title: String, val body: String, val date: String, val username: String)
 
 private val dummyReviews =
     listOf(

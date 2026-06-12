@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
@@ -66,5 +67,40 @@ class ThemeTest {
         val darkPrimary = capturedPrimary
 
         assertNotEquals(lightPrimary, darkPrimary)
+    }
+
+    @Test
+    fun myBooksLibraryTheme_appliesCinemaTokens() {
+        var darkBackground = Color.Unspecified
+        var darkPrimary = Color.Unspecified
+        composeRule.setContent {
+            MyBooksLibraryTheme(darkTheme = true) {
+                darkBackground = MaterialTheme.colorScheme.background
+                darkPrimary = MaterialTheme.colorScheme.primary
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(CinemaDarkBackground, darkBackground)
+        assertEquals(CinemaDarkPrimary, darkPrimary)
+    }
+
+    @Test
+    fun myBooksLibraryTheme_surfaceTintEqualsSurface_disablesTonalTint() {
+        var isDark by mutableStateOf(false)
+        var surfaceTint = Color.Unspecified
+        var surface = Color.Unspecified
+
+        composeRule.setContent {
+            MyBooksLibraryTheme(darkTheme = isDark) {
+                surfaceTint = MaterialTheme.colorScheme.surfaceTint
+                surface = MaterialTheme.colorScheme.surface
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(surface, surfaceTint)
+
+        isDark = true
+        composeRule.waitForIdle()
+        assertEquals(surface, surfaceTint)
     }
 }

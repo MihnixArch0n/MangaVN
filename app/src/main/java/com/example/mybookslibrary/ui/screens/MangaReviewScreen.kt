@@ -1,32 +1,54 @@
 package com.example.mybookslibrary.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.composables.icons.lucide.ArrowLeft
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Star
+import com.example.mybookslibrary.R
+import com.example.mybookslibrary.ui.theme.Alphas
+import com.example.mybookslibrary.ui.theme.Dimens
+import com.example.mybookslibrary.ui.util.appString
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongMethod")
 @Composable
 fun MangaReviewScreen(onBackClick: () -> Unit) {
     val dummyReviews =
         listOf(
-            DummyReview("Tốt \uD83D\uDC4D", "5 sao\n\nwe ét it để đi he", "30 Jun 2025", "User123"),
+            DummyReview("Tốt 👍", "5 sao\n\nwe ét it để đi he", "30 Jun 2025", "User123"),
             DummyReview(
                 "Hay",
-                "Cái này giúp cho mình biết được nó có thể giúp gì\n\n\uD83D\uDC96\uD83D\uDC9E\uD83D\uDC98",
+                "Cái này giúp cho mình biết được nó có thể giúp gì\n\n💖💞💘",
                 "5 Oct 2024",
                 "MangaFan99",
             ),
@@ -50,13 +72,13 @@ fun MangaReviewScreen(onBackClick: () -> Unit) {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Customer Reviews",
+                        appString(R.string.detail_customer_reviews),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Lucide.ArrowLeft, contentDescription = appString(R.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
@@ -69,31 +91,33 @@ fun MangaReviewScreen(onBackClick: () -> Unit) {
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(horizontal = Dimens.ScreenPaddingCompact),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingLg),
         ) {
             item {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpacingLg),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             "3.2",
-                            style = MaterialTheme.typography.displayLarge.copy(fontWeight = FontWeight.Bold, fontSize = 64.sp),
-                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            "out of 5",
+                            appString(R.string.review_out_of_5),
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
                     Column(
-                        modifier = Modifier.weight(1f).padding(start = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.weight(1f).padding(start = Dimens.SpacingXl),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingXs),
                     ) {
                         RatingBarRow(stars = 5, progress = 0.6f)
                         RatingBarRow(stars = 4, progress = 0.2f)
@@ -101,73 +125,70 @@ fun MangaReviewScreen(onBackClick: () -> Unit) {
                         RatingBarRow(stars = 2, progress = 0.05f)
                         RatingBarRow(stars = 1, progress = 0.05f)
                         Text(
-                            "177 Ratings",
+                            appString(R.string.review_ratings_count, 177),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.align(Alignment.End).padding(top = 4.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.align(Alignment.End).padding(top = Dimens.SpacingXs),
                         )
                     }
                 }
             }
 
             item {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(Dimens.SpacingXl))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "Reviews",
+                        appString(R.string.review_section_title),
                         style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    )
-                    Text(
-                        "Sort ↑↓",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.SpacingSm))
             }
 
             items(dummyReviews) { review ->
                 Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+                    shape = MaterialTheme.shapes.large,
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(Dimens.SpacingLg).fillMaxWidth()) {
                         Text(
                             review.title,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text(review.body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(Dimens.SpacingSm))
+                        Text(
+                            review.body,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Spacer(Modifier.height(Dimens.SpacingMd))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Row {
                                 repeat(5) { index ->
                                     Icon(
-                                        Icons.Filled.Star,
+                                        Lucide.Star,
                                         contentDescription = null,
                                         tint =
-                                            if (index <
-                                                3
-                                            ) {
-                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            if (index < 3) {
+                                                MaterialTheme.colorScheme.tertiary
                                             } else {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
-                                                    .copy(
-                                                        alpha = 0.3f,
-                                                    )
+                                                    .copy(alpha = Alphas.EmphasisFaint)
                                             },
-                                        modifier = Modifier.size(14.dp),
+                                        modifier = Modifier.size(Dimens.IconXs),
                                     )
                                 }
                             }
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(Dimens.SpacingSm))
                             Text(
                                 review.date + ", " + review.username,
                                 style = MaterialTheme.typography.bodySmall,
@@ -178,18 +199,13 @@ fun MangaReviewScreen(onBackClick: () -> Unit) {
                 }
             }
 
-            item {
-                Spacer(modifier = Modifier.height(40.dp))
-            }
+            item { Spacer(modifier = Modifier.height(40.dp)) }
         }
     }
 }
 
 @Composable
-private fun RatingBarRow(
-    stars: Int,
-    progress: Float,
-) {
+private fun RatingBarRow(stars: Int, progress: Float) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.End,
@@ -198,29 +214,29 @@ private fun RatingBarRow(
         Row(horizontalArrangement = Arrangement.End, modifier = Modifier.width(60.dp)) {
             repeat(stars) {
                 Icon(
-                    Icons.Filled.Star,
+                    Lucide.Star,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(10.dp),
                 )
             }
         }
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(Dimens.SpacingSm))
         Box(
             modifier =
                 Modifier
                     .weight(1f)
-                    .height(4.dp)
+                    .height(Dimens.SpacingXs)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)),
+                    .background(MaterialTheme.colorScheme.outlineVariant),
         ) {
             Box(
                 modifier =
                     Modifier
                         .fillMaxWidth(progress)
-                        .height(4.dp)
+                        .height(Dimens.SpacingXs)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onSurfaceVariant),
+                        .background(MaterialTheme.colorScheme.tertiary),
             )
         }
     }

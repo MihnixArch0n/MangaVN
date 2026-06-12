@@ -66,6 +66,10 @@ class AuthViewModel
                 _uiState.value = AuthState.Error(UiText.Resource(R.string.auth_error_empty_fields))
                 return
             }
+            if (!isPasswordStrong(password)) {
+                _uiState.value = AuthState.Error(UiText.Resource(R.string.auth_error_password_weak))
+                return
+            }
             _uiState.value = AuthState.Loading
             viewModelScope.launch {
                 val result = authRepository.registerWithEmail(email, password)
@@ -109,8 +113,55 @@ class AuthViewModel
             }
         }
 
+        fun changePassword(
+            currentPassword: String,
+            newPassword: String,
+            confirmPassword: String,
+        ) {
+            if (_uiState.value is AuthState.Loading) return
+            if (currentPassword.isBlank() || newPassword.isBlank()) {
+                _uiState.value = AuthState.Error(UiText.Resource(R.string.auth_error_empty_fields))
+                return
+            }
+            if (newPassword != confirmPassword) {
+                _uiState.value = AuthState.Error(UiText.Resource(R.string.auth_passwords_no_match))
+                return
+            }
+            if (newPassword == currentPassword) {
+                _uiState.value =
+                    AuthState.Error(UiText.Resource(R.string.auth_error_password_same_old))
+                return
+            }
+            if (!isPasswordStrong(newPassword)) {
+                _uiState.value = AuthState.Error(UiText.Resource(R.string.auth_error_password_weak))
+                return
+            }
+            _uiState.value = AuthState.Loading
+            viewModelScope.launch {
+                val result = authRepository.changePassword(currentPassword, newPassword)
+                _uiState.value =
+                    if (result.isSuccess) {
+                        AuthState.Success
+                    } else {
+                        AuthState.Error(authError(result.exceptionOrNull()?.message))
+                    }
+            }
+        }
+
         fun resetState() {
             _uiState.value = AuthState.Idle
+        }
+
+        companion object {
+            private const val MIN_PASSWORD_LENGTH = 8
+
+            /** Mật khẩu mạnh (chuẩn OWASP): ≥8 ký tự, chữ hoa, chữ thường, số, ký tự đặc biệt. */
+            fun isPasswordStrong(password: String): Boolean =
+                password.length >= MIN_PASSWORD_LENGTH &&
+                    password.any { it.isUpperCase() } &&
+                    password.any { it.isLowerCase() } &&
+                    password.any { it.isDigit() } &&
+                    password.any { !it.isLetterOrDigit() }
         }
     }
 

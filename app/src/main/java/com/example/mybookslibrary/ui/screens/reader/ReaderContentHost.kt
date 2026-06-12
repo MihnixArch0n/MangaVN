@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import com.example.mybookslibrary.ui.screens.components.LoadingIndicator
+import com.example.mybookslibrary.ui.screens.components.LoadingSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -108,7 +109,7 @@ private fun ReaderPages(
 @Composable
 private fun ReaderCenteredProgress() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.surface)
+        LoadingIndicator(size = LoadingSize.Large, color = MaterialTheme.colorScheme.surface)
     }
 }
 

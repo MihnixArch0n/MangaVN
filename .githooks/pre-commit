@@ -2,13 +2,29 @@
 # Pre-commit hook: lintDebug + ktlintCheck + detekt khi có staged .kt files.
 # Cài tự động qua Gradle task installGitHooks (chạy khi build lần đầu).
 
-STAGED_KT=$(git diff --cached --name-only --diff-filter=ACM | grep '\.kt$')
+STAGED_ALL=$(git diff --cached --name-only --diff-filter=ACM)
+
+# Strings parity: chuỗi UI mới/sửa phải có ở CẢ values/ lẫn values-vi/
+# (refactor-ui-ux.md §8). Đặt TRƯỚC early-exit vì commit chỉ sửa strings.xml
+# không có file .kt staged.
+if echo "$STAGED_ALL" | grep -q 'res/values[^/]*/strings\.xml'; then
+    if ! sh scripts/check-strings-parity.sh; then
+        exit 1
+    fi
+fi
+
+STAGED_KT=$(echo "$STAGED_ALL" | grep '\.kt$')
 if [ -z "$STAGED_KT" ]; then
     exit 0
 fi
 
 # --- Fast-fail: phát hiện pattern sai trước khi chạy Gradle (~1 giây) ---
 FAST_FAIL=0
+
+# Design tokens: cấm hardcode màu/cỡ chữ/font ngoài ui/theme/ (refactor-ui-ux.md §7B)
+if ! sh scripts/check-design-tokens.sh; then
+    FAST_FAIL=1
+fi
 
 # junit4.v2.createComposeRule không generate coverage ổn định — dùng createAndroidComposeRule
 if echo "$STAGED_KT" | xargs grep -l "junit4\.v2\.createComposeRule" 2>/dev/null | grep -q .; then

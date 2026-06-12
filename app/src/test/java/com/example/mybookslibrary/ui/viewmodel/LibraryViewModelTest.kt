@@ -41,6 +41,27 @@ class LibraryViewModelTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
+    fun showFavoritesOnly_chiTraVeItemYeuThich() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            val favorite =
+                LibraryItemEntity("1", "Yêu thích", "cover", LibraryStatus.READING, is_favorite = true)
+            val normal =
+                LibraryItemEntity("2", "Thường", "cover", LibraryStatus.READING, is_favorite = false)
+            val repository = mockk<LibraryRepository>()
+            every { repository.observeLibraryItems() } returns flowOf(listOf(favorite, normal))
+
+            val viewModel = LibraryViewModel(repository, mainDispatcherRule.dispatcher)
+            assertEquals(listOf(favorite, normal), viewModel.libraryItems.first())
+
+            viewModel.setShowFavoritesOnly(true)
+            assertEquals(listOf(favorite), viewModel.libraryItems.first())
+
+            viewModel.setShowFavoritesOnly(false)
+            assertEquals(listOf(favorite, normal), viewModel.libraryItems.first())
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
     fun removeBookmark_launchesRepositoryCall() =
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             val repository = mockk<LibraryRepository>()

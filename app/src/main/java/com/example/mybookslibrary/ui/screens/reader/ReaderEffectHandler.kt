@@ -3,15 +3,16 @@
     "LongMethod",
     "MaxLineLength",
     "ktlint:standard:function-naming",
+    "ktlint:standard:max-line-length",
 )
 
 package com.example.mybookslibrary.ui.screens.reader
 
 import android.content.Intent
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +47,7 @@ internal fun ReaderEffectHandler(
     pagerState: PagerState,
     currentReadingMode: ReadingMode,
     onEvent: (ReaderEvent) -> Unit,
+    snackbarHostState: SnackbarHostState,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -68,7 +70,7 @@ internal fun ReaderEffectHandler(
                     ReaderToastType.SaveFailed -> saveFailedText
                     ReaderToastType.ShareFailed -> shareFailedText
                 }
-            Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
+            snackbarHostState.showSnackbar(toastText)
             errorMessageEvent = null
         }
     }
@@ -184,7 +186,7 @@ internal fun ReaderEffectHandler(
                                 ReaderPageAction.SaveAs -> savedToFileText
                                 ReaderPageAction.Share -> sharingText
                             }
-                        Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+                        snackbarHostState.showSnackbar(text)
                     } else {
                         errorToastType =
                             when (effect.action) {

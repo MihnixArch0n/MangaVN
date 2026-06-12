@@ -1,14 +1,15 @@
 <resources>
-    <string name="app_name">MyBooksLibrary</string>
+    <string name="app_name">MangaVN</string>
 
     <!-- Điều hướng -->
     <string name="nav_discover">Khám phá</string>
     <string name="nav_search">Tìm kiếm</string>
     <string name="nav_library">Thư viện</string>
-    <string name="nav_setting">Cài đặt</string>
+    <string name="nav_profile">Hồ sơ</string>
 
     <!-- Discover -->
-    <string name="brand_name">Kanso</string>
+    <string name="brand_name">MangaVN</string>
+    <string name="section_continue_reading">Tiếp tục đọc</string>
     <string name="section_spotlight">Nổi bật</string>
     <string name="section_popular">Phổ biến</string>
     <string name="section_new_releases">Mới cập nhật</string>
@@ -25,6 +26,8 @@
     <string name="cd_search">Tìm kiếm</string>
     <string name="cd_profile">Hồ sơ</string>
     <string name="cd_back">Quay lại</string>
+    <string name="cd_show_password">Hiện mật khẩu</string>
+    <string name="cd_hide_password">Ẩn mật khẩu</string>
 
     <!-- Search -->
     <string name="search_title">Tìm kiếm</string>
@@ -64,6 +67,10 @@
     <string name="library_empty_subtitle">Bắt đầu đọc để xây dựng bộ sưu tập</string>
     <string name="library_remove_bookmark">Xoá đánh dấu</string>
     <string name="library_remove_bookmark_confirm">Xoá "%1$s" khỏi thư viện?</string>
+    <string name="library_filter_all">Tất cả</string>
+    <string name="library_filter_favorites">Yêu thích</string>
+    <string name="library_favorites_empty_title">Chưa có truyện yêu thích</string>
+    <string name="library_favorites_empty_subtitle">Nhấn biểu tượng trái tim trên truyện để thêm vào đây</string>
 
     <!-- Trạng thái -->
     <string name="status_reading">Đang đọc</string>
@@ -83,10 +90,17 @@
     <string name="detail_error">Không tải được chi tiết truyện</string>
     <string name="detail_from_publisher">Từ nhà xuất bản</string>
     <string name="detail_from_book">Trích từ truyện</string>
-    <string name="detail_customer_reviews">Đánh giá của độc giả &gt;</string>
+    <string name="detail_customer_reviews">Đánh giá của độc giả</string>
+    <string name="review_out_of_5">trên 5</string>
+    <string name="review_ratings_count">%1$d lượt đánh giá</string>
+    <string name="review_section_title">Đánh giá</string>
     <string name="action_more">Xem thêm</string>
     <string name="cd_page_preview">Xem trước trang truyện</string>
     <string name="cd_expand_chapters">Mở rộng danh sách chương</string>
+    <string name="cd_share">Chia sẻ</string>
+    <string name="cd_favorite_add">Thêm vào yêu thích</string>
+    <string name="cd_favorite_remove">Bỏ yêu thích</string>
+    <string name="filter_all_languages">Tất cả</string>
 
     <!-- Chapter -->
     <string name="chapter_vol_prefix">Tập %1$s </string>
@@ -149,6 +163,13 @@
     <string name="settings_delete_account_confirm">Xoá tài khoản của tôi</string>
     <string name="settings_delete_account_desc">Bạn có chắc chắn muốn xoá tài khoản không? Hành động này không thể hoàn tác và sẽ xoá toàn bộ dữ liệu thư viện của bạn khỏi đám mây.</string>
     <string name="action_cancel">Huỷ</string>
+    <string name="sign_out_confirm_title">Đăng xuất?</string>
+    <string name="sign_out_confirm_body">Bạn sẽ cần đăng nhập lại để truy cập thư viện và tiến độ đọc</string>
+    <string name="settings_about">Giới thiệu</string>
+    <string name="settings_about_subtitle">Phiên bản và giấy phép</string>
+    <string name="about_version">Phiên bản %1$s</string>
+    <string name="about_source_code">Mã nguồn</string>
+    <string name="about_licenses">Giấy phép mã nguồn mở</string>
     <string name="settings_dark_mode">Chủ đề</string>
     <string name="settings_theme_system">Theo hệ thống</string>
     <string name="settings_theme_light">Sáng</string>
@@ -177,20 +198,149 @@
 
     <!-- Màn hình đăng nhập / đăng ký -->
     <string name="auth_login_title">Đăng nhập</string>
+    <string name="auth_welcome_new">Chào mừng đến với MangaVN!</string>
     <string name="auth_welcome_back">Chào mừng trở lại!</string>
+    <string name="auth_welcome_subtitle">Ứng dụng đọc truyện tranh Manga tại&#160;Việt&#160;Nam</string>
     <string name="auth_email">Email</string>
     <string name="auth_password">Mật khẩu</string>
+    <string name="auth_password_placeholder">Nhập mật khẩu</string>
+    <string name="auth_confirm_password_placeholder">Nhập lại mật khẩu</string>
     <string name="auth_login_button">Đăng nhập</string>
     <string name="auth_continue_guest">Tiếp tục với tư cách khách</string>
     <string name="auth_google_signin">Đăng nhập bằng Google</string>
+    <string name="auth_no_account_prompt">Bạn chưa có tài khoản?</string>
+    <string name="auth_no_account_action">Đăng ký</string>
     <string name="auth_no_account_register">Chưa có tài khoản? Đăng ký</string>
     <string name="auth_register_title">Đăng ký</string>
     <string name="auth_create_account">Tạo tài khoản</string>
     <string name="auth_confirm_password">Xác nhận mật khẩu</string>
     <string name="auth_passwords_no_match">Mật khẩu không khớp</string>
+    <string name="auth_have_account_prompt">Bạn đã có tài khoản?</string>
+    <string name="auth_have_account_action">Đăng nhập</string>
     <string name="auth_have_account_login">Đã có tài khoản? Đăng nhập</string>
     <string name="auth_error_empty_fields">Email và mật khẩu không được để trống</string>
+    <string name="auth_error_password_weak">Mật khẩu tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt</string>
+    <string name="auth_password_hint">Tối thiểu 8 ký tự: chữ hoa, chữ thường, số, ký tự đặc biệt</string>
+    <string name="auth_change_password_title">Đổi mật khẩu</string>
+    <string name="auth_current_password">Mật khẩu hiện tại *</string>
+    <string name="auth_new_password">Mật khẩu mới *</string>
+    <string name="auth_confirm_new_password">Xác nhận mật khẩu mới *</string>
+    <string name="auth_error_current_password_wrong">Mật khẩu hiện tại không đúng</string>
+    <string name="auth_error_password_same_old">Mật khẩu mới phải khác mật khẩu hiện tại</string>
+    <string name="auth_error_google_no_password">Tài khoản Google không dùng mật khẩu trong app</string>
+    <string name="feedback_password_changed">Đã đổi mật khẩu!</string>
+    <string name="settings_change_password">Đổi mật khẩu</string>
+    <string name="settings_change_password_subtitle">Cập nhật mật khẩu tài khoản</string>
+    <string name="delete_account_confirm_title">Xóa tài khoản?</string>
+    <string name="delete_account_confirm_body">Tài khoản và dữ liệu đọc sẽ bị xóa vĩnh viễn. Không thể hoàn tác.</string>
+    <string name="auth_error_login_failed">Đăng nhập thất bại</string>
+    <string name="auth_error_register_failed">Đăng ký thất bại</string>
+    <string name="auth_error_google_signin_failed">Đăng nhập Google thất bại</string>
     <string name="auth_error_email_exists">Email đã tồn tại</string>
     <string name="auth_error_invalid_credentials">Email hoặc mật khẩu không đúng</string>
     <string name="auth_error_google_save_failed">Không thể lưu tài khoản Google</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_page1_title">Khám phá hàng nghìn manga</string>
+    <string name="onboarding_page1_body">Tìm kiếm kho truyện MangaDex theo thể loại, ngôn ngữ hay chủ đề</string>
+    <string name="onboarding_page2_title">Xây dựng thư viện riêng</string>
+    <string name="onboarding_page2_body">Lưu truyện yêu thích, tải chapter đọc offline bất cứ lúc nào</string>
+    <string name="onboarding_page3_title">Đọc theo cách của bạn</string>
+    <string name="onboarding_page3_body">Cuộn dọc cho webtoon, lật ngang cho manga — sáng hoặc tối, tuỳ bạn</string>
+    <string name="onboarding_skip">Bỏ qua</string>
+    <string name="onboarding_get_started">Bắt đầu</string>
+    <string name="onboarding_next">Tiếp</string>
+    <string name="settings_review_guide">Xem lại hướng dẫn</string>
+    <string name="settings_review_guide_subtitle">Xem lại phần giới thiệu và mẹo đọc truyện</string>
+    <string name="reader_hint_tap_sides">Chạm trái/phải để lật trang, chạm giữa để mở menu</string>
+    <string name="reader_hint_mode_toggle">Đổi chế độ đọc tại đây: cuộn dọc, trái-sang-phải, hoặc phải-sang-trái</string>
+    <string name="reader_hint_got_it">Đã hiểu</string>
+    <string name="reader_hint_skip">Bỏ qua</string>
+
+    <!-- In-app guided tour -->
+    <string name="tour_step_counter">%1$d / %2$d</string>
+    <string name="tour_next">Tiếp</string>
+    <string name="tour_back">Quay lại</string>
+    <string name="tour_skip">Bỏ qua tất cả</string>
+    <string name="tour_done">Xong</string>
+    <string name="tour_step1_title">Khám phá manga</string>
+    <string name="tour_step1_body">Trang chủ — xem truyện thịnh hành, mới ra và khám phá theo thể loại. Chạm vào bìa để đọc!</string>
+    <string name="tour_step2_title">Tìm kiếm</string>
+    <string name="tour_step2_body">Tìm truyện theo tên, thể loại hoặc ngôn ngữ. Lọc theo trạng thái, mức nội dung và hơn nữa</string>
+    <string name="tour_step3_title">Thư viện</string>
+    <string name="tour_step3_body">Truyện đã lưu nằm ở đây. Nhấn nút đánh dấu trên truyện bất kỳ để thêm vào</string>
+    <string name="tour_step4_title">Hồ sơ</string>
+    <string name="tour_step4_body">Hồ sơ của bạn — thống kê đọc truyện, lịch sử, tải xuống và cài đặt ứng dụng</string>
+
+    <!-- Reading History -->
+    <string name="reading_history_title">Lịch sử đọc</string>
+    <string name="reading_history_empty_title">Chưa có lịch sử đọc</string>
+    <string name="reading_history_empty_subtitle">Bắt đầu đọc truyện và nó sẽ xuất hiện ở đây</string>
+    <string name="reading_history_last_read">Đọc lần cuối %1$s</string>
+    <string name="reading_history_today">Hôm nay</string>
+    <string name="reading_history_yesterday">Hôm qua</string>
+    <string name="reading_history_days_ago">%1$d ngày trước</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Hồ sơ</string>
+    <string name="profile_stat_bookmarks">Đã đánh dấu</string>
+    <string name="profile_stat_manga_read">Truyện đã đọc</string>
+    <string name="profile_stat_chapters">Chương</string>
+    <string name="profile_reading_history">Lịch sử đọc</string>
+    <string name="profile_settings">Cài đặt</string>
+    <string name="profile_statistics">Thống kê đọc truyện</string>
+
+    <!-- Statistics -->
+    <string name="stats_title">Thống kê đọc truyện</string>
+    <string name="stats_total_chapters">Tổng số chương</string>
+    <string name="stats_completed_chapters">Đã hoàn thành</string>
+    <string name="stats_in_progress_chapters">Đang đọc dở</string>
+    <string name="stats_chapters_read">Chương đã đọc</string>
+    <string name="stats_week_this">Tuần này</string>
+    <string name="stats_week_last">Tuần trước</string>
+    <string name="stats_weeks_ago">%1$d tuần trước</string>
+    <string name="stats_weekly_activity">Hoạt động trong tuần</string>
+    <string name="stats_monthly_trend">Xu hướng theo tháng</string>
+    <string name="stats_no_data">Bắt đầu đọc truyện để xem thống kê tại đây</string>
+    <string name="stats_library_breakdown">Truyện theo trạng thái</string>
+    <string name="stats_top_manga">Truyện đọc nhiều nhất</string>
+    <string name="stats_reading">Đang đọc</string>
+    <string name="stats_completed">Hoàn thành</string>
+    <string name="stats_favorite">Yêu thích</string>
+
+    <!-- Rate App -->
+    <string name="rate_app_title">Bạn thích MangaVN?</string>
+    <string name="rate_app_body">Nếu bạn thích ứng dụng, hãy dành chút thời gian đánh giá nhé. Cảm ơn bạn đã ủng hộ!</string>
+    <string name="rate_app_rate">Đánh giá ngay</string>
+    <string name="rate_app_later">Để sau</string>
+
+    <!-- In-app feedback -->
+    <string name="feedback_login_success">Đăng nhập thành công!</string>
+    <string name="feedback_register_success">Đăng ký thành công!</string>
+    <string name="feedback_bookmark_added">Đã thêm vào thư viện</string>
+    <string name="feedback_bookmark_removed">Đã xóa khỏi thư viện</string>
+    <string name="feedback_favorite_added">Đã thêm vào yêu thích</string>
+    <string name="feedback_favorite_removed">Đã bỏ yêu thích</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_name">Nhắc nhở đọc truyện</string>
+    <string name="notification_channel_desc">Nhắc bạn tiếp tục đọc truyện</string>
+    <string name="notification_reminder_title">Nhớ truyện không? 📖</string>
+    <string name="notification_reminder_body">Bạn đã lâu chưa đọc. Tiếp tục nào!</string>
+
+    <!-- Downloads -->
+    <string name="downloads_title">Tải xuống</string>
+    <string name="downloads_empty_title">Chưa có tải xuống</string>
+    <string name="downloads_empty_subtitle">Chương đã tải sẽ hiện ở đây để đọc ngoại tuyến</string>
+    <string name="downloads_delete">Xóa</string>
+    <string name="downloads_delete_confirm">Xóa chương đã tải này?</string>
+    <string name="downloads_chapter">Chương %1$s</string>
+    <string name="profile_downloads">Tải xuống</string>
+    <string name="profile_edit">Chỉnh sửa hồ sơ</string>
+    <string name="profile_edit_title">Chỉnh sửa hồ sơ</string>
+    <string name="profile_display_name">Tên hiển thị</string>
+    <string name="profile_display_name_placeholder">Nhập tên hiển thị</string>
+    <string name="profile_change_avatar">Đổi ảnh đại diện</string>
+    <string name="profile_save">Lưu</string>
+    <string name="profile_saved">Đã lưu hồ sơ!</string>
 </resources>

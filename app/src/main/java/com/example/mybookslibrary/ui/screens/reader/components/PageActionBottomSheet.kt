@@ -2,6 +2,7 @@
 
 package com.example.mybookslibrary.ui.screens.reader.components
 
+import com.example.mybookslibrary.ui.theme.Dimens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,10 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Download
-import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Share
+import com.composables.icons.lucide.Download
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Save
+import com.composables.icons.lucide.Share2
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -27,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
@@ -76,12 +76,12 @@ fun PageActionBottomSheet(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .padding(horizontal = Dimens.SpacingXl, vertical = Dimens.SpacingLg)
                     .navigationBarsPadding(),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             ActionItem(
-                icon = Icons.Outlined.Download,
+                icon = Lucide.Download,
                 label = appString(R.string.reader_action_quick_save),
                 onClick = {
                     onAction(PageAction.QuickSave)
@@ -89,7 +89,7 @@ fun PageActionBottomSheet(
                 },
             )
             ActionItem(
-                icon = Icons.Outlined.Save,
+                icon = Lucide.Save,
                 label = appString(R.string.reader_action_save_as),
                 onClick = {
                     onAction(PageAction.SaveAs)
@@ -97,7 +97,7 @@ fun PageActionBottomSheet(
                 },
             )
             ActionItem(
-                icon = Icons.Outlined.Share,
+                icon = Lucide.Share2,
                 label = appString(R.string.reader_action_share),
                 onClick = {
                     onAction(PageAction.Share)
@@ -134,7 +134,7 @@ private fun ActionItem(
 ) {
     androidx.compose.foundation.layout.Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(horizontal = 8.dp),
+        modifier = Modifier.padding(horizontal = Dimens.SpacingSm),
     ) {
         FilledTonalIconButton(onClick = onClick) {
             Icon(
@@ -147,7 +147,7 @@ private fun ActionItem(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(top = Dimens.SpacingXs),
         )
     }
 }

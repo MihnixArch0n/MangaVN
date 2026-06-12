@@ -1,4 +1,4 @@
-﻿@file:Suppress("ktlint")
+@file:Suppress("ktlint")
 
 package com.example.mybookslibrary.ui.screens
 

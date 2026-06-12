@@ -2,6 +2,7 @@
 .claude/*.local.md
 .gradle
 /local.properties
+google-services.json
 /.idea/
 .DS_Store
 /build

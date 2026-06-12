@@ -33,6 +33,7 @@ data class MangaDetailUiState(
     val isLoadingChapters: Boolean = false,
     val chaptersError: String? = null,
     val isInLibrary: Boolean = false,
+    val isFavorite: Boolean = false,
     val firstChapterPages: List<String> = emptyList(),
     val isLoadingFirstChapterPages: Boolean = false,
     val firstChapterPagesError: String? = null,
@@ -142,7 +143,13 @@ class MangaDetailViewModel
             if (mangaId.isBlank()) return
             launchSafe {
                 val item = libraryRepository.getLibraryItem(mangaId)
-                _uiState.update { it.copy(isInLibrary = item != null, lastReadChapterId = item?.last_read_chapter_id) }
+                _uiState.update {
+                    it.copy(
+                        isInLibrary = item != null,
+                        isFavorite = item?.is_favorite == true,
+                        lastReadChapterId = item?.last_read_chapter_id,
+                    )
+                }
             }
         }
 
@@ -169,11 +176,35 @@ class MangaDetailViewModel
         ) {
             launchSafe {
                 if (_uiState.value.isInLibrary) {
+                    // Xóa khỏi thư viện đồng nghĩa mất luôn cờ yêu thích (row bị xóa)
                     libraryRepository.removeFromLibrary(mangaId)
+                    _uiState.update { it.copy(isInLibrary = false, isFavorite = false) }
                 } else {
                     libraryRepository.addToLibrary(mangaId = mangaId, title = title, coverUrl = coverUrl)
+                    _uiState.update { it.copy(isInLibrary = true) }
                 }
-                _uiState.update { it.copy(isInLibrary = !it.isInLibrary) }
+            }
+        }
+
+        fun toggleFavorite(
+            title: String,
+            coverUrl: String,
+        ) {
+            launchSafe {
+                val newFavorite = !_uiState.value.isFavorite
+                libraryRepository.setFavorite(
+                    mangaId = mangaId,
+                    title = title,
+                    coverUrl = coverUrl,
+                    isFavorite = newFavorite,
+                )
+                _uiState.update {
+                    it.copy(
+                        isFavorite = newFavorite,
+                        // Yêu thích manga chưa có trong thư viện → repository tự thêm vào
+                        isInLibrary = it.isInLibrary || newFavorite,
+                    )
+                }
             }
         }
 

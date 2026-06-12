@@ -14,16 +14,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.domain.model.AuthStatus
+import com.example.mybookslibrary.ui.navigation.LocalWindowWidthSizeClass
 import com.example.mybookslibrary.ui.navigation.MainNavHost
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.LocalAppLocale
@@ -40,10 +45,13 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var libraryRepository: LibraryRepository
 
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestNotificationPermissionIfNeeded()
+        com.example.mybookslibrary.data.notification.ReadingReminderWorker.schedule(this)
         setContent {
+            val windowSizeClass = calculateWindowSizeClass(this)
             // Parse ACTION_SEND intent (e.g. share from Chrome) to extract a manga ID.
             val incomingMangaId = remember(intent) {
                 if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
@@ -65,6 +73,13 @@ class MainActivity : ComponentActivity() {
                         .map { status -> AuthSession.Ready(status) }
                 }
             val authSession by authSessionFlow.collectAsStateWithLifecycle(initialValue = AuthSession.Loading)
+            val onboardingDone by preferencesDataStore
+                .observeOnboardingWelcomeDone()
+                .collectAsStateWithLifecycle(initialValue = true)
+            val tourDone by preferencesDataStore
+                .observeInAppTourDone()
+                .collectAsStateWithLifecycle(initialValue = true)
+            val onboardingScope = rememberCoroutineScope()
 
             val darkTheme =
                 when (themeMode) {
@@ -83,7 +98,10 @@ class MainActivity : ComponentActivity() {
             }
 
             // LocalAppLocale thay đổi → toàn bộ appString() recompose → chuyển ngôn ngữ mượt mà
-            CompositionLocalProvider(LocalAppLocale provides language) {
+            CompositionLocalProvider(
+                LocalAppLocale provides language,
+                LocalWindowWidthSizeClass provides windowSizeClass.widthSizeClass,
+            ) {
                 MyBooksLibraryTheme(darkTheme = darkTheme) {
                     when (val session = authSession) {
                         AuthSession.Loading -> AuthLoadingScreen()
@@ -99,7 +117,22 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             }
-                            MainNavHost(session.authStatus, incomingMangaId)
+                            MainNavHost(
+                                authStatus = session.authStatus,
+                                incomingMangaId = incomingMangaId,
+                                onboardingWelcomeDone = onboardingDone,
+                                onWelcomeDone = {
+                                    onboardingScope.launch {
+                                        preferencesDataStore.setOnboardingWelcomeDone(true)
+                                    }
+                                },
+                                inAppTourDone = tourDone,
+                                onTourDone = {
+                                    onboardingScope.launch {
+                                        preferencesDataStore.setInAppTourDone(true)
+                                    }
+                                },
+                            )
                         }
                     }
                 }

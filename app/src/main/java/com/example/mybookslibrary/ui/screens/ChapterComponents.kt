@@ -11,19 +11,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.composables.icons.lucide.Check
+import com.composables.icons.lucide.CircleCheck
+import com.composables.icons.lucide.CircleAlert
+import com.composables.icons.lucide.CircleStop
+import com.composables.icons.lucide.Download
+import com.composables.icons.lucide.Lucide
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,6 +37,8 @@ import com.example.mybookslibrary.domain.model.ChapterDownloadState
 import com.example.mybookslibrary.domain.model.ChapterDownloadStatus
 import com.example.mybookslibrary.domain.model.ChapterReadingStatus
 import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
+import com.example.mybookslibrary.ui.screens.components.StyledDropdownMenu
+import com.example.mybookslibrary.ui.theme.Dimens
 import com.example.mybookslibrary.ui.util.appString
 
 @Composable
@@ -47,7 +48,7 @@ fun VolumeHeader(volume: String) {
             Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 24.dp, vertical = 10.dp),
+                .padding(horizontal = Dimens.ScreenPaddingCompact, vertical = Dimens.SpacingSm + 2.dp),
     ) {
         Text(
             text = volume,
@@ -80,7 +81,7 @@ fun ChapterRow(
                     .combinedClickable(
                         onClick = onClick,
                         onLongClick = { menuExpanded = true },
-                    ).padding(horizontal = 24.dp, vertical = 14.dp),
+                    ).padding(horizontal = Dimens.ScreenPaddingCompact, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
@@ -118,12 +119,12 @@ fun ChapterRow(
                     ChapterReadingStatus.COMPLETED ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                Icons.Filled.Check,
+                                Lucide.Check,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(Dimens.SpacingLg),
                             )
-                            Spacer(Modifier.width(4.dp))
+                            Spacer(Modifier.width(Dimens.SpacingXs))
                             Text(
                                 appString(R.string.status_completed),
                                 style = MaterialTheme.typography.labelSmall,
@@ -137,7 +138,7 @@ fun ChapterRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Dimens.SpacingSm))
             ChapterDownloadIndicator(
                 state = chapter.downloadState,
                 onStartDownload = onStartDownload,
@@ -146,7 +147,7 @@ fun ChapterRow(
             )
         }
 
-        DropdownMenu(
+        StyledDropdownMenu(
             expanded = menuExpanded,
             onDismissRequest = { menuExpanded = false },
         ) {
@@ -175,9 +176,9 @@ fun ChapterRow(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(1.dp)
-                .padding(horizontal = 24.dp)
-                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)),
+                .height(Dimens.BorderThin)
+                .padding(horizontal = Dimens.ScreenPaddingCompact)
+                .background(MaterialTheme.colorScheme.outlineVariant),
     )
 }
 
@@ -193,7 +194,7 @@ private fun ChapterDownloadIndicator(
         ChapterDownloadStatus.NOT_DOWNLOADED -> {
             IconButton(onClick = onStartDownload) {
                 Icon(
-                    imageVector = Icons.Filled.Download,
+                    imageVector = Lucide.Download,
                     contentDescription = appString(R.string.chapter_download),
                 )
             }
@@ -201,8 +202,8 @@ private fun ChapterDownloadIndicator(
         ChapterDownloadStatus.PENDING -> {
             IconButton(onClick = onCancelDownload) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(Dimens.IconMd),
+                    strokeWidth = Dimens.StrokeLight,
                     color = tint,
                 )
             }
@@ -212,14 +213,14 @@ private fun ChapterDownloadIndicator(
                 Box(contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         progress = { state.progressPercent.coerceIn(0, 100) / 100f },
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(Dimens.IconDefault),
+                        strokeWidth = Dimens.StrokeLight,
                         color = tint,
                     )
                     Icon(
-                        imageVector = Icons.Filled.StopCircle,
+                        imageVector = Lucide.CircleStop,
                         contentDescription = appString(R.string.chapter_cancel_download),
-                        modifier = Modifier.size(14.dp),
+                        modifier = Modifier.size(Dimens.IconXs),
                         tint = tint,
                     )
                 }
@@ -228,7 +229,7 @@ private fun ChapterDownloadIndicator(
         ChapterDownloadStatus.DOWNLOADED -> {
             IconButton(onClick = onDeleteDownload) {
                 Icon(
-                    imageVector = Icons.Filled.CheckCircle,
+                    imageVector = Lucide.CircleCheck,
                     contentDescription = appString(R.string.chapter_delete_download),
                     tint = tint,
                 )
@@ -237,7 +238,7 @@ private fun ChapterDownloadIndicator(
         ChapterDownloadStatus.ERROR -> {
             IconButton(onClick = onStartDownload) {
                 Icon(
-                    imageVector = Icons.Filled.ErrorOutline,
+                    imageVector = Lucide.CircleAlert,
                     contentDescription = state.errorMessage ?: appString(R.string.chapter_download_error),
                     tint = MaterialTheme.colorScheme.error,
                 )

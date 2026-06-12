@@ -203,7 +203,7 @@ class SettingsViewModelTest {
 
             assertEquals(BackupRestoreResult.Success(1), vm.uiState.value.backupResult)
             assertEquals(
-                """[{"manga_id":"m1","title":"Title m1","cover_url":"https://x/m1.jpg","status":"READING","last_read_chapter_id":"","last_read_page_index":0,"updated_at":1000}]""",
+                """[{"manga_id":"m1","title":"Title m1","cover_url":"https://x/m1.jpg","status":"READING","last_read_chapter_id":"","last_read_page_index":0,"updated_at":1000,"is_favorite":false}]""",
                 output.toString(),
             )
         }

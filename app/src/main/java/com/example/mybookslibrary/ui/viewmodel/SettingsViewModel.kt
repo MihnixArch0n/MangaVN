@@ -142,16 +142,10 @@ class SettingsViewModel
         fun deleteAccount() {
             viewModelScope.launch(ioDispatcher) {
                 try {
-                    // Xóa dữ liệu trên Firestore
                     libraryRepository.clearAllRemote()
-                    
-                    // Xóa dữ liệu local
                     preferencesDataStore.setReaderQuality("data")
                     libraryRepository.clearAll()
-                    
-                    // Xóa tài khoản Firebase Auth
                     authRepository.deleteAccount().getOrThrow()
-                    
                     _uiState.update { it.copy(signedOut = true, quality = "data") }
                 } catch (c: CancellationException) {
                     throw c

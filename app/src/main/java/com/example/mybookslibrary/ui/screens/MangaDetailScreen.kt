@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -13,8 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,11 +26,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.rememberCoroutineScope
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.domain.model.ChapterReadingStatus
 import com.example.mybookslibrary.domain.model.ChapterWithProgressModel
+import com.example.mybookslibrary.ui.screens.components.AppFilterChip
+import com.example.mybookslibrary.ui.screens.components.LoadingIndicator
+import com.example.mybookslibrary.ui.screens.components.LoadingSize
+import com.example.mybookslibrary.ui.theme.Dimens
+import com.example.mybookslibrary.ui.navigation.LocalSnackbarHostState
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.MangaDetailViewModel
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -60,6 +66,12 @@ fun MangaDetailScreen(
             }
         }
     var chaptersExpanded by remember { mutableStateOf(false) }
+    val snackbarHostState = LocalSnackbarHostState.current
+    val scope = rememberCoroutineScope()
+    val bookmarkAddedMsg = appString(R.string.feedback_bookmark_added)
+    val bookmarkRemovedMsg = appString(R.string.feedback_bookmark_removed)
+    val favoriteAddedMsg = appString(R.string.feedback_favorite_added)
+    val favoriteRemovedMsg = appString(R.string.feedback_favorite_removed)
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
@@ -107,7 +119,13 @@ fun MangaDetailScreen(
                         onReadChapter(mangaId, chapter.chapterId, targetChapterTitle, startPageIndex)
                     },
                     onToggleLibrary = {
+                        val wasInLibrary = uiState.isInLibrary
                         viewModel.toggleLibrary(displayTitle, displayCoverArt)
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                if (wasInLibrary) bookmarkRemovedMsg else bookmarkAddedMsg,
+                            )
+                        }
                     },
                 )
             }
@@ -118,8 +136,8 @@ fun MangaDetailScreen(
             }
             if (uiState.isLoadingFirstChapterPages) {
                 item {
-                    Box(Modifier.padding(32.dp).fillParentMaxWidth(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    Box(Modifier.padding(Dimens.SpacingXxl).fillParentMaxWidth(), contentAlignment = Alignment.Center) {
+                        LoadingIndicator(size = LoadingSize.Large)
                     }
                 }
             } else if (uiState.firstChapterPages.isNotEmpty()) {
@@ -136,7 +154,7 @@ fun MangaDetailScreen(
                         appString(R.string.detail_error),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 24.dp),
+                        modifier = Modifier.padding(horizontal = Dimens.ScreenPaddingCompact),
                     )
                 }
             }
@@ -146,7 +164,7 @@ fun MangaDetailScreen(
                     expanded = chaptersExpanded,
                     modifier =
                     Modifier
-                        .padding(horizontal = 24.dp)
+                        .padding(horizontal = Dimens.SpacingXl)
                         .offset(y = DetailDimensions.ChaptersOffset)
                         .clickable { chaptersExpanded = !chaptersExpanded },
                 )
@@ -165,8 +183,11 @@ fun MangaDetailScreen(
                 when {
                     uiState.isLoadingChapters -> {
                         item {
-                            Box(Modifier.padding(32.dp).fillParentMaxWidth(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            Box(
+                                Modifier.padding(Dimens.SpacingXxl).fillParentMaxWidth(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                LoadingIndicator(size = LoadingSize.Medium)
                             }
                         }
                     }
@@ -227,11 +248,26 @@ fun MangaDetailScreen(
             onBackClick = onBackClick,
             modifier = Modifier.align(Alignment.TopStart),
         )
-        if (onShareClick != null && detail != null) {
-            DetailShareButton(
-                onShareClick = { onShareClick(displayTitle) },
-                modifier = Modifier.align(Alignment.TopEnd),
-            )
+        if (detail != null) {
+            Row(modifier = Modifier.align(Alignment.TopEnd)) {
+                DetailFavoriteButton(
+                    isFavorite = uiState.isFavorite,
+                    onToggleFavorite = {
+                        val wasFavorite = uiState.isFavorite
+                        viewModel.toggleFavorite(displayTitle, displayCoverArt)
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                if (wasFavorite) favoriteRemovedMsg else favoriteAddedMsg,
+                            )
+                        }
+                    },
+                )
+                if (onShareClick != null) {
+                    DetailShareButton(
+                        onShareClick = { onShareClick(displayTitle) },
+                    )
+                }
+            }
         }
     }
 }
@@ -250,21 +286,21 @@ fun LanguageFilterRow(
 ) {
     if (availableLanguages.isEmpty()) return
     LazyRow(
-        modifier = modifier.padding(horizontal = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier.padding(horizontal = Dimens.ScreenPaddingCompact),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSm),
     ) {
         item {
-            FilterChip(
+            AppFilterChip(
+                label = appString(R.string.filter_all_languages),
                 selected = selectedLanguage == "",
                 onClick = { onLanguageSelected("") },
-                label = { Text("All") }
             )
         }
         items(availableLanguages) { lang ->
-            FilterChip(
+            AppFilterChip(
+                label = lang.uppercase(),
                 selected = selectedLanguage == lang,
                 onClick = { onLanguageSelected(lang) },
-                label = { Text(lang.uppercase()) }
             )
         }
     }

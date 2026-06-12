@@ -2,6 +2,7 @@ package com.example.mybookslibrary.ui.viewmodel
 
 import android.app.Application
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.data.local.dao.LibraryDao
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.domain.model.MangaModel
 import com.example.mybookslibrary.test.MainDispatcherRule
@@ -24,11 +25,15 @@ class DiscoverViewModelTest {
 
     private val application = mockk<Application>()
     private val repository = mockk<MangaRepository>()
+    private val libraryDao = mockk<LibraryDao> {
+        every { observeRecentlyReading() } returns flowOf(emptyList())
+    }
 
     private fun viewModel() =
         DiscoverViewModel(
             application = application,
             repository = repository,
+            libraryDao = libraryDao,
             ioDispatcher = mainDispatcherRule.dispatcher,
         )
 

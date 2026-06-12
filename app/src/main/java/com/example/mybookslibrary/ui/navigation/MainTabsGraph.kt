@@ -20,7 +20,7 @@ internal fun NavGraphBuilder.mainTabsGraph(navController: NavHostController) {
     discoverTab(navController)
     searchTab(navController)
     libraryTab(navController)
-    settingTab()
+    settingTab(navController)
 }
 
 private fun NavGraphBuilder.discoverTab(navController: NavHostController) {
@@ -33,7 +33,9 @@ private fun NavGraphBuilder.discoverTab(navController: NavHostController) {
                 onMangaClick = { manga -> navController.navigateToDetail(manga) },
                 onSearchClick = { navController.navigateToBottomTab(Search) },
                 onLibraryClick = { navController.navigateToBottomTab(Library) },
-                onProfileClick = { navController.navigateToBottomTab(Setting) },
+                onProfileClick = { navController.navigateToBottomTab(Profile) },
+                onReadingHistoryClick = { navController.navigate(ReadingHistory) },
+                onSettingsClick = { navController.navigate(Setting) },
             )
         }
     }
@@ -67,20 +69,21 @@ private fun NavGraphBuilder.libraryTab(navController: NavHostController) {
     }
 }
 
-private fun NavGraphBuilder.settingTab() {
+private fun NavGraphBuilder.settingTab(navController: NavHostController) {
     composable<Setting>(
         enterTransition = { fadeIn(tabTween()) + scaleIn(initialScale = 0.95f, animationSpec = tabTween()) },
         exitTransition = { fadeOut(tabTween()) },
     ) {
-        SettingScreen()
+        SettingScreen(
+            onChangePasswordClick = { navController.navigate(ChangePassword) },
+        )
     }
 }
 
 private fun <T : Any> NavHostController.navigateToBottomTab(destination: T) {
     navigate(destination) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(graph.findStartDestination().id)
         launchSingleTop = true
-        restoreState = true
     }
 }
 

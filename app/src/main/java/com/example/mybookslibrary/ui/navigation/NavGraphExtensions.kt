@@ -15,15 +15,36 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
 import com.example.mybookslibrary.ui.screens.MangaReviewScreen
+import com.example.mybookslibrary.ui.screens.DownloadsScreen
+import com.example.mybookslibrary.ui.screens.EditProfileScreen
+import com.example.mybookslibrary.ui.screens.ProfileScreen
+import com.example.mybookslibrary.ui.screens.ReadingHistoryScreen
+import com.example.mybookslibrary.ui.screens.StatisticsScreen
+import com.example.mybookslibrary.ui.screens.auth.ChangePasswordScreen
 import com.example.mybookslibrary.ui.screens.auth.LoginScreen
 import com.example.mybookslibrary.ui.screens.auth.RegisterScreen
+import com.example.mybookslibrary.ui.screens.onboarding.WelcomeCarouselScreen
 import com.example.mybookslibrary.ui.screens.detail.MangaDetailScreen
 import com.example.mybookslibrary.ui.screens.reader.ReaderScreen
 import com.example.mybookslibrary.util.shareManga
 
-internal fun NavGraphBuilder.authGraph(navController: NavHostController) {
+internal fun NavGraphBuilder.onboardingGraph(navController: NavHostController, onWelcomeDone: () -> Unit) {
+    composable<Onboarding> {
+        WelcomeCarouselScreen(
+            onFinish = {
+                onWelcomeDone()
+                navController.navigate(Login) {
+                    popUpTo<Onboarding> { inclusive = true }
+                }
+            },
+        )
+    }
+}
+
+internal fun NavGraphBuilder.authGraph(navController: NavHostController, isReturningUser: Boolean = false) {
     composable<Login> {
         LoginScreen(
+            isReturningUser = isReturningUser,
             onLoginSuccess = {
                 navController.navigate(Discover) {
                     popUpTo<Login> { inclusive = true }
@@ -80,6 +101,55 @@ internal fun NavGraphBuilder.mangaDetailGraph(navController: NavHostController) 
 internal fun NavGraphBuilder.reviewGraph(navController: NavHostController) {
     composable<MangaReview> {
         MangaReviewScreen(onBackClick = { navController.popBackStack() })
+    }
+}
+
+internal fun NavGraphBuilder.profileGraph(navController: NavHostController) {
+    composable<Profile> {
+        ProfileScreen(
+            onReadingHistoryClick = { navController.navigate(ReadingHistory) },
+            onStatisticsClick = { navController.navigate(Statistics) },
+            onDownloadsClick = { navController.navigate(Downloads) },
+            onEditProfileClick = { navController.navigate(EditProfile) },
+            onSettingsClick = {
+                navController.navigate(Setting) {
+                    launchSingleTop = true
+                }
+            },
+        )
+    }
+}
+
+internal fun NavGraphBuilder.readingHistoryGraph(navController: NavHostController) {
+    composable<ReadingHistory> {
+        ReadingHistoryScreen(
+            onBackClick = { navController.popBackStack() },
+            onMangaClick = { mangaId -> navController.navigate(MangaDetail(mangaId)) },
+        )
+    }
+}
+
+internal fun NavGraphBuilder.editProfileGraph(navController: NavHostController) {
+    composable<EditProfile> {
+        EditProfileScreen(onBackClick = { navController.popBackStack() })
+    }
+}
+
+internal fun NavGraphBuilder.changePasswordGraph(navController: NavHostController) {
+    composable<ChangePassword> {
+        ChangePasswordScreen(onBackClick = { navController.popBackStack() })
+    }
+}
+
+internal fun NavGraphBuilder.downloadsGraph(navController: NavHostController) {
+    composable<Downloads> {
+        DownloadsScreen(onBackClick = { navController.popBackStack() })
+    }
+}
+
+internal fun NavGraphBuilder.statisticsGraph(navController: NavHostController) {
+    composable<Statistics> {
+        StatisticsScreen(onBackClick = { navController.popBackStack() })
     }
 }
 

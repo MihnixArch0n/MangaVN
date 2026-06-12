@@ -5,6 +5,7 @@
 
 package com.example.mybookslibrary.ui.screens.reader
 
+import com.example.mybookslibrary.ui.theme.Dimens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -16,8 +17,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BrokenImage
+import com.composables.icons.lucide.ImageOff
+import com.composables.icons.lucide.Lucide
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.ui.theme.Alphas
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.appString
 import timber.log.Timber
@@ -141,7 +143,7 @@ fun WebtoonPageItem(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.7f))
+                        .background(Color.Black.copy(alpha = Alphas.EmphasisHigh))
                         .combinedClickable(
                             onClick = retryPageLoad,
                             onLongClick = {
@@ -153,18 +155,18 @@ fun WebtoonPageItem(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
-                        imageVector = Icons.Filled.BrokenImage,
+                        imageVector = Lucide.ImageOff,
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.size(48.dp),
+                        tint = Color.White.copy(alpha = Alphas.EmphasisHigh),
+                        modifier = Modifier.size(Dimens.IconXl),
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(Dimens.SpacingMd))
                     Text(
                         text = appString(R.string.reader_loading_failed),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.6f),
+                        color = Color.White.copy(alpha = Alphas.EmphasisMedium),
                     )
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(Dimens.SpacingXs))
                     Button(onClick = retryPageLoad) {
                         Text(
                             text = appString(R.string.reader_tap_to_retry),
