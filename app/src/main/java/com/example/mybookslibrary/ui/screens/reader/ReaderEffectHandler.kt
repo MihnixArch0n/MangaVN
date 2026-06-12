@@ -11,6 +11,7 @@ package com.example.mybookslibrary.ui.screens.reader
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -44,6 +45,7 @@ private enum class ReaderToastType {
 @Composable
 internal fun ReaderEffectHandler(
     effects: SharedFlow<ReaderUiEffect>,
+    listState: LazyListState,
     pagerState: PagerState,
     currentReadingMode: ReadingMode,
     onEvent: (ReaderEvent) -> Unit,
@@ -109,24 +111,27 @@ internal fun ReaderEffectHandler(
             }
         }
 
-    LaunchedEffect(effects, pagerState, currentReadingMode) {
+    LaunchedEffect(effects, listState, pagerState, currentReadingMode) {
         var navigationJob: Job? = null
         effects.collect { effect ->
             when (effect) {
                 is ReaderUiEffect.NavigateToPage -> {
-                    if (currentReadingMode != ReadingMode.VERTICAL) {
-                        navigationJob?.cancel()
-                        navigationJob =
-                            launch {
-                                Timber.v(
-                                    "Reader page navigation start: targetPage=%d mode=%s",
-                                    effect.pageIndex,
-                                    currentReadingMode,
-                                )
-                                pagerState.animateScrollToPage(effect.pageIndex)
-                                Timber.v("Reader page navigation end: targetPage=%d", effect.pageIndex)
+                    navigationJob?.cancel()
+                    navigationJob =
+                        launch {
+                            Timber.v(
+                                "Reader page navigation start: targetPage=%d mode=%s",
+                                effect.pageIndex,
+                                currentReadingMode,
+                            )
+                            when (currentReadingMode) {
+                                ReadingMode.VERTICAL -> listState.animateScrollToItem(effect.pageIndex)
+                                ReadingMode.LTR,
+                                ReadingMode.RTL,
+                                -> pagerState.animateScrollToPage(effect.pageIndex)
                             }
-                    }
+                            Timber.v("Reader page navigation end: targetPage=%d", effect.pageIndex)
+                        }
                 }
                 is ReaderUiEffect.QuickSavePage -> {
                     scope.launch(Dispatchers.IO) {

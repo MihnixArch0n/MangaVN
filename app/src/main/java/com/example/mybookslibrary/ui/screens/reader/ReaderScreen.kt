@@ -62,6 +62,7 @@ fun ReaderScreen(
 
     ReaderEffectHandler(
         effects = viewModel.effects,
+        listState = listState,
         pagerState = pagerState,
         currentReadingMode = state.currentReadingMode,
         onEvent = onEvent,
