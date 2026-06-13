@@ -11,6 +11,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -115,24 +116,30 @@ fun ReaderScreen(
         UserPreferencesDataStore(context.userPreferencesDataStore)
     }
     val readerHintDone by prefsDataStore.observeReaderHintDone()
-        .collectAsStateWithLifecycle(initialValue = true)
+        .collectAsStateWithLifecycle(initialValue = null)
     val hintScope = rememberCoroutineScope()
 
     Box(modifier = modifier) {
-        ReaderContentHost(
-            state = state,
-            listState = listState,
-            pagerState = pagerState,
-            readerBarColors = readerBarColors,
-            onBackClick = onBackClick,
-            onEvent = onEvent,
-        )
+        readerHintDone?.let { hintDone ->
+            // The first-install hint owns the full-screen pointer stream. Recreate reader content
+            // after it is dismissed so Telephoto and Pager start with fresh gesture detectors.
+            key(hintDone) {
+                ReaderContentHost(
+                    state = state,
+                    listState = listState,
+                    pagerState = pagerState,
+                    readerBarColors = readerBarColors,
+                    onBackClick = onBackClick,
+                    onEvent = onEvent,
+                )
+            }
+            ReaderSpotlightOverlay(
+                visible = !hintDone && state.pages.isNotEmpty(),
+                onDismiss = {
+                    hintScope.launch { prefsDataStore.setReaderHintDone(true) }
+                },
+            )
+        }
         SnackbarHost(hostState = snackbarHostState)
-        ReaderSpotlightOverlay(
-            visible = !readerHintDone && state.pages.isNotEmpty(),
-            onDismiss = {
-                hintScope.launch { prefsDataStore.setReaderHintDone(true) }
-            },
-        )
     }
 }

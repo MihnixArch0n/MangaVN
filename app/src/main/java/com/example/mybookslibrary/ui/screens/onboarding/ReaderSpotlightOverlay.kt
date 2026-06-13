@@ -1,8 +1,5 @@
 package com.example.mybookslibrary.ui.screens.onboarding
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,58 +39,55 @@ fun ReaderSpotlightOverlay(
     visible: Boolean,
     onDismiss: () -> Unit,
 ) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(),
-        exit = fadeOut(),
-    ) {
-        var step by remember { mutableIntStateOf(0) }
-        val hintText =
-            when (step) {
-                0 -> appString(R.string.reader_hint_tap_sides)
-                else -> appString(R.string.reader_hint_mode_toggle)
-            }
+    if (!visible) return
 
-        Box(
+    var step by remember { mutableIntStateOf(0) }
+    val hintText =
+        when (step) {
+            0 -> appString(R.string.reader_hint_tap_sides)
+            else -> appString(R.string.reader_hint_mode_toggle)
+        }
+
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = OVERLAY_ALPHA))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {
+                    if (step < 1) step++ else onDismiss()
+                }
+                .semantics { contentDescription = hintText },
+    ) {
+        Column(
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = OVERLAY_ALPHA))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
-                        if (step < 1) step++ else onDismiss()
-                    }
-                    .semantics { contentDescription = hintText },
+                    .align(Alignment.Center)
+                    .padding(horizontal = Dimens.SpacingXl),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
+            Text(
+                hintText,
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White,
+                modifier = Modifier.padding(bottom = Dimens.SpacingXl),
+            )
+            Row(
                 modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .padding(horizontal = Dimens.SpacingXl),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Text(
-                    hintText,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                    modifier = Modifier.padding(bottom = Dimens.SpacingXl),
+                AppButton(
+                    text = appString(R.string.reader_hint_got_it),
+                    onClick = { if (step < 1) step++ else onDismiss() },
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    AppButton(
-                        text = appString(R.string.reader_hint_got_it),
-                        onClick = { if (step < 1) step++ else onDismiss() },
-                    )
-                    AppButton(
-                        text = appString(R.string.reader_hint_skip),
-                        onClick = onDismiss,
-                        style = AppButtonStyle.Text,
-                    )
-                }
+                AppButton(
+                    text = appString(R.string.reader_hint_skip),
+                    onClick = onDismiss,
+                    style = AppButtonStyle.Text,
+                )
             }
         }
     }

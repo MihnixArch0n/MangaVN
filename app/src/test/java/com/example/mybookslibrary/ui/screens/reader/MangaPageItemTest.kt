@@ -103,17 +103,18 @@ class MangaPageItemTest {
 
     @Test
     fun parentPageSwipe_atBaseZoom_disablesSingleFingerImagePan() {
-        assertEquals(EnabledZoomGestures.ZoomOnly, mangaPageGestures(allowParentPageSwipe = true, zoomFraction = null))
-        assertEquals(EnabledZoomGestures.ZoomOnly, mangaPageGestures(allowParentPageSwipe = true, zoomFraction = 0f))
+        assertEquals(EnabledZoomGestures.ZoomOnly, mangaPageGestures(allowParentPageSwipe = true, userZoom = 0f))
+        assertEquals(EnabledZoomGestures.ZoomOnly, mangaPageGestures(allowParentPageSwipe = true, userZoom = 1f))
+        assertEquals(EnabledZoomGestures.ZoomOnly, mangaPageGestures(allowParentPageSwipe = true, userZoom = 1.001f))
     }
 
     @Test
     fun parentPageSwipe_whenZoomed_keepsImagePanEnabled() {
         assertEquals(
             EnabledZoomGestures.ZoomAndPan,
-            mangaPageGestures(allowParentPageSwipe = true, zoomFraction = 0.01f),
+            mangaPageGestures(allowParentPageSwipe = true, userZoom = 1.01f),
         )
-        assertEquals(EnabledZoomGestures.ZoomAndPan, mangaPageGestures(allowParentPageSwipe = false, zoomFraction = 0f))
+        assertEquals(EnabledZoomGestures.ZoomAndPan, mangaPageGestures(allowParentPageSwipe = false, userZoom = 1f))
     }
 
     @Test
