@@ -14,6 +14,7 @@ import androidx.work.WorkerParameters
 import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
 import com.example.mybookslibrary.data.local.DownloadStatus
+import com.example.mybookslibrary.data.local.DownloadQueueEntity
 import com.example.mybookslibrary.data.repository.ChapterDelivery
 import com.example.mybookslibrary.data.repository.MangaRepository
 import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
@@ -140,7 +141,7 @@ class ChapterDownloadWorkerFailureTest {
         }
 
     @Test
-    fun doWork_ioExceptionMang_traVeFailure() =
+    fun doWork_ioExceptionMang_traVeRetryVaKhongGhiError() =
         runBlocking {
             // Server đã tắt -> kết nối bị từ chối -> IOException ở downloadPage.
             val deadServer = MockWebServer()
@@ -156,10 +157,32 @@ class ChapterDownloadWorkerFailureTest {
                         filenames = listOf("p1.png"),
                     ),
                 )
+            coEvery { offlineDownloadRepository.getQueueByChapter(CHAPTER_ID) } returns
+                DownloadQueueEntity(
+                    chapter_id = CHAPTER_ID,
+                    manga_id = MANGA_ID,
+                    status = DownloadStatus.DOWNLOADING,
+                    progress_percent = 40,
+                )
 
             val result = buildWorker().doWork()
 
-            assertTrue(result is ListenableWorker.Result.Failure)
+            assertTrue(result is ListenableWorker.Result.Retry)
+            coVerify {
+                offlineDownloadRepository.updateQueueStatus(
+                    chapterId = CHAPTER_ID,
+                    status = DownloadStatus.PENDING,
+                    progressPercent = 40,
+                )
+            }
+            coVerify(exactly = 0) {
+                offlineDownloadRepository.updateQueueStatus(
+                    chapterId = CHAPTER_ID,
+                    status = DownloadStatus.ERROR,
+                    progressPercent = any(),
+                    errorMessage = any(),
+                )
+            }
         }
 
     @Test

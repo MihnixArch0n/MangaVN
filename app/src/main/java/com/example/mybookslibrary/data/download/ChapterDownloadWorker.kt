@@ -19,6 +19,11 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
+import java.net.ConnectException
+import java.net.NoRouteToHostException
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -162,6 +167,9 @@ class ChapterDownloadWorker @AssistedInject constructor(
             // Cancel (vd WorkManager hủy work) phải propagate sạch, không ghi thành ERROR.
             throw cancellationException
         } catch (t: Throwable) {
+            if (t.isTransientNetworkFailure()) {
+                return retryWhenNetworkReturns(chapterId, t)
+            }
             Timber.e(t, "ChapterDownloadWorker failed: mangaId=%s chapterId=%s", mangaId, chapterId)
             offlineDownloadRepository.updateQueueStatus(
                 chapterId = chapterId,
@@ -178,6 +186,26 @@ class ChapterDownloadWorker @AssistedInject constructor(
             )
             Result.failure(workDataOf(KEY_ERROR to (t.message ?: "Download failed")))
         }
+    }
+
+    private suspend fun retryWhenNetworkReturns(
+        chapterId: String,
+        failure: Throwable,
+    ): Result {
+        val currentProgress = offlineDownloadRepository.getQueueByChapter(chapterId)?.progress_percent ?: 0
+        Timber.w(
+            failure,
+            "ChapterDownloadWorker waiting for network: chapterId=%s progress=%d runAttempt=%d",
+            chapterId,
+            currentProgress,
+            runAttemptCount,
+        )
+        offlineDownloadRepository.updateQueueStatus(
+            chapterId = chapterId,
+            status = DownloadStatus.PENDING,
+            progressPercent = currentProgress,
+        )
+        return Result.retry()
     }
 
     private suspend fun updateDownloadProgress(
@@ -225,3 +253,13 @@ class ChapterDownloadWorker @AssistedInject constructor(
         internal const val PAGE_DOWNLOAD_CONCURRENCY = 3
     }
 }
+
+private fun Throwable.isTransientNetworkFailure(): Boolean =
+    generateSequence(this) { it.cause }
+        .any {
+            it is UnknownHostException ||
+                it is ConnectException ||
+                it is NoRouteToHostException ||
+                it is SocketTimeoutException ||
+                it is SocketException
+        }
