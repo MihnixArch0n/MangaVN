@@ -40,6 +40,7 @@ class SettingsViewModelTest {
         keepScreenOn: Boolean = false,
         volumeKeyNav: Boolean = false,
         autoAdvance: Boolean = false,
+        autoDownloadNext: Boolean = false,
     ) {
         coEvery { prefs.getReaderQuality() } returns quality
         coEvery { prefs.getThemeMode() } returns theme
@@ -47,6 +48,7 @@ class SettingsViewModelTest {
         coEvery { prefs.getReaderKeepScreenOn() } returns keepScreenOn
         coEvery { prefs.getReaderVolumeKeyNav() } returns volumeKeyNav
         coEvery { prefs.getReaderAutoAdvance() } returns autoAdvance
+        coEvery { prefs.getAutoDownloadNext() } returns autoDownloadNext
     }
 
     private fun viewModel() =
@@ -141,6 +143,20 @@ class SettingsViewModelTest {
 
             assertTrue(vm.uiState.value.autoAdvance)
             coVerify { prefs.setReaderAutoAdvance(true) }
+        }
+
+    @Test
+    fun toggleAutoDownloadNext_doiVaLuu() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults(autoDownloadNext = false)
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.toggleAutoDownloadNext()
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.autoDownloadNext)
+            coVerify { prefs.setAutoDownloadNext(true) }
         }
 
     @Test

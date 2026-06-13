@@ -24,6 +24,8 @@ data class ReaderState(
     val isComfortPanelVisible: Boolean = false,
     // Seamless navigation (Phase 4 PR-2a)
     val autoAdvance: Boolean = false,
+    // Auto-download chương kế (Phase 4 PR-2b)
+    val autoDownloadNext: Boolean = false,
 )
 
 data class ReaderPageActionTarget(

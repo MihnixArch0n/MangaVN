@@ -182,6 +182,7 @@
     <string name="settings_keep_screen_on">Keep screen on</string>
     <string name="settings_volume_key_nav">Volume key navigation</string>
     <string name="settings_auto_advance">Auto-advance to next chapter</string>
+    <string name="settings_auto_download_next">Auto-download next chapter</string>
     <string name="settings_on">On</string>
     <string name="settings_off">Off</string>
     <string name="settings_clear_cache">Clear Image Cache</string>

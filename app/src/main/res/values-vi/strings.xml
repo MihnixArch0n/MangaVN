@@ -182,6 +182,7 @@
     <string name="settings_keep_screen_on">Giữ màn hình sáng</string>
     <string name="settings_volume_key_nav">Lật trang bằng phím âm lượng</string>
     <string name="settings_auto_advance">Tự động sang chương sau</string>
+    <string name="settings_auto_download_next">Tự động tải chương sau</string>
     <string name="settings_on">Bật</string>
     <string name="settings_off">Tắt</string>
     <string name="settings_clear_cache">Xóa bộ nhớ đệm ảnh</string>

@@ -8,8 +8,11 @@ import androidx.navigation.toRoute
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.data.download.DownloadedChapterCache
+import com.example.mybookslibrary.data.download.OfflineDownloadManager
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.ChapterDao
+import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
 import com.example.mybookslibrary.di.IoDispatcher
 import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReaderTapAction
@@ -51,6 +54,9 @@ constructor(
     private val pageFileBuilder: ReaderPageFileBuilder,
     private val userPreferencesDataStore: UserPreferencesDataStore,
     private val imageLoader: ImageLoader,
+    private val offlineDownloadManager: OfflineDownloadManager,
+    private val offlineDownloadRepository: OfflineDownloadRepository,
+    private val downloadedChapterCache: DownloadedChapterCache,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : AndroidViewModel(application) {
     private fun str(resId: Int) = getApplication<Application>().getString(resId)
@@ -71,6 +77,9 @@ constructor(
     private var autoAdvanceJob: Job? = null
     private var preloadedNextChapterId: String? = null
 
+    // Auto-download (Phase 4 PR-2b): cờ đã trigger tải chương kế, chống enqueue lặp khi lướt qua lại near-end.
+    private var autoDownloadTriggeredForChapter: String? = null
+
     private val _state =
         MutableStateFlow(
             ReaderState(
@@ -90,20 +99,32 @@ constructor(
     }
 
     // Quan sát các tuỳ chọn reader reactive: đổi trong Settings/panel là reader cập nhật ngay.
+    // Tách 2 combine 3-flow vì combine có overload type-safe tối đa 5 flow (giờ có 6 pref).
     private fun observeComfortPreferences() {
-        combine(
-            userPreferencesDataStore.observeReaderKeepScreenOn(),
-            userPreferencesDataStore.observeReaderVolumeKeyNav(),
-            userPreferencesDataStore.observeReaderBrightness(),
-            userPreferencesDataStore.observeReaderBackground(),
-            userPreferencesDataStore.observeReaderAutoAdvance(),
-        ) { keepScreenOn, volumeKeyNav, brightness, background, autoAdvance ->
+        val displayPrefs =
+            combine(
+                userPreferencesDataStore.observeReaderKeepScreenOn(),
+                userPreferencesDataStore.observeReaderVolumeKeyNav(),
+                userPreferencesDataStore.observeReaderBrightness(),
+            ) { keepScreenOn, volumeKeyNav, brightness -> Triple(keepScreenOn, volumeKeyNav, brightness) }
+
+        val seamlessPrefs =
+            combine(
+                userPreferencesDataStore.observeReaderBackground(),
+                userPreferencesDataStore.observeReaderAutoAdvance(),
+                userPreferencesDataStore.observeAutoDownloadNext(),
+            ) { background, autoAdvance, autoDownloadNext -> Triple(background, autoAdvance, autoDownloadNext) }
+
+        combine(displayPrefs, seamlessPrefs) { display, seamless ->
+            val (keepScreenOn, volumeKeyNav, brightness) = display
+            val (background, autoAdvance, autoDownloadNext) = seamless
             ComfortPrefs(
                 keepScreenOn = keepScreenOn,
                 volumeKeyNav = volumeKeyNav,
                 brightness = brightness,
                 background = ReaderBackground.fromString(background),
                 autoAdvance = autoAdvance,
+                autoDownloadNext = autoDownloadNext,
             )
         }.onEach { prefs ->
             _state.update {
@@ -113,6 +134,7 @@ constructor(
                     brightness = prefs.brightness,
                     background = prefs.background,
                     autoAdvance = prefs.autoAdvance,
+                    autoDownloadNext = prefs.autoDownloadNext,
                 )
             }
         }.launchIn(viewModelScope)
@@ -124,6 +146,7 @@ constructor(
         val brightness: Float,
         val background: ReaderBackground,
         val autoAdvance: Boolean,
+        val autoDownloadNext: Boolean,
     )
 
     private fun loadReadingMode() {
@@ -212,6 +235,7 @@ constructor(
     // hẹn chuyển sau AUTO_ADVANCE_DELAY_MS (lướt ngược lại sẽ hủy qua LeftTransitionPage).
     private fun onReachedTransitionPage() {
         preloadNextChapter()
+        maybeAutoDownloadNextChapter()
         val nextId = _state.value.nextChapterId ?: return
         if (!_state.value.autoAdvance) return
         autoAdvanceJob?.cancel()
@@ -245,6 +269,34 @@ constructor(
                 throw c
             } catch (t: Throwable) {
                 Timber.e(t, "preloadNextChapter error: chapterId=%s", nextId)
+            }
+        }
+    }
+
+    // Tự tải chương kế về offline khi bật toggle. Chỉ trigger 1 lần/chương; bỏ qua nếu chương kế
+    // đã tải xong hoặc đang trong queue. Network constraint (wifi-only) do enqueueDownload tự đọc.
+    private fun maybeAutoDownloadNextChapter() {
+        if (!_state.value.autoDownloadNext) return
+        val nextId = _state.value.nextChapterId ?: return
+        if (autoDownloadTriggeredForChapter == nextId) return
+        autoDownloadTriggeredForChapter = nextId
+        val nextLabel = _state.value.nextChapterTitle
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                if (downloadedChapterCache.isChapterDownloaded(nextId)) {
+                    Timber.d("maybeAutoDownloadNextChapter: chương kế đã tải, bỏ qua: chapterId=%s", nextId)
+                    return@launch
+                }
+                if (offlineDownloadRepository.getQueueByChapter(nextId) != null) {
+                    Timber.d("maybeAutoDownloadNextChapter: chương kế đã trong queue, bỏ qua: chapterId=%s", nextId)
+                    return@launch
+                }
+                Timber.d("maybeAutoDownloadNextChapter: enqueue chương kế: chapterId=%s", nextId)
+                offlineDownloadManager.enqueueDownload(mangaId, nextId, chapterLabel = nextLabel)
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Timber.e(t, "maybeAutoDownloadNextChapter error: chapterId=%s", nextId)
             }
         }
     }
@@ -350,9 +402,10 @@ constructor(
         if (pages.isEmpty()) return
         val boundedIndex = index.coerceIn(0, pages.lastIndex)
         pendingPageIndex = boundedIndex
-        // Đọc gần cuối → preload chương kế sớm (warm Coil) cho mượt khi chuyển.
+        // Đọc gần cuối → preload chương kế sớm (warm Coil) cho mượt khi chuyển + auto-download nếu bật.
         if (boundedIndex >= pages.size - PRELOAD_NEAR_END_THRESHOLD) {
             preloadNextChapter()
+            maybeAutoDownloadNextChapter()
         }
         if (boundedIndex == _state.value.lastReadPageIndex) return
         _state.update { it.copy(lastReadPageIndex = boundedIndex) }

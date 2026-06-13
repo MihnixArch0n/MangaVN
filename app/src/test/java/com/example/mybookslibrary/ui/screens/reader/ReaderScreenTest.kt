@@ -68,6 +68,9 @@ class ReaderScreenTest {
             pageFileBuilder = ReaderPageFileBuilder(),
             userPreferencesDataStore = userPreferencesDataStore,
             imageLoader = mockk(relaxed = true),
+            offlineDownloadManager = mockk(relaxed = true),
+            offlineDownloadRepository = mockk(relaxed = true),
+            downloadedChapterCache = mockk(relaxed = true),
             ioDispatcher = UnconfinedTestDispatcher(),
         )
     }
@@ -101,6 +104,9 @@ class ReaderScreenTest {
                 pageFileBuilder = ReaderPageFileBuilder(),
                 userPreferencesDataStore = userPreferencesDataStore,
                 imageLoader = mockk(relaxed = true),
+                offlineDownloadManager = mockk(relaxed = true),
+                offlineDownloadRepository = mockk(relaxed = true),
+                downloadedChapterCache = mockk(relaxed = true),
                 ioDispatcher = UnconfinedTestDispatcher(),
             )
 
@@ -134,6 +140,9 @@ class ReaderScreenTest {
                 pageFileBuilder = ReaderPageFileBuilder(),
                 userPreferencesDataStore = userPreferencesDataStore,
                 imageLoader = mockk(relaxed = true),
+                offlineDownloadManager = mockk(relaxed = true),
+                offlineDownloadRepository = mockk(relaxed = true),
+                downloadedChapterCache = mockk(relaxed = true),
                 ioDispatcher = UnconfinedTestDispatcher(),
             )
         composeRule.setContent {

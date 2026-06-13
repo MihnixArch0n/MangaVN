@@ -62,6 +62,9 @@ class ReaderViewModelCoverageTest {
             pageFileBuilder = ReaderPageFileBuilder(),
             userPreferencesDataStore = userPreferencesDataStore,
             imageLoader = mockk(relaxed = true),
+            offlineDownloadManager = mockk(relaxed = true),
+            offlineDownloadRepository = mockk(relaxed = true),
+            downloadedChapterCache = mockk(relaxed = true),
             ioDispatcher = mainDispatcherRule.dispatcher,
         )
     }
@@ -398,6 +401,9 @@ class ReaderViewModelCoverageTest {
                 pageFileBuilder = ReaderPageFileBuilder(),
                 userPreferencesDataStore = userPreferencesDataStore,
                 imageLoader = mockk(relaxed = true),
+                offlineDownloadManager = mockk(relaxed = true),
+                offlineDownloadRepository = mockk(relaxed = true),
+                downloadedChapterCache = mockk(relaxed = true),
                 ioDispatcher = mainDispatcherRule.dispatcher,
             )
         advanceUntilIdle()

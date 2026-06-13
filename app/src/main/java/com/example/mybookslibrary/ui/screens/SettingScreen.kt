@@ -154,6 +154,8 @@ fun SettingScreenContent(
                     if (uiState.volumeKeyNav) appString(R.string.settings_on) else appString(R.string.settings_off)
                 val autoAdvanceLabel =
                     if (uiState.autoAdvance) appString(R.string.settings_on) else appString(R.string.settings_off)
+                val autoDownloadNextLabel =
+                    if (uiState.autoDownloadNext) appString(R.string.settings_on) else appString(R.string.settings_off)
                 SettingsCard {
                     SettingsRow(appString(R.string.settings_image_quality), qualityLabel) { viewModel.toggleQuality() }
                     SettingsDivider()
@@ -167,6 +169,10 @@ fun SettingScreenContent(
                     SettingsDivider()
                     SettingsRow(appString(R.string.settings_auto_advance), autoAdvanceLabel) {
                         viewModel.toggleAutoAdvance()
+                    }
+                    SettingsDivider()
+                    SettingsRow(appString(R.string.settings_auto_download_next), autoDownloadNextLabel) {
+                        viewModel.toggleAutoDownloadNext()
                     }
                 }
                 Spacer(Modifier.height(Dimens.SpacingXl))

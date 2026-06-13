@@ -2,8 +2,11 @@ package com.example.mybookslibrary.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import coil3.ImageLoader
+import com.example.mybookslibrary.data.download.DownloadedChapterCache
+import com.example.mybookslibrary.data.download.OfflineDownloadManager
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.AdjacentChapter
+import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
 import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.domain.usecase.LoadReaderPagesUseCase
@@ -34,6 +37,9 @@ class ReaderViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val userPreferencesDataStore = mockk<UserPreferencesDataStore>(relaxed = true)
+    private val offlineDownloadManager = mockk<OfflineDownloadManager>(relaxed = true)
+    private val offlineDownloadRepository = mockk<OfflineDownloadRepository>(relaxed = true)
+    private val downloadedChapterCache = mockk<DownloadedChapterCache>(relaxed = true)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
@@ -272,6 +278,7 @@ class ReaderViewModelTest {
         every { userPreferencesDataStore.observeReaderBrightness() } returns flowOf(0.5f)
         every { userPreferencesDataStore.observeReaderBackground() } returns flowOf("GRAY")
         every { userPreferencesDataStore.observeReaderAutoAdvance() } returns flowOf(true)
+        every { userPreferencesDataStore.observeAutoDownloadNext() } returns flowOf(false)
         val viewModel = createViewModel(startPageIndex = 0)
         advanceUntilIdle()
 
@@ -340,12 +347,90 @@ class ReaderViewModelTest {
             job.cancel()
         }
 
-    private fun stubReaderPrefs(autoAdvance: Boolean = false) {
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun reachedTransitionPage_withAutoDownloadNext_enqueuesNextChapter() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs(autoDownloadNext = true)
+            coEvery { downloadedChapterCache.isChapterDownloaded(NEXT_CHAPTER_ID) } returns false
+            coEvery { offlineDownloadRepository.getQueueByChapter(NEXT_CHAPTER_ID) } returns null
+            val viewModel = createViewModel(startPageIndex = 7, nextChapter = NEXT_CHAPTER)
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            advanceUntilIdle()
+
+            // Assert label chương kế được forward (không chỉ any()) để bắt regression nếu drop nhãn.
+            coVerify(exactly = 1) {
+                offlineDownloadManager.enqueueDownload(
+                    MANGA_ID,
+                    NEXT_CHAPTER_ID,
+                    mangaTitle = null,
+                    chapterLabel = NEXT_CHAPTER.buildTitle(),
+                )
+            }
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun reachedTransitionPage_withoutAutoDownloadNext_doesNotEnqueue() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs(autoDownloadNext = false)
+            val viewModel = createViewModel(startPageIndex = 7, nextChapter = NEXT_CHAPTER)
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) {
+                offlineDownloadManager.enqueueDownload(any(), any(), any(), any())
+            }
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun autoDownloadNext_skipsWhenChapterAlreadyDownloaded() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs(autoDownloadNext = true)
+            coEvery { downloadedChapterCache.isChapterDownloaded(NEXT_CHAPTER_ID) } returns true
+            val viewModel = createViewModel(startPageIndex = 7, nextChapter = NEXT_CHAPTER)
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) {
+                offlineDownloadManager.enqueueDownload(any(), any(), any(), any())
+            }
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun autoDownloadNext_enqueuesOnlyOnceAcrossRepeatedTriggers() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs(autoDownloadNext = true)
+            coEvery { downloadedChapterCache.isChapterDownloaded(NEXT_CHAPTER_ID) } returns false
+            coEvery { offlineDownloadRepository.getQueueByChapter(NEXT_CHAPTER_ID) } returns null
+            val viewModel = createViewModel(startPageIndex = 7, nextChapter = NEXT_CHAPTER)
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            advanceUntilIdle()
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                offlineDownloadManager.enqueueDownload(MANGA_ID, NEXT_CHAPTER_ID, any(), any())
+            }
+        }
+
+    private fun stubReaderPrefs(autoAdvance: Boolean = false, autoDownloadNext: Boolean = false) {
         every { userPreferencesDataStore.observeReaderKeepScreenOn() } returns flowOf(false)
         every { userPreferencesDataStore.observeReaderVolumeKeyNav() } returns flowOf(false)
         every { userPreferencesDataStore.observeReaderBrightness() } returns flowOf(1.0f)
         every { userPreferencesDataStore.observeReaderBackground() } returns flowOf("BLACK")
         every { userPreferencesDataStore.observeReaderAutoAdvance() } returns flowOf(autoAdvance)
+        every { userPreferencesDataStore.observeAutoDownloadNext() } returns flowOf(autoDownloadNext)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -400,6 +485,9 @@ class ReaderViewModelTest {
             pageFileBuilder = ReaderPageFileBuilder(),
             userPreferencesDataStore = userPreferencesDataStore,
             imageLoader = imageLoader,
+            offlineDownloadManager = offlineDownloadManager,
+            offlineDownloadRepository = offlineDownloadRepository,
+            downloadedChapterCache = downloadedChapterCache,
             ioDispatcher = mainDispatcherRule.dispatcher,
         )
     }

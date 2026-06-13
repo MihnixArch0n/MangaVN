@@ -52,6 +52,7 @@ data class SettingsUiState(
     val keepScreenOn: Boolean = false,
     val volumeKeyNav: Boolean = false,
     val autoAdvance: Boolean = false,
+    val autoDownloadNext: Boolean = false,
 )
 
 @OptIn(coil3.annotation.ExperimentalCoilApi::class)
@@ -78,6 +79,7 @@ class SettingsViewModel
                 val keepScreenOn = preferencesDataStore.getReaderKeepScreenOn()
                 val volumeKeyNav = preferencesDataStore.getReaderVolumeKeyNav()
                 val autoAdvance = preferencesDataStore.getReaderAutoAdvance()
+                val autoDownloadNext = preferencesDataStore.getAutoDownloadNext()
                 _uiState.update {
                     it.copy(
                         quality = q,
@@ -87,6 +89,7 @@ class SettingsViewModel
                         keepScreenOn = keepScreenOn,
                         volumeKeyNav = volumeKeyNav,
                         autoAdvance = autoAdvance,
+                        autoDownloadNext = autoDownloadNext,
                     )
                 }
             }
@@ -121,6 +124,14 @@ class SettingsViewModel
                 val newValue = !_uiState.value.autoAdvance
                 preferencesDataStore.setReaderAutoAdvance(newValue)
                 _uiState.update { it.copy(autoAdvance = newValue) }
+            }
+        }
+
+        fun toggleAutoDownloadNext() {
+            viewModelScope.launch(ioDispatcher) {
+                val newValue = !_uiState.value.autoDownloadNext
+                preferencesDataStore.setAutoDownloadNext(newValue)
+                _uiState.update { it.copy(autoDownloadNext = newValue) }
             }
         }
 

@@ -37,6 +37,7 @@ class UserPreferencesDataStore(
         private val LANGUAGE = stringPreferencesKey("language")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
+        private val AUTO_DOWNLOAD_NEXT = booleanPreferencesKey("auto_download_next")
         private val PREFERRED_CHAPTER_LANGUAGE = stringPreferencesKey("preferred_chapter_language")
         private val ONBOARDING_WELCOME_DONE = booleanPreferencesKey("onboarding_welcome_done")
         private val READER_HINT_DONE = booleanPreferencesKey("reader_hint_done")
@@ -193,6 +194,15 @@ class UserPreferencesDataStore(
 
     suspend fun setDownloadOnlyOnWifi(enabled: Boolean) {
         dataStore.edit { it[DOWNLOAD_ONLY_ON_WIFI] = enabled }
+    }
+
+    // Tự tải chương kế khi đọc gần cuối (mặc định tắt; tôn trọng download_only_on_wifi).
+    fun observeAutoDownloadNext(): Flow<Boolean> = safeData.map { it[AUTO_DOWNLOAD_NEXT] ?: false }
+
+    suspend fun getAutoDownloadNext(): Boolean = safeData.first()[AUTO_DOWNLOAD_NEXT] ?: false
+
+    suspend fun setAutoDownloadNext(enabled: Boolean) {
+        dataStore.edit { it[AUTO_DOWNLOAD_NEXT] = enabled }
     }
 
     // ─── Clear ─────────────────────────────────────────────────────
