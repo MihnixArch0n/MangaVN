@@ -19,6 +19,11 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
 import timber.log.Timber
+import java.net.ConnectException
+import java.net.NoRouteToHostException
+import java.net.SocketException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -38,6 +43,8 @@ class ChapterDownloadWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val mangaId = inputData.getString(KEY_MANGA_ID).orEmpty()
         val chapterId = inputData.getString(KEY_CHAPTER_ID).orEmpty()
+        val mangaTitle = inputData.getString(KEY_MANGA_TITLE)
+        val chapterLabel = inputData.getString(KEY_CHAPTER_LABEL)
 
         if (mangaId.isBlank() || chapterId.isBlank()) {
             Timber.e("ChapterDownloadWorker missing input: mangaId=%s chapterId=%s", mangaId, chapterId)
@@ -51,6 +58,8 @@ class ChapterDownloadWorker @AssistedInject constructor(
             setForeground(
                 downloadNotifier.createForegroundInfo(
                     chapterId = chapterId,
+                    mangaTitle = mangaTitle,
+                    chapterLabel = chapterLabel,
                     progressPercent = 0,
                     indeterminate = true,
                 ),
@@ -74,6 +83,8 @@ class ChapterDownloadWorker @AssistedInject constructor(
                 setForeground(
                     downloadNotifier.createForegroundInfo(
                         chapterId = chapterId,
+                        mangaTitle = mangaTitle,
+                        chapterLabel = chapterLabel,
                         progressPercent = 0,
                         indeterminate = false,
                     ),
@@ -93,6 +104,8 @@ class ChapterDownloadWorker @AssistedInject constructor(
                         )
                         updateDownloadProgress(
                             chapterId = chapterId,
+                            mangaTitle = mangaTitle,
+                            chapterLabel = chapterLabel,
                             completed = completedPages.incrementAndGet(),
                             totalPages = failoverCoordinator.totalPages,
                         )
@@ -129,11 +142,19 @@ class ChapterDownloadWorker @AssistedInject constructor(
                 setForeground(
                     downloadNotifier.createForegroundInfo(
                         chapterId = chapterId,
+                        mangaTitle = mangaTitle,
+                        chapterLabel = chapterLabel,
                         progressPercent = 100,
                         indeterminate = false,
                     ),
                 )
-                downloadNotifier.showFinishedNotification(chapterId = chapterId, success = true)
+                downloadNotifier.showFinishedNotification(
+                    mangaId = mangaId,
+                    chapterId = chapterId,
+                    mangaTitle = mangaTitle,
+                    chapterLabel = chapterLabel,
+                    success = true,
+                )
             }.onFailure { Timber.w(it, "Notification kết thúc lỗi (download vẫn thành công)") }
             Timber.d(
                 "ChapterDownloadWorker success: mangaId=%s chapterId=%s pages=%d",
@@ -146,6 +167,9 @@ class ChapterDownloadWorker @AssistedInject constructor(
             // Cancel (vd WorkManager hủy work) phải propagate sạch, không ghi thành ERROR.
             throw cancellationException
         } catch (t: Throwable) {
+            if (t.isTransientNetworkFailure()) {
+                return retryWhenNetworkReturns(chapterId, t)
+            }
             Timber.e(t, "ChapterDownloadWorker failed: mangaId=%s chapterId=%s", mangaId, chapterId)
             offlineDownloadRepository.updateQueueStatus(
                 chapterId = chapterId,
@@ -153,13 +177,41 @@ class ChapterDownloadWorker @AssistedInject constructor(
                 progressPercent = 0,
                 errorMessage = t.message,
             )
-            downloadNotifier.showFinishedNotification(chapterId = chapterId, success = false)
+            downloadNotifier.showFinishedNotification(
+                mangaId = mangaId,
+                chapterId = chapterId,
+                mangaTitle = mangaTitle,
+                chapterLabel = chapterLabel,
+                success = false,
+            )
             Result.failure(workDataOf(KEY_ERROR to (t.message ?: "Download failed")))
         }
     }
 
+    private suspend fun retryWhenNetworkReturns(
+        chapterId: String,
+        failure: Throwable,
+    ): Result {
+        val currentProgress = offlineDownloadRepository.getQueueByChapter(chapterId)?.progress_percent ?: 0
+        Timber.w(
+            failure,
+            "ChapterDownloadWorker waiting for network: chapterId=%s progress=%d runAttempt=%d",
+            chapterId,
+            currentProgress,
+            runAttemptCount,
+        )
+        offlineDownloadRepository.updateQueueStatus(
+            chapterId = chapterId,
+            status = DownloadStatus.PENDING,
+            progressPercent = currentProgress,
+        )
+        return Result.retry()
+    }
+
     private suspend fun updateDownloadProgress(
         chapterId: String,
+        mangaTitle: String?,
+        chapterLabel: String?,
         completed: Int,
         totalPages: Int,
     ) {
@@ -181,6 +233,8 @@ class ChapterDownloadWorker @AssistedInject constructor(
             setForeground(
                 downloadNotifier.createForegroundInfo(
                     chapterId = chapterId,
+                    mangaTitle = mangaTitle,
+                    chapterLabel = chapterLabel,
                     progressPercent = progress,
                     indeterminate = false,
                 ),
@@ -191,9 +245,21 @@ class ChapterDownloadWorker @AssistedInject constructor(
     companion object {
         const val KEY_MANGA_ID = "manga_id"
         const val KEY_CHAPTER_ID = "chapter_id"
+        const val KEY_MANGA_TITLE = "manga_title"
+        const val KEY_CHAPTER_LABEL = "chapter_label"
         const val KEY_PROGRESS_PERCENT = "progress_percent"
         const val KEY_ERROR = "error"
 
         internal const val PAGE_DOWNLOAD_CONCURRENCY = 3
     }
 }
+
+private fun Throwable.isTransientNetworkFailure(): Boolean =
+    generateSequence(this) { it.cause }
+        .any {
+            it is UnknownHostException ||
+                it is ConnectException ||
+                it is NoRouteToHostException ||
+                it is SocketTimeoutException ||
+                it is SocketException
+        }

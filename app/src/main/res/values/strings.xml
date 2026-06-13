@@ -389,6 +389,13 @@
     <string name="cd_delete_download">Delete downloaded chapter</string>
     <string name="notification_download_complete">Chapter downloaded</string>
     <string name="notification_download_failed">Chapter download failed</string>
+    <string name="notification_download_in_progress">Downloading chapter</string>
+    <string name="notification_download_preparing">Preparing download</string>
+    <string name="notification_download_progress_channel_name">Download progress</string>
+    <string name="notification_download_result_channel_name">Download results</string>
+    <string name="notification_action_retry">Retry</string>
+    <string name="notification_action_read">Read</string>
+    <string name="notification_action_dismiss">Dismiss</string>
     <string name="profile_downloads">Downloads</string>
     <string name="profile_edit">Edit profile</string>
     <string name="profile_edit_title">Edit Profile</string>

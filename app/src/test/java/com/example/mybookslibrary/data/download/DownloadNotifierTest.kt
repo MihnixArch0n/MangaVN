@@ -49,6 +49,21 @@ class DownloadNotifierTest {
     }
 
     @Test
+    fun createForegroundInfo_showsMangaAndChapterMetadata() {
+        val info =
+            notifier.createForegroundInfo(
+                chapterId = "chapter-1",
+                mangaTitle = "One Piece",
+                chapterLabel = "Vol. 1 Ch. 2",
+                progressPercent = 50,
+                indeterminate = false,
+            )
+
+        assertEquals("One Piece", info.notification.extras.getString(NotificationCompat.EXTRA_TITLE))
+        assertEquals("Vol. 1 Ch. 2 · 50%", info.notification.extras.getString(NotificationCompat.EXTRA_TEXT))
+    }
+
+    @Test
     fun createForegroundInfo_marksIndeterminatePreparingState() {
         val info = notifier.createForegroundInfo("chapter-1", progressPercent = 0, indeterminate = true)
 
@@ -56,20 +71,27 @@ class DownloadNotifierTest {
     }
 
     @Test
-    fun createForegroundInfo_createsNotificationChannel() {
+    fun createForegroundInfo_createsLowImportanceProgressChannel() {
         notifier.createForegroundInfo("chapter-1", progressPercent = 0, indeterminate = true)
 
-        val manager = context.getSystemService(NotificationManager::class.java)
-        assertNotNull(manager.getNotificationChannel("offline_downloads"))
+        val channel = context.getSystemService(NotificationManager::class.java)
+            .getNotificationChannel("offline_downloads")
+        assertNotNull(channel)
+        assertEquals(NotificationManager.IMPORTANCE_LOW, channel.importance)
     }
 
     @Test
     fun showFinishedNotification_postsWithIdOutsideProgressRange() {
-        notifier.showFinishedNotification("chapter-1", success = true)
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = true)
 
         val manager = context.getSystemService(NotificationManager::class.java)
         val posted = manager.activeNotifications.single()
         assertTrue(posted.id in 42_000 until 43_000)
+        assertEquals("offline_download_results", posted.notification.channelId)
+        assertEquals(
+            NotificationManager.IMPORTANCE_DEFAULT,
+            manager.getNotificationChannel("offline_download_results").importance,
+        )
     }
 
     @Test
@@ -77,9 +99,53 @@ class DownloadNotifierTest {
         val progressId =
             notifier.createForegroundInfo("chapter-1", progressPercent = 0, indeterminate = true).notificationId
 
-        notifier.showFinishedNotification("chapter-1", success = true)
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = true)
 
         val manager = context.getSystemService(NotificationManager::class.java)
         assertTrue(manager.activeNotifications.none { it.id == progressId })
+    }
+
+    @Test
+    fun showFinishedNotification_showsMangaAndChapterMetadata() {
+        notifier.showFinishedNotification(
+            mangaId = "manga-1",
+            chapterId = "chapter-1",
+            mangaTitle = "One Piece",
+            chapterLabel = "Vol. 1 Ch. 2",
+            success = true,
+        )
+
+        val notification =
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .single()
+                .notification
+        assertEquals("One Piece · Vol. 1 Ch. 2", notification.extras.getString(NotificationCompat.EXTRA_TEXT))
+    }
+
+    @Test
+    fun showFinishedNotification_successHasReadAndDismissActions() {
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = true)
+
+        val actions =
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .single()
+                .notification
+                .actions
+        assertEquals(listOf("Read", "Dismiss"), actions.map { it.title.toString() })
+    }
+
+    @Test
+    fun showFinishedNotification_failureHasRetryAndDismissActions() {
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = false)
+
+        val actions =
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .single()
+                .notification
+                .actions
+        assertEquals(listOf("Retry", "Dismiss"), actions.map { it.title.toString() })
     }
 }

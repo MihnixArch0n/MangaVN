@@ -35,11 +35,15 @@ class OfflineDownloadManagerTest {
                 mangaId = MANGA_ID,
                 chapterId = CHAPTER_ID,
                 networkType = NetworkType.UNMETERED,
+                mangaTitle = "One Piece",
+                chapterLabel = "Vol. 1 Ch. 2",
             )
 
         assertEquals(NetworkType.UNMETERED, request.workSpec.constraints.requiredNetworkType)
         assertEquals(MANGA_ID, request.workSpec.input.getString(ChapterDownloadWorker.KEY_MANGA_ID))
         assertEquals(CHAPTER_ID, request.workSpec.input.getString(ChapterDownloadWorker.KEY_CHAPTER_ID))
+        assertEquals("One Piece", request.workSpec.input.getString(ChapterDownloadWorker.KEY_MANGA_TITLE))
+        assertEquals("Vol. 1 Ch. 2", request.workSpec.input.getString(ChapterDownloadWorker.KEY_CHAPTER_LABEL))
         assertTrue(OfflineDownloadManager.CHAPTER_DOWNLOAD_TAG in request.tags)
         assertTrue(OfflineDownloadManager.chapterTag(CHAPTER_ID) in request.tags)
     }
