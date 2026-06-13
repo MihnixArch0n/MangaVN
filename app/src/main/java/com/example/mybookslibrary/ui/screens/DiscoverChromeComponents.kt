@@ -172,7 +172,15 @@ private fun DiscoverTopBarActions(onSearchClick: () -> Unit, onProfileClick: () 
                 Modifier
                     .size(Dimens.IconLg)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    // Nền trung tính khi có ảnh (tránh ám cam primaryContainer lộ qua viền/lúc load);
+                    // primaryContainer chỉ dùng cho icon fallback.
+                    .background(
+                        if (avatarUri.isNotBlank()) {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        },
+                    ),
             contentAlignment = Alignment.Center,
         ) {
             if (avatarUri.isNotBlank()) {
