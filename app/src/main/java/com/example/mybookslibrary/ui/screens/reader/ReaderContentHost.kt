@@ -133,6 +133,7 @@ private fun ReaderPages(
                 listState = listState,
                 onEvent = onEvent,
                 selectedPageIndex = state.selectedPageActionTarget?.pageIndex,
+                nextChapterTitle = state.nextChapterTitle,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -144,6 +145,7 @@ private fun ReaderPages(
                 pagerState = pagerState,
                 readingMode = state.currentReadingMode,
                 onEvent = onEvent,
+                nextChapterTitle = state.nextChapterTitle,
                 modifier = Modifier.fillMaxSize(),
             )
         }

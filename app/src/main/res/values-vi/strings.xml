@@ -159,6 +159,10 @@
     <string name="reader_background_black">Đen</string>
     <string name="reader_background_white">Trắng</string>
     <string name="reader_background_gray">Xám</string>
+    <string name="reader_transition_finished">Đã hết chương này</string>
+    <string name="reader_transition_next">Tiếp theo: %1$s</string>
+    <string name="reader_transition_action_next">Đọc chương sau</string>
+    <string name="reader_transition_no_next">Đã là chương mới nhất</string>
 
     <!-- Cài đặt -->
     <string name="settings_title">Cài đặt</string>
@@ -177,6 +181,7 @@
     <string name="settings_quality_data_saver">Tiết kiệm dữ liệu</string>
     <string name="settings_keep_screen_on">Giữ màn hình sáng</string>
     <string name="settings_volume_key_nav">Lật trang bằng phím âm lượng</string>
+    <string name="settings_auto_advance">Tự động sang chương sau</string>
     <string name="settings_on">Bật</string>
     <string name="settings_off">Tắt</string>
     <string name="settings_clear_cache">Xóa bộ nhớ đệm ảnh</string>

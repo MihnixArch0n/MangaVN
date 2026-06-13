@@ -159,6 +159,10 @@
     <string name="reader_background_black">Black</string>
     <string name="reader_background_white">White</string>
     <string name="reader_background_gray">Gray</string>
+    <string name="reader_transition_finished">Finished this chapter</string>
+    <string name="reader_transition_next">Up next: %1$s</string>
+    <string name="reader_transition_action_next">Read next chapter</string>
+    <string name="reader_transition_no_next">This is the latest chapter</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
@@ -177,6 +181,7 @@
     <string name="settings_quality_data_saver">Data Saver</string>
     <string name="settings_keep_screen_on">Keep screen on</string>
     <string name="settings_volume_key_nav">Volume key navigation</string>
+    <string name="settings_auto_advance">Auto-advance to next chapter</string>
     <string name="settings_on">On</string>
     <string name="settings_off">Off</string>
     <string name="settings_clear_cache">Clear Image Cache</string>

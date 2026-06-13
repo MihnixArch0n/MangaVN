@@ -1,7 +1,9 @@
 package com.example.mybookslibrary.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
+import coil3.ImageLoader
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.data.local.dao.AdjacentChapter
 import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.domain.usecase.LoadReaderPagesUseCase
@@ -15,6 +17,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -268,6 +271,7 @@ class ReaderViewModelTest {
         every { userPreferencesDataStore.observeReaderVolumeKeyNav() } returns flowOf(true)
         every { userPreferencesDataStore.observeReaderBrightness() } returns flowOf(0.5f)
         every { userPreferencesDataStore.observeReaderBackground() } returns flowOf("GRAY")
+        every { userPreferencesDataStore.observeReaderAutoAdvance() } returns flowOf(true)
         val viewModel = createViewModel(startPageIndex = 0)
         advanceUntilIdle()
 
@@ -275,6 +279,73 @@ class ReaderViewModelTest {
         assertEquals(true, viewModel.state.value.volumeKeyNav)
         assertEquals(0.5f, viewModel.state.value.brightness)
         assertEquals(ReaderBackground.GRAY, viewModel.state.value.background)
+        assertEquals(true, viewModel.state.value.autoAdvance)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun reachedTransitionPage_withAutoAdvanceAndNext_navigatesToNextChapter() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs(autoAdvance = true)
+            val viewModel = createViewModel(startPageIndex = 7, nextChapter = NEXT_CHAPTER)
+            advanceUntilIdle()
+            val nav = async { viewModel.effects.first { it is ReaderUiEffect.NavigateToChapter } }
+            runCurrent()
+
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            advanceUntilIdle()
+
+            val effect = nav.await() as ReaderUiEffect.NavigateToChapter
+            assertEquals(NEXT_CHAPTER_ID, effect.chapterId)
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun leftTransitionPage_cancelsPendingAutoAdvance() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs(autoAdvance = true)
+            val viewModel = createViewModel(startPageIndex = 7, nextChapter = NEXT_CHAPTER)
+            advanceUntilIdle()
+            var navigated = false
+            val job = backgroundScope.launch {
+                viewModel.effects.collect { if (it is ReaderUiEffect.NavigateToChapter) navigated = true }
+            }
+            runCurrent()
+
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            viewModel.onEvent(ReaderEvent.LeftTransitionPage) // lướt ngược lại trước khi hết delay
+            advanceUntilIdle()
+
+            assertEquals(false, navigated)
+            job.cancel()
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun reachedTransitionPage_withoutAutoAdvance_doesNotNavigate() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs(autoAdvance = false)
+            val viewModel = createViewModel(startPageIndex = 7, nextChapter = NEXT_CHAPTER)
+            advanceUntilIdle()
+            var navigated = false
+            val job = backgroundScope.launch {
+                viewModel.effects.collect { if (it is ReaderUiEffect.NavigateToChapter) navigated = true }
+            }
+            runCurrent()
+
+            viewModel.onEvent(ReaderEvent.ReachedTransitionPage)
+            advanceUntilIdle()
+
+            assertEquals(false, navigated)
+            job.cancel()
+        }
+
+    private fun stubReaderPrefs(autoAdvance: Boolean = false) {
+        every { userPreferencesDataStore.observeReaderKeepScreenOn() } returns flowOf(false)
+        every { userPreferencesDataStore.observeReaderVolumeKeyNav() } returns flowOf(false)
+        every { userPreferencesDataStore.observeReaderBrightness() } returns flowOf(1.0f)
+        every { userPreferencesDataStore.observeReaderBackground() } returns flowOf("BLACK")
+        every { userPreferencesDataStore.observeReaderAutoAdvance() } returns flowOf(autoAdvance)
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -293,14 +364,19 @@ class ReaderViewModelTest {
     private fun createViewModel(
         startPageIndex: Int?,
         storedReadingMode: ReadingMode = ReadingMode.LTR,
+        nextChapter: AdjacentChapter? = null,
     ): ReaderViewModel {
         val loadReaderPagesUseCase = mockk<LoadReaderPagesUseCase>()
         val syncReadingProgressUseCase = mockk<SyncReadingProgressUseCase>(relaxed = true)
+        val imageLoader = mockk<ImageLoader>(relaxed = true)
         coEvery { userPreferencesDataStore.getReaderReadingMode() } returns storedReadingMode
         coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns
             Result.success(
                 listOf("page-1", "page-2", "page-3", "page-4", "page-5", "page-6", "page-7", "page-8"),
             )
+        // Preload chương kế (Phase 4 PR-2a) gọi use case với chapterId khác → trả vài trang.
+        coEvery { loadReaderPagesUseCase(MANGA_ID, NEXT_CHAPTER_ID) } returns
+            Result.success(listOf("next-1", "next-2", "next-3"))
 
         val args =
             mutableMapOf<String, Any?>(
@@ -312,7 +388,7 @@ class ReaderViewModelTest {
 
         val chapterDao = mockk<com.example.mybookslibrary.data.local.dao.ChapterDao>(relaxed = true)
         coEvery { chapterDao.getPrevChapter(any(), any()) } returns null
-        coEvery { chapterDao.getNextChapter(any(), any()) } returns null
+        coEvery { chapterDao.getNextChapter(any(), any()) } returns nextChapter
 
         return ReaderViewModel(
             application = RuntimeEnvironment.getApplication(),
@@ -323,6 +399,7 @@ class ReaderViewModelTest {
             tapZoneEvaluator = TapZoneEvaluator(),
             pageFileBuilder = ReaderPageFileBuilder(),
             userPreferencesDataStore = userPreferencesDataStore,
+            imageLoader = imageLoader,
             ioDispatcher = mainDispatcherRule.dispatcher,
         )
     }
@@ -330,5 +407,7 @@ class ReaderViewModelTest {
     private companion object {
         const val MANGA_ID = "manga-1"
         const val CHAPTER_ID = "chapter-1"
+        const val NEXT_CHAPTER_ID = "chapter-2"
+        val NEXT_CHAPTER = AdjacentChapter(chapterId = NEXT_CHAPTER_ID, chapterNumber = "2", volume = null)
     }
 }

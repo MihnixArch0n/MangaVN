@@ -67,6 +67,7 @@ class ReaderScreenTest {
             tapZoneEvaluator = TapZoneEvaluator(),
             pageFileBuilder = ReaderPageFileBuilder(),
             userPreferencesDataStore = userPreferencesDataStore,
+            imageLoader = mockk(relaxed = true),
             ioDispatcher = UnconfinedTestDispatcher(),
         )
     }
@@ -99,6 +100,7 @@ class ReaderScreenTest {
                 tapZoneEvaluator = TapZoneEvaluator(),
                 pageFileBuilder = ReaderPageFileBuilder(),
                 userPreferencesDataStore = userPreferencesDataStore,
+                imageLoader = mockk(relaxed = true),
                 ioDispatcher = UnconfinedTestDispatcher(),
             )
 
@@ -131,6 +133,7 @@ class ReaderScreenTest {
                 tapZoneEvaluator = TapZoneEvaluator(),
                 pageFileBuilder = ReaderPageFileBuilder(),
                 userPreferencesDataStore = userPreferencesDataStore,
+                imageLoader = mockk(relaxed = true),
                 ioDispatcher = UnconfinedTestDispatcher(),
             )
         composeRule.setContent {

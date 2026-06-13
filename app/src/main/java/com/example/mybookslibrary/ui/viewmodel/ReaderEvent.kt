@@ -76,6 +76,13 @@ sealed interface ReaderEvent {
     data object NavigatePrevChapter : ReaderEvent
 
     data object NavigateNextChapter : ReaderEvent
+
+    // Seamless navigation (Phase 4 PR-2a)
+    /** User lướt tới trang chuyển tiếp cuối chương → preload + (nếu autoAdvance) tự sang chương sau. */
+    data object ReachedTransitionPage : ReaderEvent
+
+    /** Rời trang chuyển tiếp (lướt ngược lại) → hủy auto-advance đang chờ. */
+    data object LeftTransitionPage : ReaderEvent
 }
 
 enum class ReaderPageAction {

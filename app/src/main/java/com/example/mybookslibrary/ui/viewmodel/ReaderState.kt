@@ -22,6 +22,8 @@ data class ReaderState(
     val brightness: Float = 1.0f,
     val background: ReaderBackground = ReaderBackground.BLACK,
     val isComfortPanelVisible: Boolean = false,
+    // Seamless navigation (Phase 4 PR-2a)
+    val autoAdvance: Boolean = false,
 )
 
 data class ReaderPageActionTarget(

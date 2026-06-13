@@ -61,6 +61,7 @@ class ReaderViewModelCoverageTest {
             tapZoneEvaluator = TapZoneEvaluator(),
             pageFileBuilder = ReaderPageFileBuilder(),
             userPreferencesDataStore = userPreferencesDataStore,
+            imageLoader = mockk(relaxed = true),
             ioDispatcher = mainDispatcherRule.dispatcher,
         )
     }
@@ -396,6 +397,7 @@ class ReaderViewModelCoverageTest {
                 tapZoneEvaluator = TapZoneEvaluator(),
                 pageFileBuilder = ReaderPageFileBuilder(),
                 userPreferencesDataStore = userPreferencesDataStore,
+                imageLoader = mockk(relaxed = true),
                 ioDispatcher = mainDispatcherRule.dispatcher,
             )
         advanceUntilIdle()

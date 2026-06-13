@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import coil3.ImageLoader
+import coil3.request.ImageRequest
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.ChapterDao
@@ -17,7 +19,10 @@ import com.example.mybookslibrary.domain.usecase.SyncReadingProgressUseCase
 import com.example.mybookslibrary.domain.usecase.TapZoneEvaluator
 import com.example.mybookslibrary.ui.navigation.Reader
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -45,6 +50,7 @@ constructor(
     private val tapZoneEvaluator: TapZoneEvaluator,
     private val pageFileBuilder: ReaderPageFileBuilder,
     private val userPreferencesDataStore: UserPreferencesDataStore,
+    private val imageLoader: ImageLoader,
     @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : AndroidViewModel(application) {
     private fun str(resId: Int) = getApplication<Application>().getString(resId)
@@ -60,6 +66,10 @@ constructor(
 
     @Volatile
     private var readingModeChangedByUser = false
+
+    // Seamless navigation (Phase 4 PR-2a): job auto-advance đang chờ + cờ đã preload chương kế.
+    private var autoAdvanceJob: Job? = null
+    private var preloadedNextChapterId: String? = null
 
     private val _state =
         MutableStateFlow(
@@ -79,19 +89,21 @@ constructor(
         loadChapterPages()
     }
 
-    // Quan sát 4 tuỳ chọn comfort reactive: đổi trong Settings/panel là reader cập nhật ngay.
+    // Quan sát các tuỳ chọn reader reactive: đổi trong Settings/panel là reader cập nhật ngay.
     private fun observeComfortPreferences() {
         combine(
             userPreferencesDataStore.observeReaderKeepScreenOn(),
             userPreferencesDataStore.observeReaderVolumeKeyNav(),
             userPreferencesDataStore.observeReaderBrightness(),
             userPreferencesDataStore.observeReaderBackground(),
-        ) { keepScreenOn, volumeKeyNav, brightness, background ->
+            userPreferencesDataStore.observeReaderAutoAdvance(),
+        ) { keepScreenOn, volumeKeyNav, brightness, background, autoAdvance ->
             ComfortPrefs(
                 keepScreenOn = keepScreenOn,
                 volumeKeyNav = volumeKeyNav,
                 brightness = brightness,
                 background = ReaderBackground.fromString(background),
+                autoAdvance = autoAdvance,
             )
         }.onEach { prefs ->
             _state.update {
@@ -100,6 +112,7 @@ constructor(
                     volumeKeyNav = prefs.volumeKeyNav,
                     brightness = prefs.brightness,
                     background = prefs.background,
+                    autoAdvance = prefs.autoAdvance,
                 )
             }
         }.launchIn(viewModelScope)
@@ -110,6 +123,7 @@ constructor(
         val volumeKeyNav: Boolean,
         val brightness: Float,
         val background: ReaderBackground,
+        val autoAdvance: Boolean,
     )
 
     private fun loadReadingMode() {
@@ -189,6 +203,49 @@ constructor(
                 navigateToChapter(_state.value.prevChapterId, _state.value.prevChapterTitle)
             ReaderEvent.NavigateNextChapter ->
                 navigateToChapter(_state.value.nextChapterId, _state.value.nextChapterTitle)
+            ReaderEvent.ReachedTransitionPage -> onReachedTransitionPage()
+            ReaderEvent.LeftTransitionPage -> autoAdvanceJob?.cancel()
+        }
+    }
+
+    // Tới trang chuyển tiếp cuối chương: preload chương kế (luôn) + nếu bật autoAdvance thì
+    // hẹn chuyển sau AUTO_ADVANCE_DELAY_MS (lướt ngược lại sẽ hủy qua LeftTransitionPage).
+    private fun onReachedTransitionPage() {
+        preloadNextChapter()
+        val nextId = _state.value.nextChapterId ?: return
+        if (!_state.value.autoAdvance) return
+        autoAdvanceJob?.cancel()
+        autoAdvanceJob =
+            viewModelScope.launch {
+                delay(AUTO_ADVANCE_DELAY_MS)
+                navigateToChapter(nextId, _state.value.nextChapterTitle)
+            }
+    }
+
+    // Warm Coil cache vài ảnh đầu chương kế để mở chương sau gần như tức thì. Chỉ chạy 1 lần/chương.
+    private fun preloadNextChapter() {
+        val nextId = _state.value.nextChapterId ?: return
+        if (preloadedNextChapterId == nextId) return
+        preloadedNextChapterId = nextId
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                loadReaderPagesUseCase(mangaId, nextId)
+                    .onSuccess { urls ->
+                        val warmCount = urls.size.coerceAtMost(PRELOAD_IMAGE_COUNT)
+                        urls.take(PRELOAD_IMAGE_COUNT).forEach { url ->
+                            imageLoader.enqueue(
+                                ImageRequest.Builder(getApplication()).data(url).build(),
+                            )
+                        }
+                        Timber.d("preloadNextChapter warmed %d images: chapterId=%s", warmCount, nextId)
+                    }.onFailure { t ->
+                        Timber.d(t, "preloadNextChapter load failed (bỏ qua, best-effort): chapterId=%s", nextId)
+                    }
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Timber.e(t, "preloadNextChapter error: chapterId=%s", nextId)
+            }
         }
     }
 
@@ -293,6 +350,10 @@ constructor(
         if (pages.isEmpty()) return
         val boundedIndex = index.coerceIn(0, pages.lastIndex)
         pendingPageIndex = boundedIndex
+        // Đọc gần cuối → preload chương kế sớm (warm Coil) cho mượt khi chuyển.
+        if (boundedIndex >= pages.size - PRELOAD_NEAR_END_THRESHOLD) {
+            preloadNextChapter()
+        }
         if (boundedIndex == _state.value.lastReadPageIndex) return
         _state.update { it.copy(lastReadPageIndex = boundedIndex) }
         syncProgressToRoom(pageIndexOverride = boundedIndex, force = false)
@@ -367,6 +428,8 @@ constructor(
 
     private fun navigateToChapter(chapterId: String?, chapterTitle: String?) {
         if (chapterId == null) return
+        // Hủy auto-advance đang chờ để không điều hướng 2 lần (vd user bấm nút trong lúc timer chạy).
+        autoAdvanceJob?.cancel()
         flushProgress(null)
         _effects.tryEmit(
             ReaderUiEffect.NavigateToChapter(
@@ -404,6 +467,11 @@ constructor(
 // Độ sáng overlay tối thiểu (0.15 = tối nhất vẫn còn nhìn thấy) và tối đa (1.0 = không tối thêm).
 private const val MIN_BRIGHTNESS = 0.15f
 private const val MAX_BRIGHTNESS = 1.0f
+
+// Seamless navigation (Phase 4 PR-2a)
+private const val AUTO_ADVANCE_DELAY_MS = 1500L // chờ trước khi tự sang chương (hủy được nếu lướt lại)
+private const val PRELOAD_IMAGE_COUNT = 3 // số ảnh đầu chương kế warm vào Coil cache
+private const val PRELOAD_NEAR_END_THRESHOLD = 2 // còn ≤2 trang cuối thì bắt đầu preload
 
 private fun ReadingMode.next(): ReadingMode = when (this) {
     ReadingMode.VERTICAL -> ReadingMode.LTR

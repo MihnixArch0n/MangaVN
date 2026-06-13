@@ -125,7 +125,10 @@ class VerticalReaderContentTest {
     }
 
     @Test
-    fun longPress_dispatchesCorrectPageForSelection() {
+    fun longPress_onTransitionArea_doesNotDispatchPageAction() {
+        // Từ Phase 4 PR-2a: item cuối LazyColumn là trang chuyển tiếp ảo (fillParentMaxSize), phủ
+        // phần dưới khung. Long-press vào vùng đó KHÔNG được tạo PageLongPressed (không có trang
+        // ảnh để lưu). Trước đây vùng trống dưới ảnh map về trang cuối; nay là transition.
         var received: ReaderEvent? = null
         composeRule.setContent {
             VerticalReaderContent(
@@ -136,8 +139,8 @@ class VerticalReaderContentTest {
         }
 
         composeRule.onRoot().performTouchInput { longClick(bottomCenter) }
-        composeRule.waitUntil(timeoutMillis = 5_000) { received is ReaderEvent.PageLongPressed }
+        composeRule.waitForIdle()
 
-        assertTrue((received as ReaderEvent.PageLongPressed).pageIndex == 1)
+        assertTrue(received !is ReaderEvent.PageLongPressed)
     }
 }

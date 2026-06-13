@@ -33,6 +33,7 @@ class UserPreferencesDataStore(
         private val READER_VOLUME_KEY_NAV = booleanPreferencesKey("reader_volume_key_nav")
         private val READER_BRIGHTNESS = stringPreferencesKey("reader_brightness")
         private val READER_BACKGROUND = stringPreferencesKey("reader_background")
+        private val READER_AUTO_ADVANCE = booleanPreferencesKey("reader_auto_advance")
         private val LANGUAGE = stringPreferencesKey("language")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
@@ -143,6 +144,15 @@ class UserPreferencesDataStore(
 
     suspend fun setReaderBackground(name: String) {
         dataStore.edit { it[READER_BACKGROUND] = name }
+    }
+
+    /** Tự động sang chương sau khi tới trang chuyển tiếp cuối chương (mặc định tắt). */
+    fun observeReaderAutoAdvance(): Flow<Boolean> = safeData.map { it[READER_AUTO_ADVANCE] ?: false }
+
+    suspend fun getReaderAutoAdvance(): Boolean = safeData.first()[READER_AUTO_ADVANCE] ?: false
+
+    suspend fun setReaderAutoAdvance(enabled: Boolean) {
+        dataStore.edit { it[READER_AUTO_ADVANCE] = enabled }
     }
 
     // ─── Ngôn ngữ ──────────────────────────────────────────────────

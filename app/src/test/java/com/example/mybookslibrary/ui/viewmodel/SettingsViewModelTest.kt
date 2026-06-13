@@ -39,12 +39,14 @@ class SettingsViewModelTest {
         language: String = "en",
         keepScreenOn: Boolean = false,
         volumeKeyNav: Boolean = false,
+        autoAdvance: Boolean = false,
     ) {
         coEvery { prefs.getReaderQuality() } returns quality
         coEvery { prefs.getThemeMode() } returns theme
         coEvery { prefs.getLanguage() } returns language
         coEvery { prefs.getReaderKeepScreenOn() } returns keepScreenOn
         coEvery { prefs.getReaderVolumeKeyNav() } returns volumeKeyNav
+        coEvery { prefs.getReaderAutoAdvance() } returns autoAdvance
     }
 
     private fun viewModel() =
@@ -125,6 +127,20 @@ class SettingsViewModelTest {
 
             assertTrue(vm.uiState.value.volumeKeyNav)
             coVerify { prefs.setReaderVolumeKeyNav(true) }
+        }
+
+    @Test
+    fun toggleAutoAdvance_doiVaLuu() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults(autoAdvance = false)
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.toggleAutoAdvance()
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.autoAdvance)
+            coVerify { prefs.setReaderAutoAdvance(true) }
         }
 
     @Test

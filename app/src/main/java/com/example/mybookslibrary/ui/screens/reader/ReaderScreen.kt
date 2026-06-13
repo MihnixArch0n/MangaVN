@@ -53,7 +53,8 @@ fun ReaderScreen(
     val pagerState =
         rememberPagerState(
             initialPage = state.lastReadPageIndex,
-            pageCount = { state.pages.size },
+            // +1 cho trang chuyển tiếp cuối chương (Phase 4 PR-2a); 0 khi chưa có trang.
+            pageCount = { if (state.pages.isEmpty()) 0 else state.pages.size + 1 },
         )
 
     ConfigureReaderSystemBars(

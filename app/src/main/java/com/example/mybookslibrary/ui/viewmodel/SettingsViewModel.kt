@@ -51,6 +51,7 @@ data class SettingsUiState(
     val isGuest: Boolean = false,
     val keepScreenOn: Boolean = false,
     val volumeKeyNav: Boolean = false,
+    val autoAdvance: Boolean = false,
 )
 
 @OptIn(coil3.annotation.ExperimentalCoilApi::class)
@@ -76,6 +77,7 @@ class SettingsViewModel
                 val guest = authRepository.getCurrentUser() == null
                 val keepScreenOn = preferencesDataStore.getReaderKeepScreenOn()
                 val volumeKeyNav = preferencesDataStore.getReaderVolumeKeyNav()
+                val autoAdvance = preferencesDataStore.getReaderAutoAdvance()
                 _uiState.update {
                     it.copy(
                         quality = q,
@@ -84,6 +86,7 @@ class SettingsViewModel
                         isGuest = guest,
                         keepScreenOn = keepScreenOn,
                         volumeKeyNav = volumeKeyNav,
+                        autoAdvance = autoAdvance,
                     )
                 }
             }
@@ -110,6 +113,14 @@ class SettingsViewModel
                 val newValue = !_uiState.value.volumeKeyNav
                 preferencesDataStore.setReaderVolumeKeyNav(newValue)
                 _uiState.update { it.copy(volumeKeyNav = newValue) }
+            }
+        }
+
+        fun toggleAutoAdvance() {
+            viewModelScope.launch(ioDispatcher) {
+                val newValue = !_uiState.value.autoAdvance
+                preferencesDataStore.setReaderAutoAdvance(newValue)
+                _uiState.update { it.copy(autoAdvance = newValue) }
             }
         }
 

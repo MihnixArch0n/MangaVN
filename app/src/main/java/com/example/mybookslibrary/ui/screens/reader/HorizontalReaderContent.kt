@@ -57,6 +57,7 @@ fun HorizontalReaderContent(
     readingMode: ReadingMode,
     onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier,
+    nextChapterTitle: String? = null,
 ) {
     val navigationController = rememberHorizontalNavigationController(pagerState)
     val layoutDirection = rememberHorizontalLayoutDirection(readingMode)
@@ -68,6 +69,7 @@ fun HorizontalReaderContent(
             readingMode = readingMode,
             navigationController = navigationController,
             onEvent = onEvent,
+            nextChapterTitle = nextChapterTitle,
             modifier = modifier,
         )
     }
@@ -139,6 +141,7 @@ private fun HorizontalReaderPager(
     navigationController: HorizontalNavigationController,
     onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier,
+    nextChapterTitle: String? = null,
 ) {
     val viewConfiguration = LocalViewConfiguration.current
     val latestReadingMode = rememberUpdatedState(readingMode)
@@ -169,9 +172,19 @@ private fun HorizontalReaderPager(
         // Giữ 1 trang trước/sau (không phải 2) để giảm số bitmap thường trú, tránh OOM máy RAM thấp.
         beyondViewportPageCount = 1,
         userScrollEnabled = !navigationController.isActive(),
-        key = { index -> pages.getOrNull(index) ?: "missing-page-$index" },
+        key = { index -> pages.getOrNull(index) ?: TRANSITION_PAGE_KEY },
     ) { pageIndex ->
-        pages.getOrNull(pageIndex)?.let { pageUrl ->
+        val pageUrl = pages.getOrNull(pageIndex)
+        if (pageUrl == null) {
+            // Trang ảo cuối: chuyển tiếp chương (Phase 4 PR-2a). Đặt layout LTR cho nội dung.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                ReaderTransitionView(
+                    nextChapterTitle = nextChapterTitle,
+                    onNextClick = { onEvent(ReaderEvent.NavigateNextChapter) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        } else {
             // Only the pager should be RTL. Page gestures must keep physical left/right coordinates
             // so Telephoto taps and the pager animation shield evaluate the same tap zone.
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -198,6 +211,8 @@ private fun HorizontalReaderPager(
         }
     }
 }
+
+private const val TRANSITION_PAGE_KEY = "reader-transition-page"
 
 private fun queueShieldedNavigationTap(
     offsetX: Float,

@@ -152,6 +152,8 @@ fun SettingScreenContent(
                     if (uiState.keepScreenOn) appString(R.string.settings_on) else appString(R.string.settings_off)
                 val volumeKeyLabel =
                     if (uiState.volumeKeyNav) appString(R.string.settings_on) else appString(R.string.settings_off)
+                val autoAdvanceLabel =
+                    if (uiState.autoAdvance) appString(R.string.settings_on) else appString(R.string.settings_off)
                 SettingsCard {
                     SettingsRow(appString(R.string.settings_image_quality), qualityLabel) { viewModel.toggleQuality() }
                     SettingsDivider()
@@ -161,6 +163,10 @@ fun SettingScreenContent(
                     SettingsDivider()
                     SettingsRow(appString(R.string.settings_volume_key_nav), volumeKeyLabel) {
                         viewModel.toggleVolumeKeyNav()
+                    }
+                    SettingsDivider()
+                    SettingsRow(appString(R.string.settings_auto_advance), autoAdvanceLabel) {
+                        viewModel.toggleAutoAdvance()
                     }
                 }
                 Spacer(Modifier.height(Dimens.SpacingXl))

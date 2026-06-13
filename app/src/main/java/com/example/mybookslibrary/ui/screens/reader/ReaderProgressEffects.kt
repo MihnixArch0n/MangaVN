@@ -21,7 +21,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import timber.log.Timber
 
@@ -38,19 +37,26 @@ internal fun ReaderProgressEffects(
     LaunchedEffect(listState, state.pages.size, state.currentReadingMode) {
         if (state.currentReadingMode != ReadingMode.VERTICAL) return@LaunchedEffect
         if (state.pages.isEmpty()) return@LaunchedEffect
+        var wasOnTransition = false
         snapshotFlow { listState.layoutInfo.findActivePageIndex() }
             .filter { it >= 0 }
             .onEach { index ->
-                latestActivePageIndex.value = index
+                latestActivePageIndex.value = index.coerceAtMost(state.pages.lastIndex)
                 Timber.v("Reader vertical active-page candidate: page=%d", index)
             }.distinctUntilChanged()
             .debounce(300)
-            .map { index ->
-                val visiblePage = index.coerceIn(0, state.pages.lastIndex)
-                Timber.v("Reader vertical page active: page=%d mode=%s", visiblePage, state.currentReadingMode)
-                visiblePage
-            }.collect { index ->
-                onEvent(ReaderEvent.VisiblePageChanged(index))
+            .collect { index ->
+                // Item cuối (index == pages.size) là trang chuyển tiếp chương.
+                if (index >= state.pages.size) {
+                    onEvent(ReaderEvent.ReachedTransitionPage)
+                    wasOnTransition = true
+                } else {
+                    if (wasOnTransition) onEvent(ReaderEvent.LeftTransitionPage)
+                    wasOnTransition = false
+                    val visiblePage = index.coerceIn(0, state.pages.lastIndex)
+                    Timber.v("Reader vertical page active: page=%d mode=%s", visiblePage, state.currentReadingMode)
+                    onEvent(ReaderEvent.VisiblePageChanged(visiblePage))
+                }
             }
     }
 
@@ -78,15 +84,22 @@ internal fun ReaderProgressEffects(
         if (state.currentReadingMode == ReadingMode.VERTICAL) return@LaunchedEffect
         if (state.pages.isEmpty()) return@LaunchedEffect
         Timber.v("Reader horizontal page tracking active: mode=%s", state.currentReadingMode)
+        var wasOnTransition = false
         snapshotFlow { pagerState.settledPage }
             .distinctUntilChanged()
-            .map { page ->
-                val visiblePage = page.coerceIn(0, state.pages.lastIndex)
-                latestActivePageIndex.value = visiblePage
-                Timber.v("Reader horizontal page settled: page=%d mode=%s", visiblePage, state.currentReadingMode)
-                visiblePage
-            }.collect { page ->
-                onEvent(ReaderEvent.VisiblePageChanged(page))
+            .collect { page ->
+                // Trang ảo cuối (index == pages.size) là trang chuyển tiếp chương.
+                if (page >= state.pages.size) {
+                    onEvent(ReaderEvent.ReachedTransitionPage)
+                    wasOnTransition = true
+                } else {
+                    if (wasOnTransition) onEvent(ReaderEvent.LeftTransitionPage)
+                    wasOnTransition = false
+                    val visiblePage = page.coerceIn(0, state.pages.lastIndex)
+                    latestActivePageIndex.value = visiblePage
+                    Timber.v("Reader horizontal page settled: page=%d mode=%s", visiblePage, state.currentReadingMode)
+                    onEvent(ReaderEvent.VisiblePageChanged(visiblePage))
+                }
             }
     }
 

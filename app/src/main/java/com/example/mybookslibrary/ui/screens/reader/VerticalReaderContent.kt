@@ -35,6 +35,7 @@ internal fun VerticalReaderContent(
     onEvent: (ReaderEvent) -> Unit,
     modifier: Modifier = Modifier,
     selectedPageIndex: Int? = null,
+    nextChapterTitle: String? = null,
     onZoomFractionChanged: (Float?) -> Unit = {},
 ) {
     val zoomableState = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f))
@@ -93,6 +94,14 @@ internal fun VerticalReaderContent(
                     index = index,
                     isSelected = index == selectedPageIndex,
                     modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            // Trang chuyển tiếp cuối chương (Phase 4 PR-2a) — item cuối, cao 1 màn hình.
+            item(key = "reader-transition-page") {
+                ReaderTransitionView(
+                    nextChapterTitle = nextChapterTitle,
+                    onNextClick = { onEvent(ReaderEvent.NavigateNextChapter) },
+                    modifier = Modifier.fillParentMaxSize(),
                 )
             }
         }
