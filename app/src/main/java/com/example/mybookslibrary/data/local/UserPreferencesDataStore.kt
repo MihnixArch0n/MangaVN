@@ -11,7 +11,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.mybookslibrary.domain.model.AuthStatus
 import com.example.mybookslibrary.domain.model.ReadingMode
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.Flow
+import timber.log.Timber
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -29,6 +31,7 @@ class UserPreferencesDataStore(
     companion object {
         private val READER_QUALITY = stringPreferencesKey("reader_quality")
         private val READER_READING_MODE = stringPreferencesKey("reader_reading_mode")
+        private val READER_MODE_PER_MANGA = stringPreferencesKey("reader_mode_per_manga")
         private val READER_KEEP_SCREEN_ON = booleanPreferencesKey("reader_keep_screen_on")
         private val READER_VOLUME_KEY_NAV = booleanPreferencesKey("reader_volume_key_nav")
         private val READER_BRIGHTNESS = stringPreferencesKey("reader_brightness")
@@ -65,6 +68,9 @@ class UserPreferencesDataStore(
         dataStore.data.catch { e ->
             if (e is IOException) emit(emptyPreferences()) else throw e
         }
+
+    // Parse/serialize map reading-mode per-manga (READER_MODE_PER_MANGA).
+    private val perMangaModeJson = Json
 
     // ─── Auth Status ───────────────────────────────────────────────
 
@@ -113,6 +119,33 @@ class UserPreferencesDataStore(
     suspend fun setReaderReadingMode(mode: ReadingMode) {
         dataStore.edit { it[READER_READING_MODE] = mode.name }
     }
+
+    // Reading mode override riêng từng truyện (Phase 4 PR-3a) — map mangaId -> mode.name, lưu JSON.
+    // Override thắng global default; null = truyện chưa tùy chỉnh.
+    suspend fun getReaderModeForManga(mangaId: String): ReadingMode? {
+        val raw = safeData.first()[READER_MODE_PER_MANGA] ?: return null
+        val storedName = parsePerMangaMode(raw)[mangaId] ?: return null
+        return ReadingMode.entries.firstOrNull { it.name == storedName }
+    }
+
+    suspend fun setReaderModeForManga(mangaId: String, mode: ReadingMode) {
+        dataStore.edit { prefs ->
+            val updated = parsePerMangaMode(prefs[READER_MODE_PER_MANGA] ?: "") + (mangaId to mode.name)
+            prefs[READER_MODE_PER_MANGA] = perMangaModeJson.encodeToString(updated)
+        }
+    }
+
+    private fun parsePerMangaMode(raw: String): Map<String, String> =
+        if (raw.isBlank()) {
+            emptyMap()
+        } else {
+            try {
+                perMangaModeJson.decodeFromString<Map<String, String>>(raw)
+            } catch (t: Throwable) {
+                Timber.w(t, "parsePerMangaMode lỗi, reset map reading-mode per-manga")
+                emptyMap()
+            }
+        }
 
     // ─── Reader comfort: keep screen on / volume key / brightness / background ─────
 

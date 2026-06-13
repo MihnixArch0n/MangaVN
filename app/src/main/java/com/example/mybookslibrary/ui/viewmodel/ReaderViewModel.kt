@@ -152,7 +152,9 @@ constructor(
     private fun loadReadingMode() {
         viewModelScope.launch(ioDispatcher) {
             try {
-                val storedMode = userPreferencesDataStore.getReaderReadingMode()
+                // Per-manga override (Phase 4 PR-3a) thắng; thiếu thì fallback global default.
+                val storedMode = userPreferencesDataStore.getReaderModeForManga(mangaId)
+                    ?: userPreferencesDataStore.getReaderReadingMode()
                 if (!readingModeChangedByUser) {
                     _state.update { it.copy(currentReadingMode = storedMode) }
                 }
@@ -314,6 +316,8 @@ constructor(
         _effects.tryEmit(ReaderUiEffect.ReadingModeChanged(mode))
         viewModelScope.launch(ioDispatcher) {
             try {
+                // Lưu override cho truyện hiện tại + cập nhật global default (last-used cho truyện mới).
+                userPreferencesDataStore.setReaderModeForManga(mangaId, mode)
                 userPreferencesDataStore.setReaderReadingMode(mode)
             } catch (t: Throwable) {
                 Timber.e(t, "saveReadingMode error: mode=%s", mode)

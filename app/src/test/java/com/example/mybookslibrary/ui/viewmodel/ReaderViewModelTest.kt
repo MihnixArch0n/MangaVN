@@ -186,6 +186,31 @@ class ReaderViewModelTest {
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
+    fun perMangaOverride_isLoadedOverGlobalDefault() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        val viewModel = createViewModel(startPageIndex = 0, storedReadingMode = ReadingMode.LTR)
+        // Stub SAU createViewModel để thắng default any()->null; override RTL thắng global LTR.
+        coEvery { userPreferencesDataStore.getReaderModeForManga(MANGA_ID) } returns ReadingMode.RTL
+        advanceUntilIdle()
+
+        assertEquals(ReadingMode.RTL, viewModel.state.value.currentReadingMode)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun changeReadingMode_persistsPerMangaOverride() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        val viewModel = createViewModel(startPageIndex = 0)
+        advanceUntilIdle()
+
+        viewModel.onEvent(ReaderEvent.ChangeReadingMode(ReadingMode.VERTICAL))
+        advanceUntilIdle()
+
+        // Lưu override per-manga + global default.
+        coVerify { userPreferencesDataStore.setReaderModeForManga(MANGA_ID, ReadingMode.VERTICAL) }
+        coVerify { userPreferencesDataStore.setReaderReadingMode(ReadingMode.VERTICAL) }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
     fun onEvent_atPageBoundary_doesNotMovePastAvailablePages() = runTest(mainDispatcherRule.dispatcher.scheduler) {
         val firstPageViewModel = createViewModel(startPageIndex = 0)
         advanceUntilIdle()
@@ -455,6 +480,8 @@ class ReaderViewModelTest {
         val syncReadingProgressUseCase = mockk<SyncReadingProgressUseCase>(relaxed = true)
         val imageLoader = mockk<ImageLoader>(relaxed = true)
         coEvery { userPreferencesDataStore.getReaderReadingMode() } returns storedReadingMode
+        // Mặc định không có override per-manga; test nào cần override stub lại SAU createViewModel.
+        coEvery { userPreferencesDataStore.getReaderModeForManga(any()) } returns null
         coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns
             Result.success(
                 listOf("page-1", "page-2", "page-3", "page-4", "page-5", "page-6", "page-7", "page-8"),

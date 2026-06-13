@@ -37,7 +37,11 @@ class ReaderScreenTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    @Before fun setUp() = FakeImageLoader.install()
+    @Before fun setUp() {
+        FakeImageLoader.install()
+        // Relaxed mock trả enum đầu cho ReadingMode? → stub null để loadReadingMode fallback global ở MỌI site.
+        coEvery { userPreferencesDataStore.getReaderModeForManga(any()) } returns null
+    }
 
     @After fun tearDown() = FakeImageLoader.reset()
 
