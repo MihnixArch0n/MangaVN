@@ -3,6 +3,8 @@
 package com.example.mybookslibrary.ui.viewmodel
 
 import coil3.ImageLoader
+import com.example.mybookslibrary.data.local.ChapterProgressEntity
+import com.example.mybookslibrary.data.local.ChapterStatus
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
@@ -319,6 +321,18 @@ class SettingsViewModelTest {
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             stubDefaults()
             coEvery { libraryRepository.getAllItems() } returns listOf(sampleEntity("m1"))
+            coEvery { libraryRepository.getAllChapterProgress() } returns
+                listOf(
+                    ChapterProgressEntity(
+                        chapter_id = "c1",
+                        manga_id = "m1",
+                        status = ChapterStatus.READING,
+                        last_read_page = 4,
+                        total_pages = 10,
+                        updated_at = 2000,
+                        is_downloaded = true,
+                    ),
+                )
             val vm = viewModel()
             advanceUntilIdle()
             val output = ByteArrayOutputStream()
@@ -328,7 +342,7 @@ class SettingsViewModelTest {
 
             assertEquals(BackupRestoreResult.Success(1), vm.uiState.value.backupResult)
             assertEquals(
-                """[{"manga_id":"m1","title":"Title m1","cover_url":"https://x/m1.jpg","status":"READING","last_read_chapter_id":"","last_read_page_index":0,"added_at":1000,"updated_at":1000,"is_favorite":false}]""",
+                """{"version":2,"library":[{"manga_id":"m1","title":"Title m1","cover_url":"https://x/m1.jpg","status":"READING","last_read_chapter_id":"","last_read_page_index":0,"added_at":1000,"updated_at":1000,"is_favorite":false}],"chapter_progress":[{"chapter_id":"c1","manga_id":"m1","status":"READING","last_read_page":4,"total_pages":10,"updated_at":2000}]}""",
                 output.toString(),
             )
         }
@@ -352,7 +366,8 @@ class SettingsViewModelTest {
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             stubDefaults()
             val restoredItems = slot<List<LibraryItemEntity>>()
-            coEvery { libraryRepository.restoreItems(capture(restoredItems)) } returns Unit
+            val restoredProgress = slot<List<ChapterProgressEntity>>()
+            coEvery { libraryRepository.restoreBackup(capture(restoredItems), capture(restoredProgress)) } returns Unit
             val vm = viewModel()
             advanceUntilIdle()
             val item =
@@ -367,6 +382,37 @@ class SettingsViewModelTest {
             assertEquals(
                 sampleEntity("m1").copy(title = "T", cover_url = "", added_at = 123, updated_at = 123),
                 restoredItems.captured.single(),
+            )
+            assertTrue(restoredProgress.captured.isEmpty())
+        }
+
+    @Test
+    fun restoreLibrary_schemaMoi_restoreChapterProgress() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults()
+            val restoredProgress = slot<List<ChapterProgressEntity>>()
+            coEvery { libraryRepository.restoreBackup(any(), capture(restoredProgress)) } returns Unit
+            val vm = viewModel()
+            advanceUntilIdle()
+            val json =
+                """{"version":2,"library":[{"manga_id":"m1","title":"T"}],""" +
+                    """"chapter_progress":[{"chapter_id":"c1","manga_id":"m1","status":"COMPLETED",""" +
+                    """"last_read_page":9,"total_pages":10,"updated_at":123}]}"""
+
+            vm.restoreLibrary(ByteArrayInputStream(json.toByteArray()))
+            advanceUntilIdle()
+
+            assertEquals(BackupRestoreResult.Success(1), vm.uiState.value.restoreResult)
+            assertEquals(
+                ChapterProgressEntity(
+                    chapter_id = "c1",
+                    manga_id = "m1",
+                    status = ChapterStatus.COMPLETED,
+                    last_read_page = 9,
+                    total_pages = 10,
+                    updated_at = 123,
+                ),
+                restoredProgress.captured.single(),
             )
         }
 
@@ -457,7 +503,7 @@ class SettingsViewModelTest {
         runTest(mainDispatcherRule.dispatcher.scheduler) {
             stubDefaults()
             val restoredItems = slot<List<LibraryItemEntity>>()
-            coEvery { libraryRepository.restoreItems(capture(restoredItems)) } returns Unit
+            coEvery { libraryRepository.restoreBackup(capture(restoredItems), any()) } returns Unit
             val vm = viewModel()
             advanceUntilIdle()
             val json =

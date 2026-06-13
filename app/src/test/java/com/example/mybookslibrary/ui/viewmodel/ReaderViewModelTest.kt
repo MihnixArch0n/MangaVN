@@ -17,6 +17,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -173,6 +174,33 @@ class ReaderViewModelTest {
 
         assertEquals(ReadingMode.VERTICAL, viewModel.state.value.currentReadingMode)
     }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun chapterPages_areNotLoadedBeforeStoredReadingModeIsResolved() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            val modeResult = CompletableDeferred<ReadingMode>()
+            val loadReaderPagesUseCase = mockk<LoadReaderPagesUseCase>()
+            coEvery { userPreferencesDataStore.getReaderReadingMode() } coAnswers { modeResult.await() }
+
+            val viewModel =
+                createViewModel(
+                    startPageIndex = 0,
+                    loadReaderPagesUseCase = loadReaderPagesUseCase,
+                    stubStoredReadingMode = false,
+                    readerPages = listOf("page-1"),
+                )
+            runCurrent()
+
+            coVerify(exactly = 0) { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) }
+
+            modeResult.complete(ReadingMode.RTL)
+            advanceUntilIdle()
+
+            assertEquals(ReadingMode.RTL, viewModel.state.value.currentReadingMode)
+            assertEquals(listOf("page-1"), viewModel.state.value.pages)
+            coVerify(exactly = 1) { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) }
+        }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
@@ -540,17 +568,19 @@ class ReaderViewModelTest {
         startPageIndex: Int?,
         storedReadingMode: ReadingMode = ReadingMode.LTR,
         nextChapter: AdjacentChapter? = null,
+        loadReaderPagesUseCase: LoadReaderPagesUseCase = mockk(),
+        stubStoredReadingMode: Boolean = true,
+        readerPages: List<String> = DEFAULT_READER_PAGES,
     ): ReaderViewModel {
-        val loadReaderPagesUseCase = mockk<LoadReaderPagesUseCase>()
         val syncReadingProgressUseCase = mockk<SyncReadingProgressUseCase>(relaxed = true)
         val imageLoader = mockk<ImageLoader>(relaxed = true)
-        coEvery { userPreferencesDataStore.getReaderReadingMode() } returns storedReadingMode
+        if (stubStoredReadingMode) {
+            coEvery { userPreferencesDataStore.getReaderReadingMode() } returns storedReadingMode
+        }
         // Mặc định không có override per-manga; test nào cần override stub lại SAU createViewModel.
         coEvery { userPreferencesDataStore.getReaderModeForManga(any()) } returns null
         coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns
-            Result.success(
-                listOf("page-1", "page-2", "page-3", "page-4", "page-5", "page-6", "page-7", "page-8"),
-            )
+            Result.success(readerPages)
         // Preload chương kế (Phase 4 PR-2a) gọi use case với chapterId khác → trả vài trang.
         coEvery { loadReaderPagesUseCase(MANGA_ID, NEXT_CHAPTER_ID) } returns
             Result.success(listOf("next-1", "next-2", "next-3"))
@@ -587,6 +617,7 @@ class ReaderViewModelTest {
         const val MANGA_ID = "manga-1"
         const val CHAPTER_ID = "chapter-1"
         const val NEXT_CHAPTER_ID = "chapter-2"
+        val DEFAULT_READER_PAGES = List(8) { "page-${it + 1}" }
         val NEXT_CHAPTER = AdjacentChapter(chapterId = NEXT_CHAPTER_ID, chapterNumber = "2", volume = null)
     }
 }

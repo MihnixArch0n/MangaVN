@@ -5,6 +5,7 @@ package com.example.mybookslibrary.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil3.ImageLoader
+import com.example.mybookslibrary.data.local.LibraryBackup
 import com.example.mybookslibrary.data.local.LibraryBackupItem
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.toBackupItem
@@ -21,8 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonArray
 import timber.log.Timber
 import java.io.InputStream
 import java.io.OutputStream
@@ -245,7 +246,16 @@ class SettingsViewModel
             viewModelScope.launch(ioDispatcher) {
                 try {
                     val items = libraryRepository.getAllItems()
-                    val backupJson = json.encodeToString(items.map { it.toBackupItem() })
+                    val mangaIds = items.mapTo(mutableSetOf()) { it.manga_id }
+                    val chapterProgress =
+                        libraryRepository.getAllChapterProgress().filter { it.manga_id in mangaIds }
+                    val backupJson =
+                        json.encodeToString(
+                            LibraryBackup(
+                                library = items.map { it.toBackupItem() },
+                                chapterProgress = chapterProgress.map { it.toBackupItem() },
+                            ),
+                        )
                     outputStream.bufferedWriter().use { it.write(backupJson) }
                     _uiState.update { it.copy(backupResult = BackupRestoreResult.Success(items.size)) }
                 } catch (e: Exception) {
@@ -258,16 +268,30 @@ class SettingsViewModel
             viewModelScope.launch(ioDispatcher) {
                 try {
                     val backupJson = inputStream.bufferedReader().use { it.readText() }
+                    val root = json.parseToJsonElement(backupJson)
+                    val backup =
+                        if (root is JsonArray) {
+                            LibraryBackup(
+                                library =
+                                    root.mapNotNull { element ->
+                                        runCatching {
+                                            json.decodeFromJsonElement<LibraryBackupItem>(element)
+                                        }.getOrNull()
+                                    },
+                            )
+                        } else {
+                            json.decodeFromJsonElement<LibraryBackup>(root)
+                        }
                     val entities =
-                        json
-                            .parseToJsonElement(backupJson)
-                            .jsonArray
-                            .mapNotNull { element ->
-                                runCatching {
-                                    json.decodeFromJsonElement<LibraryBackupItem>(element).toEntity()
-                                }.getOrNull()
-                            }
-                    libraryRepository.restoreItems(entities)
+                        backup.library.mapNotNull { item ->
+                            runCatching { item.toEntity() }.getOrNull()
+                        }
+                    val restoredMangaIds = entities.mapTo(mutableSetOf()) { it.manga_id }
+                    val chapterProgress =
+                        backup.chapterProgress.mapNotNull { item ->
+                            runCatching { item.toEntity() }.getOrNull()
+                        }.filter { it.manga_id in restoredMangaIds }
+                    libraryRepository.restoreBackup(entities, chapterProgress)
                     _uiState.update { it.copy(restoreResult = BackupRestoreResult.Success(entities.size)) }
                 } catch (e: Exception) {
                     _uiState.update { it.copy(restoreResult = BackupRestoreResult.Failure(e.message ?: "")) }

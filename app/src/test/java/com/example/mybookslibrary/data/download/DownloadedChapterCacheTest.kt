@@ -25,8 +25,8 @@ class DownloadedChapterCacheTest {
             coEvery { chapterDao.getDownloadedChapterIds() } returns listOf("chapter-1", "chapter-2")
             coEvery { storage.backfillCompletionMarkers(setOf("chapter-1", "chapter-2")) } returns 2
             coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
-            coEvery { storage.scanDownloadedChapters() } returns setOf("chapter-1", "chapter-2")
-            coEvery { storage.scanCorruptedChapters() } returns emptyList()
+            coEvery { storage.scanChapterStates() } returns
+                OfflineChapterScanResult(setOf("chapter-1", "chapter-2"), emptyList())
 
             val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
@@ -47,8 +47,7 @@ class DownloadedChapterCacheTest {
             coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
             coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
             coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
-            coEvery { storage.scanDownloadedChapters() } returns setOf("chapter-1")
-            coEvery { storage.scanCorruptedChapters() } returns emptyList()
+            coEvery { storage.scanChapterStates() } returns OfflineChapterScanResult(setOf("chapter-1"), emptyList())
 
             val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
@@ -83,8 +82,8 @@ class DownloadedChapterCacheTest {
             coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
             coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
             coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
-            coEvery { storage.scanDownloadedChapters() } returns emptySet()
-            coEvery { storage.scanCorruptedChapters() } returns listOf(Pair("manga-1", "chapter-9"))
+            coEvery { storage.scanChapterStates() } returns
+                OfflineChapterScanResult(emptySet(), listOf(Pair("manga-1", "chapter-9")))
 
             DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
@@ -105,8 +104,7 @@ class DownloadedChapterCacheTest {
             coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
             coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
             coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
-            coEvery { storage.scanDownloadedChapters() } returns emptySet()
-            coEvery { storage.scanCorruptedChapters() } returns emptyList()
+            coEvery { storage.scanChapterStates() } returns OfflineChapterScanResult(emptySet(), emptyList())
 
             val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
             advanceUntilIdle()
@@ -116,5 +114,62 @@ class DownloadedChapterCacheTest {
 
             cache.removeChapter("chapter-1")
             assertFalse(cache.isChapterDownloadedFlow("chapter-1").first())
+        }
+
+    @Test
+    fun rescan_whenDownloadedPageIsMissing_removesDownloadedAndUpsertsError() =
+        runTest {
+            val chapterDao = mockk<ChapterDao>()
+            val downloadQueueDao = mockk<DownloadQueueDao>(relaxed = true)
+            val storage = mockk<OfflineDownloadStorage>()
+            coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
+            coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
+            coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
+            coEvery { storage.scanChapterStates() } returnsMany
+                listOf(
+                    OfflineChapterScanResult(setOf("chapter-1"), emptyList()),
+                    OfflineChapterScanResult(emptySet(), listOf("manga-1" to "chapter-1")),
+                )
+
+            val cache = DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
+            advanceUntilIdle()
+            assertTrue(cache.isChapterDownloaded("chapter-1"))
+
+            cache.scanFilesystem()
+
+            assertFalse(cache.isChapterDownloaded("chapter-1"))
+            coVerify(exactly = 1) {
+                downloadQueueDao.upsert(
+                    match {
+                        it.chapter_id == "chapter-1" &&
+                            it.manga_id == "manga-1" &&
+                            it.status == com.example.mybookslibrary.data.local.DownloadStatus.ERROR
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun rescan_whenCorruptedChapterIsBeingRedownloaded_doesNotOverwriteActiveStatus() =
+        runTest {
+            val chapterDao = mockk<ChapterDao>()
+            val downloadQueueDao = mockk<DownloadQueueDao>(relaxed = true)
+            val storage = mockk<OfflineDownloadStorage>()
+            coEvery { chapterDao.getDownloadedChapterIds() } returns emptyList()
+            coEvery { storage.backfillCompletionMarkers(emptySet()) } returns 0
+            coEvery { chapterDao.clearDownloadedChapterFlags() } returns Unit
+            coEvery { storage.scanChapterStates() } returns
+                OfflineChapterScanResult(emptySet(), listOf("manga-1" to "chapter-1"))
+            coEvery { downloadQueueDao.getQueueByChapter("chapter-1") } returns
+                com.example.mybookslibrary.data.local.DownloadQueueEntity(
+                    chapter_id = "chapter-1",
+                    manga_id = "manga-1",
+                    status = com.example.mybookslibrary.data.local.DownloadStatus.DOWNLOADING,
+                )
+
+            DownloadedChapterCache(chapterDao, downloadQueueDao, storage, TestScope(testScheduler))
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { downloadQueueDao.upsert(any()) }
         }
 }

@@ -121,18 +121,26 @@ fun ReaderScreen(
         UserPreferencesDataStore(context.userPreferencesDataStore)
     }
     val readerHintDone by prefsDataStore.observeReaderHintDone()
-        .collectAsStateWithLifecycle(initialValue = true)
+        .collectAsStateWithLifecycle(initialValue = null)
     val hintScope = rememberCoroutineScope()
 
     Box(modifier = modifier) {
-        ReaderContentHost(
-            state = state,
-            listState = listState,
-            pagerState = pagerState,
-            readerBarColors = readerBarColors,
-            onBackClick = onBackClick,
-            onEvent = onEvent,
-        )
+        readerHintDone?.let { hintDone ->
+            ReaderContentHost(
+                state = state,
+                listState = listState,
+                pagerState = pagerState,
+                readerBarColors = readerBarColors,
+                onBackClick = onBackClick,
+                onEvent = onEvent,
+            )
+            ReaderSpotlightOverlay(
+                visible = !hintDone && state.pages.isNotEmpty(),
+                onDismiss = {
+                    hintScope.launch { prefsDataStore.setReaderHintDone(true) }
+                },
+            )
+        }
         SnackbarHost(hostState = snackbarHostState)
         // Chỉ báo trang nhỏ khi đã ẩn overlay (bottom bar ẩn cùng overlay nên không thấy bộ đếm).
         AnimatedVisibility(
@@ -148,11 +156,5 @@ fun ReaderScreen(
                 totalPages = state.pages.size,
             )
         }
-        ReaderSpotlightOverlay(
-            visible = !readerHintDone && state.pages.isNotEmpty(),
-            onDismiss = {
-                hintScope.launch { prefsDataStore.setReaderHintDone(true) }
-            },
-        )
     }
 }

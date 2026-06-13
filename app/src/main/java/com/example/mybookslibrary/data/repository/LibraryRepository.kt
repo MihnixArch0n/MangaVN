@@ -33,6 +33,9 @@ class LibraryRepository(
     /** Lấy toàn bộ items một lần, dùng cho backup. */
     suspend fun getAllItems(): List<LibraryItemEntity> = libraryDao.getAll()
 
+    /** Lấy toàn bộ tiến độ đọc chapter một lần, dùng cho backup. */
+    suspend fun getAllChapterProgress(): List<ChapterProgressEntity> = chapterDao.getAllProgress()
+
     /** Thêm hoặc cập nhật manga trong thư viện. Mặc định trạng thái [LibraryStatus.READING]. */
     suspend fun addToLibrary(
         mangaId: String,
@@ -124,7 +127,22 @@ class LibraryRepository(
 
     /** Upsert danh sách items từ backup JSON. */
     suspend fun restoreItems(items: List<LibraryItemEntity>) {
-        libraryDao.upsert(items.map { it.copy(syncStatus = SyncStatus.PENDING_UPDATE) })
+        restoreBackup(items, emptyList())
+    }
+
+    /** Restore manga trước rồi đến chapter progress trong cùng transaction để giữ khóa ngoại hợp lệ. */
+    suspend fun restoreBackup(
+        items: List<LibraryItemEntity>,
+        chapterProgress: List<ChapterProgressEntity>,
+    ) {
+        database.withTransaction {
+            libraryDao.upsert(items.map { it.copy(syncStatus = SyncStatus.PENDING_UPDATE) })
+            chapterProgress.forEach { progress ->
+                if (libraryDao.getByMangaId(progress.manga_id) != null) {
+                    chapterDao.upsertReadingProgress(progress)
+                }
+            }
+        }
         items.forEach { trySyncItem(it) }
     }
 

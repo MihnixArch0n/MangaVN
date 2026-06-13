@@ -38,9 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Horizontal page-by-page reader content using [HorizontalPager].
  *
- * Handles both LTR and RTL reading modes by providing the appropriate
- * [LayoutDirection] to the composition, which causes [HorizontalPager]
- * to natively reverse its swipe direction.
+ * Handles both LTR and RTL reading modes using [HorizontalPager]'s explicit reverse layout flag.
+ * The composition remains LTR so physical tap and drag coordinates stay stable.
  *
  * Preloads 2 pages ahead/behind via [beyondViewportPageCount] for smoother scrolling.
  *
@@ -60,9 +59,8 @@ fun HorizontalReaderContent(
     nextChapterTitle: String? = null,
 ) {
     val navigationController = rememberHorizontalNavigationController(pagerState)
-    val layoutDirection = rememberHorizontalLayoutDirection(readingMode)
 
-    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         HorizontalReaderPager(
             pages = pages,
             pagerState = pagerState,
@@ -171,6 +169,7 @@ private fun HorizontalReaderPager(
             ),
         // Giữ 1 trang trước/sau (không phải 2) để giảm số bitmap thường trú, tránh OOM máy RAM thấp.
         beyondViewportPageCount = 1,
+        reverseLayout = readingMode == ReadingMode.RTL,
         userScrollEnabled = !navigationController.isActive(),
         key = { index -> pages.getOrNull(index) ?: TRANSITION_PAGE_KEY },
     ) { pageIndex ->
@@ -278,12 +277,6 @@ private fun handleConfirmedPageTap(
         ReaderTapAction.NONE -> Unit
     }
 }
-
-private fun rememberHorizontalLayoutDirection(readingMode: ReadingMode): LayoutDirection =
-    when (readingMode) {
-        ReadingMode.RTL -> LayoutDirection.Rtl
-        else -> LayoutDirection.Ltr
-    }
 
 private fun ReaderTapAction.isPageNavigation(): Boolean =
     this == ReaderTapAction.NEXT_PAGE || this == ReaderTapAction.PREVIOUS_PAGE

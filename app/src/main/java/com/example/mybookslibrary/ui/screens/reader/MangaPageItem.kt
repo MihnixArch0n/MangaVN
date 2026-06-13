@@ -85,7 +85,11 @@ fun MangaPageItem(
     var pageSize by remember(imageUrl) { mutableStateOf(IntSize.Zero) }
     val zoomableState = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 3f))
     val zoomableImageState = rememberZoomableImageState(zoomableState)
-    val gestures = mangaPageGestures(allowParentPageSwipe, zoomableState.zoomFraction)
+    val gestures =
+        mangaPageGestures(
+            allowParentPageSwipe = allowParentPageSwipe,
+            userZoom = zoomableState.contentTransformation.scaleMetadata.userZoom,
+        )
     val retryPageLoad =
         remember(imageUrl, index) {
             {
@@ -209,9 +213,9 @@ private fun MangaPageImage(
 
 internal fun mangaPageGestures(
     allowParentPageSwipe: Boolean,
-    zoomFraction: Float?,
+    userZoom: Float,
 ): EnabledZoomGestures =
-    if (allowParentPageSwipe && (zoomFraction == null || zoomFraction <= BASE_ZOOM_FRACTION)) {
+    if (allowParentPageSwipe && userZoom <= BASE_USER_ZOOM + USER_ZOOM_EPSILON) {
         EnabledZoomGestures.ZoomOnly
     } else {
         EnabledZoomGestures.ZoomAndPan
@@ -255,7 +259,8 @@ private fun MangaPageRetryOverlay(onRetry: () -> Unit) {
 private fun displayPage(index: Int): Int = index + 1
 
 private const val FILE_URI_PREFIX = "file:"
-private const val BASE_ZOOM_FRACTION = 0f
+private const val BASE_USER_ZOOM = 1f
+private const val USER_ZOOM_EPSILON = 0.001f
 private const val PREVIEW_PAGE_URL = "https://example.com/preview-page.jpg"
 
 @Preview(name = "Manga Page Item", showBackground = true)

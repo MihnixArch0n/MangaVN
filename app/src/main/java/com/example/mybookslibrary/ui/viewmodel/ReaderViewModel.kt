@@ -88,6 +88,7 @@ constructor(
             ReaderState(
                 chapterTitle = chapterTitleArg,
                 lastReadPageIndex = startPageIndexArg,
+                isLoading = true,
             ),
         )
     val state: StateFlow<ReaderState> = _state.asStateFlow()
@@ -98,7 +99,6 @@ constructor(
     init {
         loadReadingMode()
         observeComfortPreferences()
-        loadChapterPages()
     }
 
     // Quan sát các tuỳ chọn reader reactive: đổi trong Settings/panel là reader cập nhật ngay.
@@ -161,9 +161,15 @@ constructor(
                 if (!readingModeChangedByUser) {
                     _state.update { it.copy(currentReadingMode = storedMode) }
                 }
+            } catch (c: CancellationException) {
+                throw c
             } catch (t: Throwable) {
                 Timber.e(t, "loadReadingMode error")
             }
+            // Resolve the persisted direction before pages can compose. Loading local files is
+            // often fast enough to otherwise build a pager in LTR and switch it to RTL while
+            // its pointer gesture is already active.
+            loadChapterPages()
         }
     }
 

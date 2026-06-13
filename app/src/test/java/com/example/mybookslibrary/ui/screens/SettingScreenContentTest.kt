@@ -147,7 +147,7 @@ class SettingScreenContentTest {
         val json =
             """[{"manga_id":"m1","title":"T1","cover_url":"","status":"READING",""" +
                 """"last_read_chapter_id":"","last_read_page_index":0,"updated_at":0}]"""
-        coEvery { libraryRepo.restoreItems(any()) } returns Unit
+        coEvery { libraryRepo.restoreBackup(any(), any()) } returns Unit
         val vm = viewModel()
         vm.restoreLibrary(json.byteInputStream())
 

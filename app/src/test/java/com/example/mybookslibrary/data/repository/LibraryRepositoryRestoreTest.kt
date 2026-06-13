@@ -9,6 +9,7 @@ import com.example.mybookslibrary.data.local.ChapterStatus
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
@@ -69,5 +70,41 @@ class LibraryRepositoryRestoreTest {
             // chapter_progress KHÔNG được bị cascade xóa
             val progress = db.chapterDao().getChapterProgressByChapter("chapter-1")
             assertNotNull("restoreItems không được xóa chapter_progress của manga đã có", progress)
+        }
+
+    @Test
+    fun restoreBackup_restoresProgressAndPreservesDownloadedFlag() =
+        runTest {
+            val mangaId = "manga-1"
+            val chapterId = "chapter-1"
+            db.libraryDao().upsert(LibraryItemEntity(manga_id = mangaId, title = "Old", cover_url = ""))
+            db.chapterDao().upsertChapterProgress(
+                ChapterProgressEntity(
+                    chapter_id = chapterId,
+                    manga_id = mangaId,
+                    updated_at = 1L,
+                    is_downloaded = true,
+                ),
+            )
+
+            repository.restoreBackup(
+                items = listOf(LibraryItemEntity(manga_id = mangaId, title = "New", cover_url = "")),
+                chapterProgress =
+                    listOf(
+                        ChapterProgressEntity(
+                            chapter_id = chapterId,
+                            manga_id = mangaId,
+                            status = ChapterStatus.READING,
+                            last_read_page = 4,
+                            total_pages = 10,
+                            updated_at = 2L,
+                        ),
+                    ),
+            )
+
+            val restored = db.chapterDao().getChapterProgressByChapter(chapterId)!!
+            assertEquals(ChapterStatus.READING, restored.status)
+            assertEquals(4, restored.last_read_page)
+            assertEquals(true, restored.is_downloaded)
         }
 }

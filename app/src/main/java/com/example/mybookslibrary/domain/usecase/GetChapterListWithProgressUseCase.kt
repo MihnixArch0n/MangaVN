@@ -100,7 +100,7 @@ class GetChapterListWithProgressUseCase
         @Suppress("TooGenericExceptionCaught")
         private suspend fun refreshDownloadedChapterCache() {
             try {
-                downloadedChapterCache.scanDownloadedChapters()
+                downloadedChapterCache.scanFilesystem()
             } catch (cancellationException: CancellationException) {
                 throw cancellationException
             } catch (t: Throwable) {

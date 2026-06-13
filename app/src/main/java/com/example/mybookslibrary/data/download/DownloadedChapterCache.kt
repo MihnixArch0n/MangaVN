@@ -45,23 +45,11 @@ class DownloadedChapterCache
                     val legacyDownloadedIds = chapterDao.getDownloadedChapterIds().toSet()
                     storage.backfillCompletionMarkers(legacyDownloadedIds)
                     chapterDao.clearDownloadedChapterFlags()
-                    scanDownloadedChapters()
-                    val corruptedChapters = storage.scanCorruptedChapters()
-                    for ((mangaId, chapterId) in corruptedChapters) {
-                        downloadQueueDao.upsert(
-                            DownloadQueueEntity(
-                                chapter_id = chapterId,
-                                manga_id = mangaId,
-                                status = DownloadStatus.ERROR,
-                                progress_percent = 0,
-                                error_msg = "Thiếu trang (Missing pages)"
-                            )
-                        )
-                    }
+                    val scanResult = scanFilesystem()
                     Timber.d(
                         "DownloadedChapterCache initialized: count=%d, corrupted=%d",
                         downloadedChapterIds.value.size,
-                        corruptedChapters.size,
+                        scanResult.corruptedChapters.size,
                     )
                 } catch (cancellationException: CancellationException) {
                     throw cancellationException
@@ -87,10 +75,27 @@ class DownloadedChapterCache
         }
 
         /**
-         * Refreshes the in-memory index from completed filesystem downloads.
+         * Refreshes downloaded chapters and records completed-but-damaged chapters as errors.
          */
-        suspend fun scanDownloadedChapters() {
-            _downloadedChapterIds.value = storage.scanDownloadedChapters()
+        suspend fun scanFilesystem(): OfflineChapterScanResult {
+            val scanResult = storage.scanChapterStates()
+            for ((mangaId, chapterId) in scanResult.corruptedChapters) {
+                val currentStatus = downloadQueueDao.getQueueByChapter(chapterId)?.status
+                if (currentStatus == DownloadStatus.PENDING || currentStatus == DownloadStatus.DOWNLOADING) {
+                    continue
+                }
+                downloadQueueDao.upsert(
+                    DownloadQueueEntity(
+                        chapter_id = chapterId,
+                        manga_id = mangaId,
+                        status = DownloadStatus.ERROR,
+                        progress_percent = 0,
+                        error_msg = CORRUPTED_CHAPTER_ERROR,
+                    ),
+                )
+            }
+            _downloadedChapterIds.value = scanResult.downloadedChapterIds
+            return scanResult
         }
 
         /**
@@ -107,5 +112,9 @@ class DownloadedChapterCache
         fun removeChapter(chapterId: String) {
             _downloadedChapterIds.update { it - chapterId }
             Timber.d("DownloadedChapterCache removeChapter: chapterId=%s", chapterId)
+        }
+
+        private companion object {
+            const val CORRUPTED_CHAPTER_ERROR = "Thiếu trang (Missing pages)"
         }
     }
