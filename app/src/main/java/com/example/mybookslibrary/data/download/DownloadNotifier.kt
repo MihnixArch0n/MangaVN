@@ -27,21 +27,25 @@ class DownloadNotifier
         @ExcludeFromGeneratedCoverage // Notification/ForegroundInfo + Android foreground-service glue
         internal fun createForegroundInfo(
             chapterId: String,
+            mangaTitle: String? = null,
+            chapterLabel: String? = null,
             progressPercent: Int,
             indeterminate: Boolean,
         ): ForegroundInfo {
             ensureNotificationChannel()
-            val content =
+            val progressText =
                 if (indeterminate) {
                     context.getString(R.string.notification_download_preparing)
                 } else {
                     "$progressPercent%"
                 }
+            val title = mangaTitle.nonBlankOrNull() ?: context.getString(R.string.notification_download_in_progress)
+            val content = joinNotificationDetails(chapterLabel, progressText)
             val notification =
                 NotificationCompat
                     .Builder(context, DOWNLOAD_PROGRESS_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_stat_name)
-                    .setContentTitle(context.getString(R.string.notification_download_in_progress))
+                    .setContentTitle(title)
                     .setContentText(content)
                     .setOngoing(true)
                     .setOnlyAlertOnce(true)
@@ -94,6 +98,8 @@ class DownloadNotifier
         @ExcludeFromGeneratedCoverage // NotificationManagerCompat + permission/SecurityException Android glue
         internal fun showFinishedNotification(
             chapterId: String,
+            mangaTitle: String? = null,
+            chapterLabel: String? = null,
             success: Boolean,
         ) {
             ensureDownloadResultChannel()
@@ -107,6 +113,11 @@ class DownloadNotifier
                     .Builder(context, DOWNLOAD_RESULT_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_stat_name)
                     .setContentTitle(title)
+                    .setContentText(joinNotificationDetails(mangaTitle, chapterLabel))
+                    .setStyle(
+                        NotificationCompat.BigTextStyle()
+                            .bigText(joinNotificationDetails(mangaTitle, chapterLabel)),
+                    )
                     .setAutoCancel(true)
                     .setOnlyAlertOnce(false)
                     .build()
@@ -129,6 +140,11 @@ class DownloadNotifier
         private fun finishedNotificationIdFor(chapterId: String): Int =
             FINISHED_NOTIFICATION_ID_BASE + (chapterId.hashCode().absoluteValue % NOTIFICATION_ID_RANGE)
 
+        private fun joinNotificationDetails(first: String?, second: String?): String =
+            listOfNotNull(first.nonBlankOrNull(), second.nonBlankOrNull()).joinToString(DETAIL_SEPARATOR)
+
+        private fun String?.nonBlankOrNull(): String? = this?.takeIf { it.isNotBlank() }
+
         private companion object {
             // Keep the existing ID so installed users retain their progress-channel preferences.
             const val DOWNLOAD_PROGRESS_CHANNEL_ID = "offline_downloads"
@@ -140,5 +156,6 @@ class DownloadNotifier
             const val NOTIFICATION_ID_RANGE = 1_000
             const val PROGRESS_MIN = 0
             const val PROGRESS_MAX = 100
+            const val DETAIL_SEPARATOR = " · "
         }
     }

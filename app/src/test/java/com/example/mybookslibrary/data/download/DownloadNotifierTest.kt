@@ -49,6 +49,21 @@ class DownloadNotifierTest {
     }
 
     @Test
+    fun createForegroundInfo_showsMangaAndChapterMetadata() {
+        val info =
+            notifier.createForegroundInfo(
+                chapterId = "chapter-1",
+                mangaTitle = "One Piece",
+                chapterLabel = "Vol. 1 Ch. 2",
+                progressPercent = 50,
+                indeterminate = false,
+            )
+
+        assertEquals("One Piece", info.notification.extras.getString(NotificationCompat.EXTRA_TITLE))
+        assertEquals("Vol. 1 Ch. 2 · 50%", info.notification.extras.getString(NotificationCompat.EXTRA_TEXT))
+    }
+
+    @Test
     fun createForegroundInfo_marksIndeterminatePreparingState() {
         val info = notifier.createForegroundInfo("chapter-1", progressPercent = 0, indeterminate = true)
 
@@ -88,5 +103,22 @@ class DownloadNotifierTest {
 
         val manager = context.getSystemService(NotificationManager::class.java)
         assertTrue(manager.activeNotifications.none { it.id == progressId })
+    }
+
+    @Test
+    fun showFinishedNotification_showsMangaAndChapterMetadata() {
+        notifier.showFinishedNotification(
+            chapterId = "chapter-1",
+            mangaTitle = "One Piece",
+            chapterLabel = "Vol. 1 Ch. 2",
+            success = true,
+        )
+
+        val notification =
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .single()
+                .notification
+        assertEquals("One Piece · Vol. 1 Ch. 2", notification.extras.getString(NotificationCompat.EXTRA_TEXT))
     }
 }

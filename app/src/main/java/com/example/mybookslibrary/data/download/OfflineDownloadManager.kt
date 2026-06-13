@@ -36,6 +36,8 @@ class OfflineDownloadManager
         suspend fun enqueueDownload(
             mangaId: String,
             chapterId: String,
+            mangaTitle: String? = null,
+            chapterLabel: String? = null,
         ) {
             val downloadOnlyOnWifi = repository.getDownloadOnlyOnWifi()
             val networkType = if (downloadOnlyOnWifi) NetworkType.UNMETERED else NetworkType.CONNECTED
@@ -48,7 +50,7 @@ class OfflineDownloadManager
             )
             repository.enqueueChapter(mangaId, chapterId)
 
-            val request = buildDownloadRequest(mangaId, chapterId, networkType)
+            val request = buildDownloadRequest(mangaId, chapterId, networkType, mangaTitle, chapterLabel)
             workManager.enqueueUniqueWork(uniqueWorkName(chapterId), ExistingWorkPolicy.REPLACE, request)
         }
 
@@ -56,6 +58,8 @@ class OfflineDownloadManager
             mangaId: String,
             chapterId: String,
             networkType: NetworkType,
+            mangaTitle: String? = null,
+            chapterLabel: String? = null,
         ) = OneTimeWorkRequestBuilder<ChapterDownloadWorker>()
             .setConstraints(
                 Constraints
@@ -66,6 +70,8 @@ class OfflineDownloadManager
                 workDataOf(
                     ChapterDownloadWorker.KEY_MANGA_ID to mangaId,
                     ChapterDownloadWorker.KEY_CHAPTER_ID to chapterId,
+                    ChapterDownloadWorker.KEY_MANGA_TITLE to mangaTitle,
+                    ChapterDownloadWorker.KEY_CHAPTER_LABEL to chapterLabel,
                 ),
             ).addTag(CHAPTER_DOWNLOAD_TAG)
             .addTag(chapterTag(chapterId))

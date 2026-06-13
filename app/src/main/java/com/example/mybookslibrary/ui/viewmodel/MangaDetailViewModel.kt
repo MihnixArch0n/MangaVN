@@ -261,7 +261,13 @@ class MangaDetailViewModel
         fun startChapterDownload(chapterId: String) {
             if (mangaId.isBlank() || chapterId.isBlank()) return
             launchSafe {
-                offlineDownloadManager.enqueueDownload(mangaId, chapterId)
+                val chapter = uiState.value.chapters.firstOrNull { it.chapterId == chapterId }
+                offlineDownloadManager.enqueueDownload(
+                    mangaId = mangaId,
+                    chapterId = chapterId,
+                    mangaTitle = uiState.value.mangaDetail?.title,
+                    chapterLabel = chapter?.buildDownloadLabel(),
+                )
             }
         }
 
@@ -283,4 +289,15 @@ class MangaDetailViewModel
             private const val TOP_REVIEWS_COUNT = 3
             private const val AVERAGE_ROUND_FACTOR = 10.0
         }
+    }
+
+private fun ChapterWithProgressModel.buildDownloadLabel(): String =
+    buildString {
+        volume?.takeIf { it.isNotBlank() }?.let { append("Vol. $it ") }
+        chapterNumber?.takeIf { it.isNotBlank() }?.let { append("Ch. $it") }
+        title?.takeIf { it.isNotBlank() }?.let {
+            if (isNotEmpty()) append(" · ")
+            append(it)
+        }
+        if (isEmpty()) append("Oneshot")
     }
