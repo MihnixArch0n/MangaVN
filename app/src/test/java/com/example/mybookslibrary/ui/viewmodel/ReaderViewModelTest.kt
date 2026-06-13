@@ -19,6 +19,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -41,6 +42,7 @@ class ReaderViewModelTest {
     private val offlineDownloadManager = mockk<OfflineDownloadManager>(relaxed = true)
     private val offlineDownloadRepository = mockk<OfflineDownloadRepository>(relaxed = true)
     private val downloadedChapterCache = mockk<DownloadedChapterCache>(relaxed = true)
+    private val chapterDao = mockk<com.example.mybookslibrary.data.local.dao.ChapterDao>(relaxed = true)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
@@ -210,6 +212,31 @@ class ReaderViewModelTest {
         advanceUntilIdle()
 
         coVerify { userPreferencesDataStore.setReaderReadingMode(ReadingMode.RTL) }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun perMangaOverride_isLoadedOverGlobalDefault() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        val viewModel = createViewModel(startPageIndex = 0, storedReadingMode = ReadingMode.LTR)
+        // Stub SAU createViewModel để thắng default any()->null; override RTL thắng global LTR.
+        coEvery { userPreferencesDataStore.getReaderModeForManga(MANGA_ID) } returns ReadingMode.RTL
+        advanceUntilIdle()
+
+        assertEquals(ReadingMode.RTL, viewModel.state.value.currentReadingMode)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun changeReadingMode_persistsPerMangaOverride() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        val viewModel = createViewModel(startPageIndex = 0)
+        advanceUntilIdle()
+
+        viewModel.onEvent(ReaderEvent.ChangeReadingMode(ReadingMode.VERTICAL))
+        advanceUntilIdle()
+
+        // Lưu override per-manga + global default.
+        coVerify { userPreferencesDataStore.setReaderModeForManga(MANGA_ID, ReadingMode.VERTICAL) }
+        coVerify { userPreferencesDataStore.setReaderReadingMode(ReadingMode.VERTICAL) }
     }
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -452,6 +479,69 @@ class ReaderViewModelTest {
             }
         }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun completedChapter_withDeleteAfterRead_deletesOldKeepingN() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs()
+            coEvery { userPreferencesDataStore.getDeleteAfterRead() } returns true
+            coEvery { userPreferencesDataStore.getDeleteAfterReadKeep() } returns 2
+            coEvery { chapterDao.getCompletedChapterIdsOrdered(MANGA_ID) } returns
+                listOf("c1", "c2", "c3", "c4")
+            every { downloadedChapterCache.downloadedChapterIds } returns
+                MutableStateFlow(setOf("c1", "c2", "c3", "c4"))
+            val viewModel = createViewModel(startPageIndex = 0)
+            advanceUntilIdle()
+
+            // 8 trang → index 7 = trang cuối = chương hoàn thành.
+            viewModel.onEvent(ReaderEvent.VisiblePageChanged(7))
+            advanceUntilIdle()
+
+            // Giữ 2 mới nhất (c3, c4); xóa c1, c2.
+            coVerify { offlineDownloadManager.deleteDownload(MANGA_ID, "c1") }
+            coVerify { offlineDownloadManager.deleteDownload(MANGA_ID, "c2") }
+            coVerify(exactly = 0) { offlineDownloadManager.deleteDownload(MANGA_ID, "c3") }
+            coVerify(exactly = 0) { offlineDownloadManager.deleteDownload(MANGA_ID, "c4") }
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun completedChapter_neverDeletesCurrentChapter_evenIfAmongOldest() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs()
+            coEvery { userPreferencesDataStore.getDeleteAfterRead() } returns true
+            coEvery { userPreferencesDataStore.getDeleteAfterReadKeep() } returns 2
+            // Chương hiện tại (CHAPTER_ID) nằm trong nhóm cũ nhất → vẫn KHÔNG được xóa.
+            coEvery { chapterDao.getCompletedChapterIdsOrdered(MANGA_ID) } returns
+                listOf(CHAPTER_ID, "c2", "c3", "c4")
+            every { downloadedChapterCache.downloadedChapterIds } returns
+                MutableStateFlow(setOf(CHAPTER_ID, "c2", "c3", "c4"))
+            val viewModel = createViewModel(startPageIndex = 0)
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReaderEvent.VisiblePageChanged(7))
+            advanceUntilIdle()
+
+            // dropLast(2) = [CHAPTER_ID, c2]; chừa chương hiện tại → chỉ xóa c2.
+            coVerify(exactly = 0) { offlineDownloadManager.deleteDownload(MANGA_ID, CHAPTER_ID) }
+            coVerify { offlineDownloadManager.deleteDownload(MANGA_ID, "c2") }
+        }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun completedChapter_withoutDeleteAfterRead_deletesNothing() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubReaderPrefs()
+            coEvery { userPreferencesDataStore.getDeleteAfterRead() } returns false
+            val viewModel = createViewModel(startPageIndex = 0)
+            advanceUntilIdle()
+
+            viewModel.onEvent(ReaderEvent.VisiblePageChanged(7))
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { offlineDownloadManager.deleteDownload(any(), any()) }
+        }
+
     private fun stubReaderPrefs(autoAdvance: Boolean = false, autoDownloadNext: Boolean = false) {
         every { userPreferencesDataStore.observeReaderKeepScreenOn() } returns flowOf(false)
         every { userPreferencesDataStore.observeReaderVolumeKeyNav() } returns flowOf(false)
@@ -487,6 +577,8 @@ class ReaderViewModelTest {
         if (stubStoredReadingMode) {
             coEvery { userPreferencesDataStore.getReaderReadingMode() } returns storedReadingMode
         }
+        // Mặc định không có override per-manga; test nào cần override stub lại SAU createViewModel.
+        coEvery { userPreferencesDataStore.getReaderModeForManga(any()) } returns null
         coEvery { loadReaderPagesUseCase(MANGA_ID, CHAPTER_ID) } returns
             Result.success(readerPages)
         // Preload chương kế (Phase 4 PR-2a) gọi use case với chapterId khác → trả vài trang.
@@ -501,7 +593,6 @@ class ReaderViewModelTest {
                 "startPageIndex" to (startPageIndex ?: 0),
             )
 
-        val chapterDao = mockk<com.example.mybookslibrary.data.local.dao.ChapterDao>(relaxed = true)
         coEvery { chapterDao.getPrevChapter(any(), any()) } returns null
         coEvery { chapterDao.getNextChapter(any(), any()) } returns nextChapter
 

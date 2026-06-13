@@ -29,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import com.composables.icons.lucide.ArrowLeft
+import com.composables.icons.lucide.ChevronDown
+import com.composables.icons.lucide.ChevronUp
 import com.composables.icons.lucide.Lucide
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -156,6 +158,12 @@ fun SettingScreenContent(
                     if (uiState.autoAdvance) appString(R.string.settings_on) else appString(R.string.settings_off)
                 val autoDownloadNextLabel =
                     if (uiState.autoDownloadNext) appString(R.string.settings_on) else appString(R.string.settings_off)
+                val newChapterNotificationsLabel =
+                    if (uiState.newChapterNotifications) {
+                        appString(R.string.settings_on)
+                    } else {
+                        appString(R.string.settings_off)
+                    }
                 SettingsCard {
                     SettingsRow(appString(R.string.settings_image_quality), qualityLabel) { viewModel.toggleQuality() }
                     SettingsDivider()
@@ -174,6 +182,10 @@ fun SettingScreenContent(
                     SettingsRow(appString(R.string.settings_auto_download_next), autoDownloadNextLabel) {
                         viewModel.toggleAutoDownloadNext()
                     }
+                    SettingsDivider()
+                    SettingsRow(appString(R.string.settings_new_chapter_notifications), newChapterNotificationsLabel) {
+                        viewModel.toggleNewChapterNotifications()
+                    }
                 }
                 Spacer(Modifier.height(Dimens.SpacingXl))
             }
@@ -188,8 +200,24 @@ fun SettingScreenContent(
                     } else {
                         appString(R.string.settings_cache_subtitle)
                     }
+                val deleteAfterReadLabel =
+                    if (uiState.deleteAfterRead) appString(R.string.settings_on) else appString(R.string.settings_off)
                 SettingsCard {
                     SettingsRow(appString(R.string.settings_clear_cache), cacheSubtitle) { viewModel.clearImageCache() }
+                    SettingsDivider()
+                    SettingsRow(appString(R.string.settings_delete_after_read), deleteAfterReadLabel) {
+                        viewModel.toggleDeleteAfterRead()
+                    }
+                    if (uiState.deleteAfterRead) {
+                        SettingsDivider()
+                        SettingsStepperRow(
+                            title = appString(R.string.settings_delete_after_read_keep),
+                            value = uiState.deleteAfterReadKeep,
+                            min = SettingsViewModel.KEEP_MIN,
+                            max = SettingsViewModel.KEEP_MAX,
+                            onChange = { viewModel.setDeleteAfterReadKeep(it) },
+                        )
+                    }
                 }
                 Spacer(Modifier.height(Dimens.SpacingXl))
             }
@@ -406,6 +434,44 @@ private fun SettingsRow(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+@Composable
+private fun SettingsStepperRow(
+    title: String,
+    value: Int,
+    min: Int,
+    max: Int,
+    onChange: (Int) -> Unit,
+) {
+    Row(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Dimens.SpacingXl, vertical = Dimens.SpacingMd),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onChange(value - 1) }, enabled = value > min) {
+                Icon(Lucide.ChevronDown, appString(R.string.cd_decrease), tint = MaterialTheme.colorScheme.primary)
+            }
+            Text(
+                value.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            IconButton(onClick = { onChange(value + 1) }, enabled = value < max) {
+                Icon(Lucide.ChevronUp, appString(R.string.cd_increase), tint = MaterialTheme.colorScheme.primary)
+            }
         }
     }
 }

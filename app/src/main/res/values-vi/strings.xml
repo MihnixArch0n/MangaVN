@@ -163,6 +163,7 @@
     <string name="reader_transition_next">Tiếp theo: %1$s</string>
     <string name="reader_transition_action_next">Đọc chương sau</string>
     <string name="reader_transition_no_next">Đã là chương mới nhất</string>
+    <string name="cd_reader_page_indicator">Trang %1$d/%2$d</string>
 
     <!-- Cài đặt -->
     <string name="settings_title">Cài đặt</string>
@@ -183,6 +184,11 @@
     <string name="settings_volume_key_nav">Lật trang bằng phím âm lượng</string>
     <string name="settings_auto_advance">Tự động sang chương sau</string>
     <string name="settings_auto_download_next">Tự động tải chương sau</string>
+    <string name="settings_new_chapter_notifications">Thông báo chương mới</string>
+    <string name="settings_delete_after_read">Xóa chương sau khi đọc</string>
+    <string name="settings_delete_after_read_keep">Giữ chương đã đọc gần nhất</string>
+    <string name="cd_decrease">Giảm</string>
+    <string name="cd_increase">Tăng</string>
     <string name="settings_on">Bật</string>
     <string name="settings_off">Tắt</string>
     <string name="settings_clear_cache">Xóa bộ nhớ đệm ảnh</string>
@@ -375,6 +381,9 @@
     <string name="notification_channel_desc">Nhắc bạn tiếp tục đọc truyện</string>
     <string name="notification_reminder_title">Nhớ truyện không? 📖</string>
     <string name="notification_reminder_body">Bạn đã lâu chưa đọc. Tiếp tục nào!</string>
+    <string name="notification_new_chapter_channel_name">Chương mới</string>
+    <string name="notification_new_chapter_channel_desc">Báo khi truyện trong thư viện có chương mới</string>
+    <string name="notification_new_chapter_title">Có chương mới 🎉</string>
 
     <!-- Downloads -->
     <string name="downloads_title">Tải xuống</string>

@@ -163,6 +163,7 @@
     <string name="reader_transition_next">Up next: %1$s</string>
     <string name="reader_transition_action_next">Read next chapter</string>
     <string name="reader_transition_no_next">This is the latest chapter</string>
+    <string name="cd_reader_page_indicator">Page %1$d of %2$d</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
@@ -183,6 +184,11 @@
     <string name="settings_volume_key_nav">Volume key navigation</string>
     <string name="settings_auto_advance">Auto-advance to next chapter</string>
     <string name="settings_auto_download_next">Auto-download next chapter</string>
+    <string name="settings_new_chapter_notifications">New chapter notifications</string>
+    <string name="settings_delete_after_read">Delete chapters after reading</string>
+    <string name="settings_delete_after_read_keep">Keep recent read chapters</string>
+    <string name="cd_decrease">Decrease</string>
+    <string name="cd_increase">Increase</string>
     <string name="settings_on">On</string>
     <string name="settings_off">Off</string>
     <string name="settings_clear_cache">Clear Image Cache</string>
@@ -376,6 +382,9 @@
     <string name="notification_channel_desc">Reminds you to continue reading</string>
     <string name="notification_reminder_title">Miss your manga? 📖</string>
     <string name="notification_reminder_body">You haven\'t read in a while. Continue where you left off!</string>
+    <string name="notification_new_chapter_channel_name">New Chapters</string>
+    <string name="notification_new_chapter_channel_desc">Notifies when followed manga have new chapters</string>
+    <string name="notification_new_chapter_title">New chapters available 🎉</string>
 
     <!-- Downloads -->
     <string name="downloads_title">Downloads</string>

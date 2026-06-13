@@ -14,6 +14,17 @@ abstract class ChapterDao {
     @Query("SELECT * FROM chapter_metadata WHERE manga_id = :mangaId ORDER BY feed_order ASC")
     abstract fun getChaptersByMangaIdFlow(mangaId: String): Flow<List<ChapterMetadataEntity>>
 
+    // Chapter ĐÃ ĐỌC XONG của manga, sắp theo feed_order tăng dần — cho delete-after-read (PR-3b).
+    @Query(
+        """
+        SELECT cm.chapter_id FROM chapter_metadata cm
+        INNER JOIN chapter_progress cp ON cp.chapter_id = cm.chapter_id
+        WHERE cm.manga_id = :mangaId AND cp.status = 'COMPLETED'
+        ORDER BY cm.feed_order ASC
+        """,
+    )
+    abstract suspend fun getCompletedChapterIdsOrdered(mangaId: String): List<String>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     protected abstract suspend fun upsertChapterMetadata(chapters: List<ChapterMetadataEntity>)
 

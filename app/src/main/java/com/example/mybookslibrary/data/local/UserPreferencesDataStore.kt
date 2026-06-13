@@ -6,12 +6,15 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.mybookslibrary.domain.model.AuthStatus
 import com.example.mybookslibrary.domain.model.ReadingMode
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.Flow
+import timber.log.Timber
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -29,6 +32,7 @@ class UserPreferencesDataStore(
     companion object {
         private val READER_QUALITY = stringPreferencesKey("reader_quality")
         private val READER_READING_MODE = stringPreferencesKey("reader_reading_mode")
+        private val READER_MODE_PER_MANGA = stringPreferencesKey("reader_mode_per_manga")
         private val READER_KEEP_SCREEN_ON = booleanPreferencesKey("reader_keep_screen_on")
         private val READER_VOLUME_KEY_NAV = booleanPreferencesKey("reader_volume_key_nav")
         private val READER_BRIGHTNESS = stringPreferencesKey("reader_brightness")
@@ -38,6 +42,10 @@ class UserPreferencesDataStore(
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
         private val AUTO_DOWNLOAD_NEXT = booleanPreferencesKey("auto_download_next")
+        private val DELETE_AFTER_READ = booleanPreferencesKey("delete_after_read")
+        private val DELETE_AFTER_READ_KEEP = intPreferencesKey("delete_after_read_keep")
+        private val NEW_CHAPTER_NOTIFICATIONS = booleanPreferencesKey("new_chapter_notifications")
+        private val NEW_CHAPTER_SEEN_MAP = stringPreferencesKey("new_chapter_seen_map")
         private val PREFERRED_CHAPTER_LANGUAGE = stringPreferencesKey("preferred_chapter_language")
         private val ONBOARDING_WELCOME_DONE = booleanPreferencesKey("onboarding_welcome_done")
         private val READER_HINT_DONE = booleanPreferencesKey("reader_hint_done")
@@ -55,6 +63,9 @@ class UserPreferencesDataStore(
         private const val DEFAULT_BRIGHTNESS = 1.0f
         private const val DEFAULT_READER_BACKGROUND = "BLACK"
         private const val DEFAULT_DOWNLOAD_ONLY_ON_WIFI = true
+        private const val DEFAULT_DELETE_AFTER_READ_KEEP = 2
+        private const val KEEP_MIN = 1
+        private const val KEEP_MAX = 5
     }
 
     // Đọc prefs an toàn: file prefs hỏng (IOException) thì trả prefs rỗng thay vì ném,
@@ -63,6 +74,9 @@ class UserPreferencesDataStore(
         dataStore.data.catch { e ->
             if (e is IOException) emit(emptyPreferences()) else throw e
         }
+
+    // Parse/serialize map reading-mode per-manga (READER_MODE_PER_MANGA).
+    private val perMangaModeJson = Json
 
     // ─── Auth Status ───────────────────────────────────────────────
 
@@ -111,6 +125,33 @@ class UserPreferencesDataStore(
     suspend fun setReaderReadingMode(mode: ReadingMode) {
         dataStore.edit { it[READER_READING_MODE] = mode.name }
     }
+
+    // Reading mode override riêng từng truyện (Phase 4 PR-3a) — map mangaId -> mode.name, lưu JSON.
+    // Override thắng global default; null = truyện chưa tùy chỉnh.
+    suspend fun getReaderModeForManga(mangaId: String): ReadingMode? {
+        val raw = safeData.first()[READER_MODE_PER_MANGA] ?: return null
+        val storedName = parsePerMangaMode(raw)[mangaId] ?: return null
+        return ReadingMode.entries.firstOrNull { it.name == storedName }
+    }
+
+    suspend fun setReaderModeForManga(mangaId: String, mode: ReadingMode) {
+        dataStore.edit { prefs ->
+            val updated = parsePerMangaMode(prefs[READER_MODE_PER_MANGA] ?: "") + (mangaId to mode.name)
+            prefs[READER_MODE_PER_MANGA] = perMangaModeJson.encodeToString(updated)
+        }
+    }
+
+    private fun parsePerMangaMode(raw: String): Map<String, String> =
+        if (raw.isBlank()) {
+            emptyMap()
+        } else {
+            try {
+                perMangaModeJson.decodeFromString<Map<String, String>>(raw)
+            } catch (t: Throwable) {
+                Timber.w(t, "parsePerMangaMode lỗi, reset map reading-mode per-manga")
+                emptyMap()
+            }
+        }
 
     // ─── Reader comfort: keep screen on / volume key / brightness / background ─────
 
@@ -203,6 +244,44 @@ class UserPreferencesDataStore(
 
     suspend fun setAutoDownloadNext(enabled: Boolean) {
         dataStore.edit { it[AUTO_DOWNLOAD_NEXT] = enabled }
+    }
+
+    // Tự xóa download chương đã đọc xong, giữ N chương mới nhất (mặc định tắt — destructive, opt-in).
+    fun observeDeleteAfterRead(): Flow<Boolean> = safeData.map { it[DELETE_AFTER_READ] ?: false }
+
+    suspend fun getDeleteAfterRead(): Boolean = safeData.first()[DELETE_AFTER_READ] ?: false
+
+    suspend fun setDeleteAfterRead(enabled: Boolean) {
+        dataStore.edit { it[DELETE_AFTER_READ] = enabled }
+    }
+
+    // Số chương đã đọc gần nhất giữ lại offline (1..5, mặc định 2).
+    fun observeDeleteAfterReadKeep(): Flow<Int> =
+        safeData.map { (it[DELETE_AFTER_READ_KEEP] ?: DEFAULT_DELETE_AFTER_READ_KEEP).coerceIn(KEEP_MIN, KEEP_MAX) }
+
+    suspend fun getDeleteAfterReadKeep(): Int =
+        (safeData.first()[DELETE_AFTER_READ_KEEP] ?: DEFAULT_DELETE_AFTER_READ_KEEP).coerceIn(KEEP_MIN, KEEP_MAX)
+
+    suspend fun setDeleteAfterReadKeep(keep: Int) {
+        dataStore.edit { it[DELETE_AFTER_READ_KEEP] = keep.coerceIn(KEEP_MIN, KEEP_MAX) }
+    }
+
+    // ─── Thông báo chương mới ──────────────────────────────────────
+
+    // Bật thông báo khi truyện trong thư viện có chương mới (mặc định tắt — opt-in, tốn pin/mạng).
+    fun observeNewChapterNotifications(): Flow<Boolean> = safeData.map { it[NEW_CHAPTER_NOTIFICATIONS] ?: false }
+
+    suspend fun getNewChapterNotifications(): Boolean = safeData.first()[NEW_CHAPTER_NOTIFICATIONS] ?: false
+
+    suspend fun setNewChapterNotifications(enabled: Boolean) {
+        dataStore.edit { it[NEW_CHAPTER_NOTIFICATIONS] = enabled }
+    }
+
+    // Marker JSON Map<mangaId, latestChapterId> đã thấy — device-local, worker tự parse bằng Json.
+    suspend fun getNewChapterSeenMapRaw(): String = safeData.first()[NEW_CHAPTER_SEEN_MAP] ?: ""
+
+    suspend fun setNewChapterSeenMapRaw(raw: String) {
+        dataStore.edit { it[NEW_CHAPTER_SEEN_MAP] = raw }
     }
 
     // ─── Clear ─────────────────────────────────────────────────────

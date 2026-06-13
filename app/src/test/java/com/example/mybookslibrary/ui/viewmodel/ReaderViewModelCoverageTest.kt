@@ -45,6 +45,7 @@ class ReaderViewModelCoverageTest {
         chapterTitle: String = "Chapter 1",
     ): ReaderViewModel {
         coEvery { userPreferencesDataStore.getReaderReadingMode() } returns ReadingMode.LTR
+        coEvery { userPreferencesDataStore.getReaderModeForManga(any()) } returns null
         val args =
             mutableMapOf<String, Any?>(
                 "mangaId" to MANGA_ID,
@@ -382,6 +383,7 @@ class ReaderViewModelCoverageTest {
     @Test
     fun missingArgs_chapterIdRong_baoLoiMissing() = runTest(mainDispatcherRule.dispatcher.scheduler) {
         // SavedStateHandle rỗng -> mangaId/chapterId/chapterTitle null-coalesce ""
+        coEvery { userPreferencesDataStore.getReaderModeForManga(any()) } returns null
         val vm =
             ReaderViewModel(
                 application = RuntimeEnvironment.getApplication(),

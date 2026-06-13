@@ -54,9 +54,13 @@ data class SettingsUiState(
     val volumeKeyNav: Boolean = false,
     val autoAdvance: Boolean = false,
     val autoDownloadNext: Boolean = false,
+    val newChapterNotifications: Boolean = false,
+    val deleteAfterRead: Boolean = false,
+    val deleteAfterReadKeep: Int = 2,
 )
 
 @OptIn(coil3.annotation.ExperimentalCoilApi::class)
+@Suppress("TooManyFunctions") // ViewModel màn Settings gom nhiều toggle/setter — tách nhỏ không có lợi
 @HiltViewModel
 class SettingsViewModel
     @Inject
@@ -81,6 +85,9 @@ class SettingsViewModel
                 val volumeKeyNav = preferencesDataStore.getReaderVolumeKeyNav()
                 val autoAdvance = preferencesDataStore.getReaderAutoAdvance()
                 val autoDownloadNext = preferencesDataStore.getAutoDownloadNext()
+                val newChapterNotifications = preferencesDataStore.getNewChapterNotifications()
+                val deleteAfterRead = preferencesDataStore.getDeleteAfterRead()
+                val deleteAfterReadKeep = preferencesDataStore.getDeleteAfterReadKeep()
                 _uiState.update {
                     it.copy(
                         quality = q,
@@ -91,6 +98,9 @@ class SettingsViewModel
                         volumeKeyNav = volumeKeyNav,
                         autoAdvance = autoAdvance,
                         autoDownloadNext = autoDownloadNext,
+                        newChapterNotifications = newChapterNotifications,
+                        deleteAfterRead = deleteAfterRead,
+                        deleteAfterReadKeep = deleteAfterReadKeep,
                     )
                 }
             }
@@ -133,6 +143,29 @@ class SettingsViewModel
                 val newValue = !_uiState.value.autoDownloadNext
                 preferencesDataStore.setAutoDownloadNext(newValue)
                 _uiState.update { it.copy(autoDownloadNext = newValue) }
+            }
+        }
+
+        fun toggleNewChapterNotifications() {
+            viewModelScope.launch(ioDispatcher) {
+                val newValue = !_uiState.value.newChapterNotifications
+                preferencesDataStore.setNewChapterNotifications(newValue)
+                _uiState.update { it.copy(newChapterNotifications = newValue) }
+            }
+        }
+
+        fun toggleDeleteAfterRead() {
+            viewModelScope.launch(ioDispatcher) {
+                val newValue = !_uiState.value.deleteAfterRead
+                preferencesDataStore.setDeleteAfterRead(newValue)
+                _uiState.update { it.copy(deleteAfterRead = newValue) }
+            }
+        }
+
+        fun setDeleteAfterReadKeep(keep: Int) {
+            viewModelScope.launch(ioDispatcher) {
+                preferencesDataStore.setDeleteAfterReadKeep(keep)
+                _uiState.update { it.copy(deleteAfterReadKeep = keep.coerceIn(KEEP_MIN, KEEP_MAX)) }
             }
         }
 
@@ -264,5 +297,10 @@ class SettingsViewModel
                     _uiState.update { it.copy(restoreResult = BackupRestoreResult.Failure(e.message ?: "")) }
                 }
             }
+        }
+
+        companion object {
+            const val KEEP_MIN = 1
+            const val KEEP_MAX = 5
         }
     }

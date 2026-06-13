@@ -80,6 +80,9 @@ constructor(
     // Auto-download (Phase 4 PR-2b): cờ đã trigger tải chương kế, chống enqueue lặp khi lướt qua lại near-end.
     private var autoDownloadTriggeredForChapter: String? = null
 
+    // Delete-after-read (Phase 4 PR-3b): chỉ dọn 1 lần/chương khi đọc xong.
+    private var deleteAfterReadDoneForChapter: String? = null
+
     private val _state =
         MutableStateFlow(
             ReaderState(
@@ -152,7 +155,9 @@ constructor(
     private fun loadReadingMode() {
         viewModelScope.launch(ioDispatcher) {
             try {
-                val storedMode = userPreferencesDataStore.getReaderReadingMode()
+                // Per-manga override (Phase 4 PR-3a) thắng; thiếu thì fallback global default.
+                val storedMode = userPreferencesDataStore.getReaderModeForManga(mangaId)
+                    ?: userPreferencesDataStore.getReaderReadingMode()
                 if (!readingModeChangedByUser) {
                     _state.update { it.copy(currentReadingMode = storedMode) }
                 }
@@ -307,6 +312,32 @@ constructor(
         }
     }
 
+    // Đọc xong chương → nếu bật delete-after-read, xóa file download của các chương đã đọc xong + đã tải,
+    // giữ N chương mới nhất (theo feed_order). KHÔNG đụng chương hiện tại / chưa đọc / chưa tải.
+    private fun maybeDeleteAfterRead() {
+        if (deleteAfterReadDoneForChapter == chapterId) return
+        deleteAfterReadDoneForChapter = chapterId
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                if (!userPreferencesDataStore.getDeleteAfterRead()) return@launch
+                val keep = userPreferencesDataStore.getDeleteAfterReadKeep()
+                val downloaded = downloadedChapterCache.downloadedChapterIds.value
+                // Chương đã đọc xong + đã tải, theo feed_order (cũ -> mới).
+                val completedDownloaded = chapterDao.getCompletedChapterIdsOrdered(mangaId)
+                    .filter { it in downloaded }
+                if (completedDownloaded.size <= keep) return@launch
+                // Giữ N mới nhất (cuối list); xóa phần cũ hơn, chừa chương đang đọc.
+                val toDelete = completedDownloaded.dropLast(keep).filter { it != chapterId }
+                toDelete.forEach { id -> offlineDownloadManager.deleteDownload(mangaId, id) }
+                Timber.d("deleteAfterRead: xóa %d chương cũ, giữ %d (manga=%s)", toDelete.size, keep, mangaId)
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Timber.e(t, "maybeDeleteAfterRead error: manga=%s", mangaId)
+            }
+        }
+    }
+
     private fun toggleOverlay() {
         _state.update { it.copy(isOverlayVisible = !it.isOverlayVisible) }
     }
@@ -320,6 +351,8 @@ constructor(
         _effects.tryEmit(ReaderUiEffect.ReadingModeChanged(mode))
         viewModelScope.launch(ioDispatcher) {
             try {
+                // Lưu override cho truyện hiện tại + cập nhật global default (last-used cho truyện mới).
+                userPreferencesDataStore.setReaderModeForManga(mangaId, mode)
                 userPreferencesDataStore.setReaderReadingMode(mode)
             } catch (t: Throwable) {
                 Timber.e(t, "saveReadingMode error: mode=%s", mode)
@@ -412,6 +445,10 @@ constructor(
         if (boundedIndex >= pages.size - PRELOAD_NEAR_END_THRESHOLD) {
             preloadNextChapter()
             maybeAutoDownloadNextChapter()
+        }
+        // Tới trang cuối = chương hoàn thành (cùng điều kiện repo: pageIndex == totalPages-1) → dọn download cũ.
+        if (boundedIndex == pages.lastIndex) {
+            maybeDeleteAfterRead()
         }
         if (boundedIndex == _state.value.lastReadPageIndex) return
         _state.update { it.copy(lastReadPageIndex = boundedIndex) }

@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.download.DownloadNotifier
+import com.example.mybookslibrary.data.notification.NewChapterCheckWorker
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.domain.model.AuthStatus
 import com.example.mybookslibrary.ui.navigation.LocalWindowWidthSizeClass
@@ -61,6 +62,8 @@ class MainActivity : ComponentActivity() {
         incomingReader?.let { downloadNotifier.dismissFinishedNotification(it.chapterId) }
         requestNotificationPermissionIfNeeded()
         com.example.mybookslibrary.data.notification.ReadingReminderWorker.schedule(this)
+        // Worker tự bỏ qua nếu toggle tắt (mặc định tắt) → schedule vô điều kiện như ReadingReminderWorker.
+        NewChapterCheckWorker.schedule(this)
         setContent {
             val windowSizeClass = calculateWindowSizeClass(this)
             // Parse ACTION_SEND intent (e.g. share from Chrome) to extract a manga ID.

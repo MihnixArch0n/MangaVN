@@ -2,7 +2,11 @@
 
 package com.example.mybookslibrary.ui.screens.reader
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
@@ -22,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.mybookslibrary.ui.theme.Dimens
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.userPreferencesDataStore
 import com.example.mybookslibrary.ui.screens.onboarding.ReaderSpotlightOverlay
@@ -136,5 +142,19 @@ fun ReaderScreen(
             )
         }
         SnackbarHost(hostState = snackbarHostState)
+        // Chỉ báo trang nhỏ khi đã ẩn overlay (bottom bar ẩn cùng overlay nên không thấy bộ đếm).
+        AnimatedVisibility(
+            visible = !state.isOverlayVisible && state.pages.isNotEmpty(),
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = Dimens.SpacingXl),
+        ) {
+            ReaderPageIndicator(
+                currentPage = (state.lastReadPageIndex + 1).coerceIn(1, state.pages.size),
+                totalPages = state.pages.size,
+            )
+        }
     }
 }
