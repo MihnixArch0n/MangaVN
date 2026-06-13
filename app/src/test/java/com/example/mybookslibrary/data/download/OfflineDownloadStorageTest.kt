@@ -288,6 +288,26 @@ class OfflineDownloadStorageTest {
         }
 
     @Test
+    fun scanChapterStates_marksCompletedChapterWithZeroBytePageAsCorrupted() =
+        runTest {
+            val storage = storage()
+            storage.deleteChapter(MANGA_ID, CHAPTER_ID)
+
+            try {
+                val page = storage.savePage(MANGA_ID, CHAPTER_ID, pageIndex = 0, byteStream = pageBytes())
+                storage.markChapterComplete(MANGA_ID, CHAPTER_ID, totalPages = 1)
+                page.writeBytes(ByteArray(0))
+
+                val result = storage.scanChapterStates()
+
+                assertFalse(CHAPTER_ID in result.downloadedChapterIds)
+                assertTrue((MANGA_ID to CHAPTER_ID) in result.corruptedChapters)
+            } finally {
+                storage.deleteChapter(MANGA_ID, CHAPTER_ID)
+            }
+        }
+
+    @Test
     fun verifyDownloadedChapter_rejectsMarkerWithoutPages() =
         runTest {
             val storage = storage()

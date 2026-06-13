@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.domain.usecase
 
 import com.example.mybookslibrary.data.download.DownloadedChapterCache
+import com.example.mybookslibrary.data.download.OfflineChapterScanResult
 import com.example.mybookslibrary.data.local.ChapterMetadataEntity
 import com.example.mybookslibrary.data.local.ChapterProgressEntity
 import com.example.mybookslibrary.data.local.ChapterStatus
@@ -54,7 +55,9 @@ class GetChapterListWithProgressUseCaseTest {
         every { offlineDownloadRepository.observeQueueByManga(MANGA_ID) } returns flowOf(emptyList())
         every { downloadedChapterCache.downloadedChapterIds } returns downloadedIds
         every { userPreferencesDataStore.observePreferredChapterLanguage() } returns flowOf("")
-        coEvery { downloadedChapterCache.scanDownloadedChapters() } returns Unit
+        coEvery {
+            downloadedChapterCache.scanFilesystem()
+        } returns OfflineChapterScanResult(downloadedIds.value, emptyList())
         coEvery { chapterDao.syncChapterMetadata(any(), any(), any()) } returns Unit
     }
 
@@ -217,8 +220,9 @@ class GetChapterListWithProgressUseCaseTest {
         runTest {
             val downloadedIds = MutableStateFlow(setOf("chapter-1"))
             coEvery { mangaRepository.getMangaFeed(MANGA_ID) } returns Result.failure(IOException("offline"))
-            coEvery { downloadedChapterCache.scanDownloadedChapters() } answers {
+            coEvery { downloadedChapterCache.scanFilesystem() } answers {
                 downloadedIds.value = emptySet()
+                OfflineChapterScanResult(emptySet(), emptyList())
             }
             every { chapterDao.getChaptersByMangaIdFlow(MANGA_ID) } returns flowOf(listOf(metadata("chapter-1", 12)))
             every { chapterDao.getChapterProgressByManga(MANGA_ID) } returns flowOf(emptyList())

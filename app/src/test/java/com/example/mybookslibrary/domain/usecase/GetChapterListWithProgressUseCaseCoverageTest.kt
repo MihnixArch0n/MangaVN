@@ -1,6 +1,7 @@
 package com.example.mybookslibrary.domain.usecase
 
 import com.example.mybookslibrary.data.download.DownloadedChapterCache
+import com.example.mybookslibrary.data.download.OfflineChapterScanResult
 import com.example.mybookslibrary.data.local.ChapterMetadataEntity
 import com.example.mybookslibrary.data.local.DownloadQueueEntity
 import com.example.mybookslibrary.data.local.DownloadStatus
@@ -74,7 +75,7 @@ class GetChapterListWithProgressUseCaseCoverageTest {
         every { userPreferencesDataStore.observePreferredChapterLanguage() } returns flowOf("")
         every { chapterDao.getChapterProgressByManga(MANGA_ID) } returns flowOf(emptyList())
         every { downloadedChapterCache.downloadedChapterIds } returns MutableStateFlow(emptySet())
-        coEvery { downloadedChapterCache.scanDownloadedChapters() } returns Unit
+        coEvery { downloadedChapterCache.scanFilesystem() } returns OfflineChapterScanResult(emptySet(), emptyList())
         coEvery { chapterDao.syncChapterMetadata(any(), any(), any()) } returns Unit
     }
 

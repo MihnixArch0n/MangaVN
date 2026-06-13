@@ -151,20 +151,38 @@ class OfflineDownloadStorage
         }
 
         /**
+         * Scans completed chapter directories once and classifies them as downloaded or corrupted.
+         */
+        suspend fun scanChapterStates(): OfflineChapterScanResult =
+            withContext(ioDispatcher) {
+                val downloadedIds = linkedSetOf<String>()
+                val corruptedChapters = mutableListOf<Pair<String, String>>()
+
+                rootDirectory()
+                    .listFiles { file -> file.isDirectory }
+                    .orEmpty()
+                    .forEach { mangaDir ->
+                        mangaDir.listFiles { file -> file.isDirectory }.orEmpty().forEach { chapterDir ->
+                            if (isCompletedChapterDir(chapterDir)) {
+                                downloadedIds += chapterDir.name
+                            } else if (File(chapterDir, COMPLETION_MARKER).isFile) {
+                                corruptedChapters += mangaDir.name to chapterDir.name
+                            }
+                        }
+                    }
+
+                Timber.d(
+                    "scanChapterStates: downloaded=%d corrupted=%d",
+                    downloadedIds.size,
+                    corruptedChapters.size,
+                )
+                OfflineChapterScanResult(downloadedIds, corruptedChapters)
+            }
+
+        /**
          * Returns chapter ids whose directories contain both valid pages and a completion marker.
          */
-        suspend fun scanDownloadedChapters(): Set<String> =
-            withContext(ioDispatcher) {
-                val downloadedIds =
-                    rootDirectory()
-                        .listFiles { file -> file.isDirectory }
-                        .orEmpty()
-                        .flatMap { mangaDir -> mangaDir.listFiles { file -> file.isDirectory }.orEmpty().asList() }
-                        .filter { chapterDir -> isCompletedChapterDir(chapterDir) }
-                        .mapTo(linkedSetOf()) { chapterDir -> chapterDir.name }
-                Timber.d("scanDownloadedChapters: count=%d", downloadedIds.size)
-                downloadedIds
-            }
+        suspend fun scanDownloadedChapters(): Set<String> = scanChapterStates().downloadedChapterIds
 
         /**
          * Liệt kê chapter đã tải hoàn chỉnh kèm mangaId (từ dir cha) và dung lượng —
@@ -208,24 +226,7 @@ class OfflineDownloadStorage
         /**
          * Scans for chapters that have a completion marker but fail validity checks (e.g. missing pages).
          */
-        suspend fun scanCorruptedChapters(): List<Pair<String, String>> =
-            withContext(ioDispatcher) {
-                val corrupted = mutableListOf<Pair<String, String>>()
-                rootDirectory()
-                    .listFiles { file -> file.isDirectory }
-                    .orEmpty()
-                    .forEach { mangaDir ->
-                        val mangaId = mangaDir.name
-                        mangaDir.listFiles { file -> file.isDirectory }.orEmpty().forEach { chapterDir ->
-                            val marker = File(chapterDir, COMPLETION_MARKER)
-                            if (marker.isFile && !isCompletedChapterDir(chapterDir)) {
-                                corrupted.add(Pair(mangaId, chapterDir.name))
-                            }
-                        }
-                    }
-                Timber.d("scanCorruptedChapters: count=%d", corrupted.size)
-                corrupted
-            }
+        suspend fun scanCorruptedChapters(): List<Pair<String, String>> = scanChapterStates().corruptedChapters
 
         /**
          * Returns a valid page file if it already exists, or null otherwise.
@@ -302,6 +303,7 @@ class OfflineDownloadStorage
             chapterDir
                 .listFiles { file ->
                     file.isFile &&
+                        file.length() > 0 &&
                         file.name.startsWith(PAGE_PREFIX) &&
                         !file.name.endsWith(TEMP_SUFFIX)
                 }
@@ -361,4 +363,9 @@ data class DownloadedChapterDirInfo(
     val mangaId: String,
     val chapterId: String,
     val sizeBytes: Long,
+)
+
+data class OfflineChapterScanResult(
+    val downloadedChapterIds: Set<String>,
+    val corruptedChapters: List<Pair<String, String>>,
 )
