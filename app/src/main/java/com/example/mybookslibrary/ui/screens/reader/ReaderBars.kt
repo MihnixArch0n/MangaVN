@@ -40,6 +40,7 @@ import com.composables.icons.lucide.ChevronLeft
 import com.composables.icons.lucide.ChevronRight
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Scroll
+import com.composables.icons.lucide.Sun
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -266,6 +267,7 @@ internal fun BoxScope.ReaderBottomBar(
     onPageSelected: (Int) -> Unit = {},
     onPrevChapter: () -> Unit = {},
     onNextChapter: () -> Unit = {},
+    onComfortClick: () -> Unit = {},
 ) {
     val safeTotalPages = state.totalPages.coerceAtLeast(1)
     val displayPage = (state.currentPage + 1).coerceIn(1, safeTotalPages)
@@ -382,6 +384,14 @@ internal fun BoxScope.ReaderBottomBar(
                     text = appString(currentReadingModeLabelRes),
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(start = Dimens.SpacingSm),
+                )
+            }
+            IconButton(onClick = onComfortClick) {
+                Icon(
+                    Lucide.Sun,
+                    contentDescription = appString(R.string.reader_comfort_settings),
+                    tint = colors.content,
+                    modifier = Modifier.size(Dimens.IconDefault),
                 )
             }
             IconButton(

@@ -24,11 +24,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import com.example.mybookslibrary.R
+import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.ui.screens.reader.components.PageActionBottomSheet
 import com.example.mybookslibrary.ui.screens.components.LoadingIndicator
 import com.example.mybookslibrary.ui.screens.components.LoadingSize
 import com.example.mybookslibrary.ui.theme.Dimens
+import com.example.mybookslibrary.ui.theme.ReaderBackgroundBlack
+import com.example.mybookslibrary.ui.theme.ReaderBackgroundGray
+import com.example.mybookslibrary.ui.theme.ReaderBackgroundWhite
 import com.example.mybookslibrary.ui.util.appString
 import com.example.mybookslibrary.ui.viewmodel.ReaderEvent
 import com.example.mybookslibrary.ui.viewmodel.ReaderState
@@ -47,7 +51,7 @@ internal fun ReaderContentHost(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(Color.Black),
+                .background(state.background.toColor()),
     ) {
         ReaderContentBody(
             state = state,
@@ -55,6 +59,16 @@ internal fun ReaderContentHost(
             pagerState = pagerState,
             onEvent = onEvent,
         )
+
+        // Overlay làm tối theo độ sáng (1.0 = trong suốt). Không đăng ký pointer input → tap xuyên qua.
+        if (state.brightness < 1f) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 1f - state.brightness)),
+            )
+        }
 
         ReaderOverlayBars(
             state = state,
@@ -65,7 +79,26 @@ internal fun ReaderContentHost(
     }
 
     ReaderPageActionSheet(state = state, onEvent = onEvent)
+
+    if (state.isComfortPanelVisible) {
+        ReaderComfortSheet(
+            brightness = state.brightness,
+            background = state.background,
+            onBrightnessChange = { onEvent(ReaderEvent.SetBrightness(it)) },
+            onBrightnessChangeFinished = { onEvent(ReaderEvent.CommitBrightness) },
+            onBackgroundChange = { onEvent(ReaderEvent.SetBackground(it)) },
+            onDismiss = { onEvent(ReaderEvent.ToggleComfortPanel) },
+        )
+    }
 }
+
+// Màu nền reader theo lựa chọn người dùng — token trong ui/theme/Color.kt (không hardcode).
+private fun ReaderBackground.toColor(): Color =
+    when (this) {
+        ReaderBackground.BLACK -> ReaderBackgroundBlack
+        ReaderBackground.WHITE -> ReaderBackgroundWhite
+        ReaderBackground.GRAY -> ReaderBackgroundGray
+    }
 
 @Composable
 private fun ReaderContentBody(
@@ -192,6 +225,7 @@ private fun BoxWithConstraintsScope.ReaderOverlayBars(
         },
         onPrevChapter = { onEvent(ReaderEvent.NavigatePrevChapter) },
         onNextChapter = { onEvent(ReaderEvent.NavigateNextChapter) },
+        onComfortClick = { onEvent(ReaderEvent.ToggleComfortPanel) },
     )
 }
 

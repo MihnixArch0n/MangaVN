@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -140,6 +141,19 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    // Lật trang bằng phím âm lượng khi reader đang lắng nghe (xem ReaderVolumeKeyHandler).
+    // Volume up = trang trước, volume down = trang kế.
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        val handler = com.example.mybookslibrary.ui.screens.reader.ReaderVolumeKeyHandler.onVolumeKey
+        if (handler != null) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP -> if (handler(true)) return true
+                KeyEvent.KEYCODE_VOLUME_DOWN -> if (handler(false)) return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     private fun requestNotificationPermissionIfNeeded() {

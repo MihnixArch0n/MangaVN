@@ -2,6 +2,7 @@ package com.example.mybookslibrary.ui.viewmodel
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.domain.usecase.LoadReaderPagesUseCase
 import com.example.mybookslibrary.domain.usecase.SyncReadingProgressUseCase
@@ -9,9 +10,11 @@ import com.example.mybookslibrary.domain.usecase.TapZoneEvaluator
 import com.example.mybookslibrary.test.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -221,6 +224,70 @@ class ReaderViewModelTest {
         viewModel.onEvent(ReaderEvent.PageActionSelected(ReaderPageAction.QuickSave))
 
         assertEquals("https://example.com/page-1.jpg", effect.await().target.pageUrl)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun setBrightness_coercedToRangeAndPersisted() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        val viewModel = createViewModel(startPageIndex = 0)
+        advanceUntilIdle()
+
+        // SetBrightness chỉ update state (preview), KHÔNG ghi DataStore.
+        viewModel.onEvent(ReaderEvent.SetBrightness(2.0f))
+        advanceUntilIdle()
+        assertEquals(1.0f, viewModel.state.value.brightness)
+
+        viewModel.onEvent(ReaderEvent.SetBrightness(0.05f))
+        advanceUntilIdle()
+        assertEquals(0.15f, viewModel.state.value.brightness)
+        coVerify(exactly = 0) { userPreferencesDataStore.setReaderBrightness(any()) }
+
+        // CommitBrightness mới ghi DataStore (gọi khi thả slider).
+        viewModel.onEvent(ReaderEvent.CommitBrightness)
+        advanceUntilIdle()
+        coVerify { userPreferencesDataStore.setReaderBrightness(0.15f) }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun setBackground_updatesStateAndPersists() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        val viewModel = createViewModel(startPageIndex = 0)
+        advanceUntilIdle()
+
+        viewModel.onEvent(ReaderEvent.SetBackground(ReaderBackground.WHITE))
+        advanceUntilIdle()
+
+        assertEquals(ReaderBackground.WHITE, viewModel.state.value.background)
+        coVerify { userPreferencesDataStore.setReaderBackground("WHITE") }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun comfortPreferences_loadedIntoState() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        every { userPreferencesDataStore.observeReaderKeepScreenOn() } returns flowOf(true)
+        every { userPreferencesDataStore.observeReaderVolumeKeyNav() } returns flowOf(true)
+        every { userPreferencesDataStore.observeReaderBrightness() } returns flowOf(0.5f)
+        every { userPreferencesDataStore.observeReaderBackground() } returns flowOf("GRAY")
+        val viewModel = createViewModel(startPageIndex = 0)
+        advanceUntilIdle()
+
+        assertEquals(true, viewModel.state.value.keepScreenOn)
+        assertEquals(true, viewModel.state.value.volumeKeyNav)
+        assertEquals(0.5f, viewModel.state.value.brightness)
+        assertEquals(ReaderBackground.GRAY, viewModel.state.value.background)
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test
+    fun volumeKeyNextAndPrevPage_movesPage() = runTest(mainDispatcherRule.dispatcher.scheduler) {
+        val viewModel = createViewModel(startPageIndex = 2)
+        advanceUntilIdle()
+
+        viewModel.onEvent(ReaderEvent.VolumeKeyNextPage)
+        assertEquals(3, viewModel.state.value.lastReadPageIndex)
+
+        viewModel.onEvent(ReaderEvent.VolumeKeyPrevPage)
+        assertEquals(2, viewModel.state.value.lastReadPageIndex)
     }
 
     private fun createViewModel(

@@ -148,8 +148,20 @@ fun SettingScreenContent(
                     } else {
                         appString(R.string.settings_quality_data_saver)
                     }
+                val keepScreenOnLabel =
+                    if (uiState.keepScreenOn) appString(R.string.settings_on) else appString(R.string.settings_off)
+                val volumeKeyLabel =
+                    if (uiState.volumeKeyNav) appString(R.string.settings_on) else appString(R.string.settings_off)
                 SettingsCard {
                     SettingsRow(appString(R.string.settings_image_quality), qualityLabel) { viewModel.toggleQuality() }
+                    SettingsDivider()
+                    SettingsRow(appString(R.string.settings_keep_screen_on), keepScreenOnLabel) {
+                        viewModel.toggleKeepScreenOn()
+                    }
+                    SettingsDivider()
+                    SettingsRow(appString(R.string.settings_volume_key_nav), volumeKeyLabel) {
+                        viewModel.toggleVolumeKeyNav()
+                    }
                 }
                 Spacer(Modifier.height(Dimens.SpacingXl))
             }

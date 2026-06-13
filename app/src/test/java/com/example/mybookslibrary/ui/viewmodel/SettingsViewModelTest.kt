@@ -37,10 +37,14 @@ class SettingsViewModelTest {
         quality: String = "data",
         theme: String = "system",
         language: String = "en",
+        keepScreenOn: Boolean = false,
+        volumeKeyNav: Boolean = false,
     ) {
         coEvery { prefs.getReaderQuality() } returns quality
         coEvery { prefs.getThemeMode() } returns theme
         coEvery { prefs.getLanguage() } returns language
+        coEvery { prefs.getReaderKeepScreenOn() } returns keepScreenOn
+        coEvery { prefs.getReaderVolumeKeyNav() } returns volumeKeyNav
     }
 
     private fun viewModel() =
@@ -81,6 +85,46 @@ class SettingsViewModelTest {
             vm.toggleQuality()
             advanceUntilIdle()
             assertEquals("data", vm.uiState.value.quality)
+        }
+
+    @Test
+    fun init_taiKeepScreenOnVaVolumeKeyNav() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults(keepScreenOn = true, volumeKeyNav = true)
+
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.keepScreenOn)
+            assertTrue(vm.uiState.value.volumeKeyNav)
+        }
+
+    @Test
+    fun toggleKeepScreenOn_doiVaLuu() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults(keepScreenOn = false)
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.toggleKeepScreenOn()
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.keepScreenOn)
+            coVerify { prefs.setReaderKeepScreenOn(true) }
+        }
+
+    @Test
+    fun toggleVolumeKeyNav_doiVaLuu() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            stubDefaults(volumeKeyNav = false)
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.toggleVolumeKeyNav()
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.volumeKeyNav)
+            coVerify { prefs.setReaderVolumeKeyNav(true) }
         }
 
     @Test

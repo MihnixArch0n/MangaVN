@@ -49,6 +49,8 @@ data class SettingsUiState(
     val isSyncing: Boolean = false,
     val syncSuccess: Boolean? = null,
     val isGuest: Boolean = false,
+    val keepScreenOn: Boolean = false,
+    val volumeKeyNav: Boolean = false,
 )
 
 @OptIn(coil3.annotation.ExperimentalCoilApi::class)
@@ -72,7 +74,18 @@ class SettingsViewModel
                 val t = preferencesDataStore.getThemeMode()
                 val l = preferencesDataStore.getLanguage()
                 val guest = authRepository.getCurrentUser() == null
-                _uiState.update { it.copy(quality = q, themeMode = t, language = l, isGuest = guest) }
+                val keepScreenOn = preferencesDataStore.getReaderKeepScreenOn()
+                val volumeKeyNav = preferencesDataStore.getReaderVolumeKeyNav()
+                _uiState.update {
+                    it.copy(
+                        quality = q,
+                        themeMode = t,
+                        language = l,
+                        isGuest = guest,
+                        keepScreenOn = keepScreenOn,
+                        volumeKeyNav = volumeKeyNav,
+                    )
+                }
             }
         }
 
@@ -81,6 +94,22 @@ class SettingsViewModel
                 val newQuality = if (_uiState.value.quality == "data") "data-saver" else "data"
                 preferencesDataStore.setReaderQuality(newQuality)
                 _uiState.update { it.copy(quality = newQuality) }
+            }
+        }
+
+        fun toggleKeepScreenOn() {
+            viewModelScope.launch(ioDispatcher) {
+                val newValue = !_uiState.value.keepScreenOn
+                preferencesDataStore.setReaderKeepScreenOn(newValue)
+                _uiState.update { it.copy(keepScreenOn = newValue) }
+            }
+        }
+
+        fun toggleVolumeKeyNav() {
+            viewModelScope.launch(ioDispatcher) {
+                val newValue = !_uiState.value.volumeKeyNav
+                preferencesDataStore.setReaderVolumeKeyNav(newValue)
+                _uiState.update { it.copy(volumeKeyNav = newValue) }
             }
         }
 

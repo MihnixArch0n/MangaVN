@@ -29,6 +29,10 @@ class UserPreferencesDataStore(
     companion object {
         private val READER_QUALITY = stringPreferencesKey("reader_quality")
         private val READER_READING_MODE = stringPreferencesKey("reader_reading_mode")
+        private val READER_KEEP_SCREEN_ON = booleanPreferencesKey("reader_keep_screen_on")
+        private val READER_VOLUME_KEY_NAV = booleanPreferencesKey("reader_volume_key_nav")
+        private val READER_BRIGHTNESS = stringPreferencesKey("reader_brightness")
+        private val READER_BACKGROUND = stringPreferencesKey("reader_background")
         private val LANGUAGE = stringPreferencesKey("language")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
@@ -46,6 +50,8 @@ class UserPreferencesDataStore(
         private const val DEFAULT_QUALITY = "data"
         private const val DEFAULT_LANGUAGE = "vi"
         private const val DEFAULT_THEME = "system"
+        private const val DEFAULT_BRIGHTNESS = 1.0f
+        private const val DEFAULT_READER_BACKGROUND = "BLACK"
         private const val DEFAULT_DOWNLOAD_ONLY_ON_WIFI = true
     }
 
@@ -102,6 +108,41 @@ class UserPreferencesDataStore(
 
     suspend fun setReaderReadingMode(mode: ReadingMode) {
         dataStore.edit { it[READER_READING_MODE] = mode.name }
+    }
+
+    // ─── Reader comfort: keep screen on / volume key / brightness / background ─────
+
+    /** Giữ màn hình sáng khi đọc (mặc định tắt). */
+    fun observeReaderKeepScreenOn(): Flow<Boolean> = safeData.map { it[READER_KEEP_SCREEN_ON] ?: false }
+
+    suspend fun getReaderKeepScreenOn(): Boolean = safeData.first()[READER_KEEP_SCREEN_ON] ?: false
+
+    suspend fun setReaderKeepScreenOn(enabled: Boolean) {
+        dataStore.edit { it[READER_KEEP_SCREEN_ON] = enabled }
+    }
+
+    /** Dùng phím âm lượng để lật trang (mặc định tắt). */
+    fun observeReaderVolumeKeyNav(): Flow<Boolean> = safeData.map { it[READER_VOLUME_KEY_NAV] ?: false }
+
+    suspend fun getReaderVolumeKeyNav(): Boolean = safeData.first()[READER_VOLUME_KEY_NAV] ?: false
+
+    suspend fun setReaderVolumeKeyNav(enabled: Boolean) {
+        dataStore.edit { it[READER_VOLUME_KEY_NAV] = enabled }
+    }
+
+    /** Độ sáng overlay reader 0.15..1.0 (1.0 = không tối thêm). Lưu String tránh sai số float key. */
+    fun observeReaderBrightness(): Flow<Float> =
+        safeData.map { it[READER_BRIGHTNESS]?.toFloatOrNull() ?: DEFAULT_BRIGHTNESS }
+
+    suspend fun setReaderBrightness(value: Float) {
+        dataStore.edit { it[READER_BRIGHTNESS] = value.toString() }
+    }
+
+    /** Màu nền reader: BLACK/WHITE/GRAY (lưu tên enum, mặc định BLACK). */
+    fun observeReaderBackground(): Flow<String> = safeData.map { it[READER_BACKGROUND] ?: DEFAULT_READER_BACKGROUND }
+
+    suspend fun setReaderBackground(name: String) {
+        dataStore.edit { it[READER_BACKGROUND] = name }
     }
 
     // ─── Ngôn ngữ ──────────────────────────────────────────────────

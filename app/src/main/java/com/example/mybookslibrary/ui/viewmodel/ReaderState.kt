@@ -1,5 +1,6 @@
 package com.example.mybookslibrary.ui.viewmodel
 
+import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReadingMode
 
 data class ReaderState(
@@ -15,6 +16,12 @@ data class ReaderState(
     val prevChapterTitle: String? = null,
     val nextChapterId: String? = null,
     val nextChapterTitle: String? = null,
+    // Reader comfort (Phase 4 PR-1)
+    val keepScreenOn: Boolean = false,
+    val volumeKeyNav: Boolean = false,
+    val brightness: Float = 1.0f,
+    val background: ReaderBackground = ReaderBackground.BLACK,
+    val isComfortPanelVisible: Boolean = false,
 )
 
 data class ReaderPageActionTarget(

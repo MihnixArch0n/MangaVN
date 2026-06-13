@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
@@ -60,6 +62,34 @@ fun ReaderScreen(
         overlayIsVisible = state.isOverlayVisible,
         overlayIsLight = readerBarIsLight,
     )
+
+    // Giữ màn hình sáng khi đọc — gắn cờ lên View, gỡ khi rời reader.
+    val view = LocalView.current
+    DisposableEffect(state.keepScreenOn) {
+        view.keepScreenOn = state.keepScreenOn
+        onDispose { view.keepScreenOn = false }
+    }
+
+    // Đăng ký lật trang bằng phím âm lượng khi tính năng bật; huỷ khi tắt hoặc rời màn hình.
+    // Holder là singleton process-wide → chỉ gỡ ĐÚNG handler mình đặt (identity check) để
+    // tránh race khi 2 màn reader chồng nhau lúc chuyển chương xoá nhầm handler màn mới.
+    DisposableEffect(state.volumeKeyNav) {
+        val handler: ((Boolean) -> Boolean)? =
+            if (state.volumeKeyNav) {
+                { volumeUp ->
+                    onEvent(if (volumeUp) ReaderEvent.VolumeKeyPrevPage else ReaderEvent.VolumeKeyNextPage)
+                    true
+                }
+            } else {
+                null
+            }
+        ReaderVolumeKeyHandler.onVolumeKey = handler
+        onDispose {
+            if (ReaderVolumeKeyHandler.onVolumeKey === handler) {
+                ReaderVolumeKeyHandler.onVolumeKey = null
+            }
+        }
+    }
 
     ReaderEffectHandler(
         effects = viewModel.effects,

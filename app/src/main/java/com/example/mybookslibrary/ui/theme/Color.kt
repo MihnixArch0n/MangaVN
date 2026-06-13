@@ -79,3 +79,9 @@ val CinemaDarkSuccess = Color(0xFF62D68F)
 val CinemaDarkWarning = Color(0xFFFFA763)
 val CinemaFavorite = Color(0xFFD32F2F)
 val CinemaDarkFavorite = Color(0xFFFF6B6B)
+
+// ---- Màu nền reader (tuỳ chọn người dùng) ----
+// Giá trị nội dung, KHÔNG đổi theo theme: người đọc tự chọn nền sau trang truyện.
+val ReaderBackgroundBlack = Color(0xFF000000)
+val ReaderBackgroundWhite = Color(0xFFFFFFFF)
+val ReaderBackgroundGray = Color(0xFF424242)

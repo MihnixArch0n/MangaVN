@@ -9,6 +9,7 @@ import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
 import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.di.IoDispatcher
+import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReaderTapAction
 import com.example.mybookslibrary.domain.model.ReadingMode
 import com.example.mybookslibrary.domain.usecase.LoadReaderPagesUseCase
@@ -23,6 +24,9 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -71,8 +75,42 @@ constructor(
 
     init {
         loadReadingMode()
+        observeComfortPreferences()
         loadChapterPages()
     }
+
+    // Quan sát 4 tuỳ chọn comfort reactive: đổi trong Settings/panel là reader cập nhật ngay.
+    private fun observeComfortPreferences() {
+        combine(
+            userPreferencesDataStore.observeReaderKeepScreenOn(),
+            userPreferencesDataStore.observeReaderVolumeKeyNav(),
+            userPreferencesDataStore.observeReaderBrightness(),
+            userPreferencesDataStore.observeReaderBackground(),
+        ) { keepScreenOn, volumeKeyNav, brightness, background ->
+            ComfortPrefs(
+                keepScreenOn = keepScreenOn,
+                volumeKeyNav = volumeKeyNav,
+                brightness = brightness,
+                background = ReaderBackground.fromString(background),
+            )
+        }.onEach { prefs ->
+            _state.update {
+                it.copy(
+                    keepScreenOn = prefs.keepScreenOn,
+                    volumeKeyNav = prefs.volumeKeyNav,
+                    brightness = prefs.brightness,
+                    background = prefs.background,
+                )
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    private data class ComfortPrefs(
+        val keepScreenOn: Boolean,
+        val volumeKeyNav: Boolean,
+        val brightness: Float,
+        val background: ReaderBackground,
+    )
 
     private fun loadReadingMode() {
         viewModelScope.launch(ioDispatcher) {
@@ -129,6 +167,13 @@ constructor(
         when (event) {
             ReaderEvent.RetryLoadPages -> loadChapterPages()
             ReaderEvent.ToggleOverlay -> toggleOverlay()
+            ReaderEvent.ToggleComfortPanel ->
+                _state.update { it.copy(isComfortPanelVisible = !it.isComfortPanelVisible) }
+            is ReaderEvent.SetBrightness -> setBrightness(event.value)
+            ReaderEvent.CommitBrightness -> commitBrightness()
+            is ReaderEvent.SetBackground -> setBackground(event.background)
+            ReaderEvent.VolumeKeyNextPage -> navigateToPage(ReaderTapAction.NEXT_PAGE)
+            ReaderEvent.VolumeKeyPrevPage -> navigateToPage(ReaderTapAction.PREVIOUS_PAGE)
             is ReaderEvent.ChangeReadingMode -> changeReadingMode(event.mode)
             ReaderEvent.CycleReadingMode -> cycleReadingMode()
             is ReaderEvent.JumpToPage -> jumpToPage(event.pageIndex)
@@ -169,6 +214,34 @@ constructor(
 
     private fun cycleReadingMode() {
         changeReadingMode(_state.value.currentReadingMode.next())
+    }
+
+    // Chỉ cập nhật state (preview mượt khi kéo). Ghi DataStore tách qua commitBrightness khi thả slider.
+    private fun setBrightness(value: Float) {
+        val coerced = value.coerceIn(MIN_BRIGHTNESS, MAX_BRIGHTNESS)
+        _state.update { it.copy(brightness = coerced) }
+    }
+
+    private fun commitBrightness() {
+        val value = _state.value.brightness
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                userPreferencesDataStore.setReaderBrightness(value)
+            } catch (t: Throwable) {
+                Timber.e(t, "commitBrightness error: value=%f", value)
+            }
+        }
+    }
+
+    private fun setBackground(background: ReaderBackground) {
+        _state.update { it.copy(background = background) }
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                userPreferencesDataStore.setReaderBackground(background.name)
+            } catch (t: Throwable) {
+                Timber.e(t, "setBackground error: background=%s", background)
+            }
+        }
     }
 
     private fun navigateToPage(action: ReaderTapAction) {
@@ -327,6 +400,10 @@ constructor(
     }
 
 }
+
+// Độ sáng overlay tối thiểu (0.15 = tối nhất vẫn còn nhìn thấy) và tối đa (1.0 = không tối thêm).
+private const val MIN_BRIGHTNESS = 0.15f
+private const val MAX_BRIGHTNESS = 1.0f
 
 private fun ReadingMode.next(): ReadingMode = when (this) {
     ReadingMode.VERTICAL -> ReadingMode.LTR

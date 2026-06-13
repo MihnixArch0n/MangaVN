@@ -153,6 +153,12 @@
     <string name="reader_switch_mode_action">Chuyển chế độ đọc sang %1$s</string>
     <string name="reader_prev_chapter">Chương trước</string>
     <string name="reader_next_chapter">Chương sau</string>
+    <string name="reader_comfort_settings">Tùy chỉnh hiển thị</string>
+    <string name="reader_brightness">Độ sáng</string>
+    <string name="reader_background">Màu nền</string>
+    <string name="reader_background_black">Đen</string>
+    <string name="reader_background_white">Trắng</string>
+    <string name="reader_background_gray">Xám</string>
 
     <!-- Cài đặt -->
     <string name="settings_title">Cài đặt</string>
@@ -169,6 +175,10 @@
     <string name="settings_image_quality">Chất lượng ảnh</string>
     <string name="settings_quality_original">Gốc</string>
     <string name="settings_quality_data_saver">Tiết kiệm dữ liệu</string>
+    <string name="settings_keep_screen_on">Giữ màn hình sáng</string>
+    <string name="settings_volume_key_nav">Lật trang bằng phím âm lượng</string>
+    <string name="settings_on">Bật</string>
+    <string name="settings_off">Tắt</string>
     <string name="settings_clear_cache">Xóa bộ nhớ đệm ảnh</string>
     <string name="settings_cache_cleared">Đã xóa ✓</string>
     <string name="settings_cache_subtitle">Giải phóng bộ nhớ từ ảnh đã tải</string>

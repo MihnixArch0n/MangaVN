@@ -1,10 +1,32 @@
 package com.example.mybookslibrary.ui.viewmodel
 
+import com.example.mybookslibrary.domain.model.ReaderBackground
 import com.example.mybookslibrary.domain.model.ReadingMode
 
 sealed interface ReaderEvent {
     data object RetryLoadPages : ReaderEvent
     data object ToggleOverlay : ReaderEvent
+
+    // Reader comfort (Phase 4 PR-1)
+    data object ToggleComfortPanel : ReaderEvent
+
+    /** Cập nhật độ sáng tức thời (preview mượt khi kéo slider) — KHÔNG ghi DataStore. */
+    data class SetBrightness(
+        val value: Float,
+    ) : ReaderEvent
+
+    /** Lưu độ sáng hiện tại xuống DataStore (gọi khi thả slider) để tránh ghi mỗi tick. */
+    data object CommitBrightness : ReaderEvent
+
+    data class SetBackground(
+        val background: ReaderBackground,
+    ) : ReaderEvent
+
+    /** Phím âm lượng lật sang trang kế (volume down). */
+    data object VolumeKeyNextPage : ReaderEvent
+
+    /** Phím âm lượng lật về trang trước (volume up). */
+    data object VolumeKeyPrevPage : ReaderEvent
 
     data class ChangeReadingMode(
         val mode: ReadingMode,
