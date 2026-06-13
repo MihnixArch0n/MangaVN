@@ -46,7 +46,7 @@
     <string name="filter_section_theme">Chủ đề</string>
     <string name="filter_section_language">Ngôn ngữ</string>
     <string name="filter_section_rating">Mức nội dung</string>
-    <string name="filter_section_status">Trạng thái</string>
+    <string name="filter_section_status">Tình trạng phát hành</string>
     <string name="filter_clear">Xoá lọc</string>
     <string name="filter_apply">Áp dụng</string>
     <string name="filter_tags_error">Không tải được thể loại — kiểm tra kết nối</string>

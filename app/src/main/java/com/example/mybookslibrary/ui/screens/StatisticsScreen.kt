@@ -123,7 +123,9 @@ fun StatisticsScreen(
             val hasWeeklyData = state.weeklyActivity.any { it > 0 }
             val hasMonthlyData = state.monthlyTrend.any { it > 0 }
             val hasActivity = hasWeeklyData || hasMonthlyData
-            val hasLibrary = state.readingCount + state.completedCount + state.favoriteCount > 0
+            // Mọi item đều có status READING/COMPLETED (favorite chỉ là cờ chồng lấp)
+            // → reading + completed = tổng thư viện, là điều kiện đúng để vẽ pie.
+            val hasLibrary = state.readingCount + state.completedCount > 0
 
             if (hasWeeklyData) {
                 item { SectionHeader(title = appString(R.string.stats_weekly_activity)) }
@@ -139,7 +141,16 @@ fun StatisticsScreen(
                     LibraryPieChart(
                         reading = state.readingCount,
                         completed = state.completedCount,
-                        favorite = state.favoriteCount,
+                    )
+                }
+                // Yêu thích là metric độc lập (chồng lấp Đang đọc/Hoàn thành) → card riêng,
+                // không phải múi pie — pie chỉ phân hoạch theo status. Hiện cả khi = 0
+                // (có chủ đích, nhất quán với legend pie cũng hiện count 0).
+                item {
+                    SummaryCard(
+                        state.favoriteCount.toString(),
+                        appString(R.string.stats_favorite),
+                        Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -314,18 +325,17 @@ private fun MonthlyLineChart(trend: List<Int>) {
 }
 
 @Composable
-private fun LibraryPieChart(reading: Int, completed: Int, favorite: Int) {
-    val total = reading + completed + favorite
-    // Dùng cùng bảng màu với StatusChip để nhất quán toàn app:
-    // Đang đọc = tertiary, Hoàn thành = success, Yêu thích = favorite (đỏ)
+private fun LibraryPieChart(reading: Int, completed: Int) {
+    val total = reading + completed
+    // Pie là PHÂN HOẠCH theo status (2 múi, tổng = số truyện trong thư viện).
+    // Cùng bảng màu với StatusChip: Đang đọc = tertiary, Hoàn thành = success.
     val readingColor = MaterialTheme.colorScheme.tertiary
     val completedColor = MaterialTheme.statusColors.success
-    val favoriteColor = MaterialTheme.statusColors.favorite
     val rl = appString(R.string.stats_reading)
     val cl = appString(R.string.stats_completed)
-    val fl = appString(R.string.stats_favorite)
 
-    var pieData by remember(reading, completed, favorite, rl, cl, fl) {
+    // Key đủ cả màu: theme đổi (dark/light) giữa chừng phải rebuild pie với màu mới
+    var pieData by remember(reading, completed, rl, cl, readingColor, completedColor) {
         mutableStateOf(
             listOfNotNull(
                 if (reading > 0) {
@@ -335,11 +345,6 @@ private fun LibraryPieChart(reading: Int, completed: Int, favorite: Int) {
                 },
                 if (completed > 0) {
                     Pie(label = cl, data = completed.toDouble(), color = completedColor, selectedColor = completedColor)
-                } else {
-                    null
-                },
-                if (favorite > 0) {
-                    Pie(label = fl, data = favorite.toDouble(), color = favoriteColor, selectedColor = favoriteColor)
                 } else {
                     null
                 },
@@ -388,7 +393,6 @@ private fun LibraryPieChart(reading: Int, completed: Int, favorite: Int) {
                 items = listOf(
                     LegendItem(readingColor, appString(R.string.stats_reading), reading),
                     LegendItem(completedColor, appString(R.string.stats_completed), completed),
-                    LegendItem(favoriteColor, appString(R.string.stats_favorite), favorite),
                 ),
             )
         }

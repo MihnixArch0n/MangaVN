@@ -5,10 +5,11 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.mybookslibrary.domain.model.SyncStatus
 
+// Yêu thích KHÔNG phải status: dùng cờ `is_favorite` riêng (một truyện yêu thích
+// vẫn Đang đọc hoặc Hoàn thành). Giá trị FAVORITE cũ đã xóa — không code nào set.
 enum class LibraryStatus {
     READING,
     COMPLETED,
-    FAVORITE,
 }
 
 class LibraryStatusConverters {
@@ -17,11 +18,8 @@ class LibraryStatusConverters {
 
     @androidx.room.TypeConverter
     fun toStatus(value: String): LibraryStatus =
-        try {
-            LibraryStatus.valueOf(value)
-        } catch (_: IllegalArgumentException) {
-            LibraryStatus.READING
-        }
+        // Fallback READING gồm cả "FAVORITE" legacy (DB rất cũ) — cờ is_favorite là cột riêng nên không mất
+        LibraryStatus.entries.firstOrNull { it.name == value } ?: LibraryStatus.READING
 
     @androidx.room.TypeConverter
     fun fromSyncStatus(status: SyncStatus): String = status.name

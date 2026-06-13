@@ -1,5 +1,6 @@
 package com.example.mybookslibrary.data.remote.models
 
+import com.example.mybookslibrary.data.local.LibraryStatus
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date
@@ -9,7 +10,7 @@ data class FirestoreLibraryItem(
     val mangaId: String = "",
     val title: String = "",
     val coverUrl: String? = null,
-    val status: String = "READING",
+    val status: String = LibraryStatus.READING.name,
     val isFavorite: Boolean = false,
     val addedAt: Long = 0,
     val lastReadAt: Long? = null,

@@ -19,6 +19,7 @@ data class LibraryBackupItem(
 ) {
     /**
      * Converts a valid backup item to a Room entity, or returns null when required fields are absent.
+     * Backup cũ có thể chứa status "FAVORITE" (đã xóa khỏi enum) → map về READING + is_favorite=true.
      */
     fun toEntity(): LibraryItemEntity? {
         val effectiveUpdatedAt = updatedAt ?: System.currentTimeMillis()
@@ -31,8 +32,13 @@ data class LibraryBackupItem(
             last_read_page_index = lastReadPageIndex,
             added_at = addedAt ?: effectiveUpdatedAt,
             updated_at = effectiveUpdatedAt,
-            is_favorite = isFavorite,
+            is_favorite = isFavorite || status == LEGACY_STATUS_FAVORITE,
         )
+    }
+
+    companion object {
+        /** Giá trị enum đã xóa — chỉ còn gặp trong backup JSON cũ. */
+        const val LEGACY_STATUS_FAVORITE = "FAVORITE"
     }
 }
 

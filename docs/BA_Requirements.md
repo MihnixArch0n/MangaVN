@@ -17,7 +17,7 @@
 * **LibraryItemEntity** (Bookmark/Yêu thích):
   * `manga_id` (PK - map với MangaDex).
   * `title`, `cover_url`.
-  * `status` (Enum: `READING`, `COMPLETED`, `FAVORITE`).
+  * `status` (Enum: `READING`, `COMPLETED`) — yêu thích KHÔNG phải status, dùng cờ `is_favorite` (Boolean) riêng.
   * `last_read_chapter_id`, `last_read_page_index`, `updated_at`.
   * `sync_status` (Enum: `SYNCED`, `PENDING_UPDATE`, `PENDING_DELETE`).
 * **ChapterProgressEntity** (Tiến độ đọc chapter):

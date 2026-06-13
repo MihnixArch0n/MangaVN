@@ -58,7 +58,8 @@ class StatisticsViewModelTest {
                 listOf(
                     LibraryItemEntity("1", "Đang đọc", "c", LibraryStatus.READING),
                     LibraryItemEntity("2", "Hoàn thành", "c", LibraryStatus.COMPLETED),
-                    // Yêu thích loại trừ khỏi reading/completed (đếm exclusive)
+                    // Yêu thích KHÔNG loại khỏi reading/completed — cùng định nghĩa với
+                    // Library filter chip; favoriteCount là metric độc lập chồng lấp.
                     LibraryItemEntity("3", "Yêu thích", "c", LibraryStatus.READING, is_favorite = true),
                 )
             val top = listOf(TopMangaCount(title = "One Piece", chapterCount = 12))
@@ -70,10 +71,28 @@ class StatisticsViewModelTest {
             assertEquals(10, state.totalChapters)
             assertEquals(4, state.completedChapters)
             assertEquals(2, state.inProgressChapters)
-            assertEquals(1, state.readingCount)
+            assertEquals(2, state.readingCount)
             assertEquals(1, state.completedCount)
             assertEquals(1, state.favoriteCount)
             assertEquals(top, state.topManga)
+        }
+
+    @Test
+    fun favoriteCount_demDocLapChongLapVoiStatus() =
+        runTest(mainDispatcherRule.dispatcher.scheduler) {
+            // Item yêu thích duy nhất vẫn có status COMPLETED — favorite không phải status
+            val items =
+                listOf(
+                    LibraryItemEntity("1", "Fav", "c", LibraryStatus.COMPLETED, is_favorite = true),
+                )
+            val vm = build(total = 1, libraryItems = items)
+
+            vm.uiState.first { it.totalChapters == 1 }
+
+            val state = vm.uiState.value
+            assertEquals(0, state.readingCount)
+            assertEquals(1, state.completedCount)
+            assertEquals(1, state.favoriteCount)
         }
 
     @Test

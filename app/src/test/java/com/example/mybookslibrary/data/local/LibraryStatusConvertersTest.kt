@@ -14,13 +14,12 @@ class LibraryStatusConvertersTest {
     fun fromStatus_traVeTenEnum() {
         assertEquals("READING", converters.fromStatus(LibraryStatus.READING))
         assertEquals("COMPLETED", converters.fromStatus(LibraryStatus.COMPLETED))
-        assertEquals("FAVORITE", converters.fromStatus(LibraryStatus.FAVORITE))
     }
 
     @Test
     fun toStatus_giaTriHopLe_parseDung() {
+        assertEquals(LibraryStatus.READING, converters.toStatus("READING"))
         assertEquals(LibraryStatus.COMPLETED, converters.toStatus("COMPLETED"))
-        assertEquals(LibraryStatus.FAVORITE, converters.toStatus("FAVORITE"))
     }
 
     @Test
@@ -28,5 +27,7 @@ class LibraryStatusConvertersTest {
         // Nhánh catch IllegalArgumentException -> READING
         assertEquals(LibraryStatus.READING, converters.toStatus("UNKNOWN_VALUE"))
         assertEquals(LibraryStatus.READING, converters.toStatus(""))
+        // "FAVORITE" legacy (enum đã xóa) cũng rơi vào fallback — cờ is_favorite là cột riêng
+        assertEquals(LibraryStatus.READING, converters.toStatus("FAVORITE"))
     }
 }

@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.example.mybookslibrary.data.local.AppDatabase
 import com.example.mybookslibrary.data.local.ChapterProgressEntity
 import com.example.mybookslibrary.data.local.ChapterStatus
+import com.example.mybookslibrary.data.local.LibraryBackupItem
 import com.example.mybookslibrary.data.local.LibraryItemEntity
 import com.example.mybookslibrary.data.local.LibraryStatus
 import com.example.mybookslibrary.data.local.dao.ChapterDao
@@ -405,7 +406,8 @@ class LibraryRepository(
             last_read_page_index = lastReadPageIndex,
             added_at = if (addedAt > 0) addedAt else updatedAt,
             updated_at = updatedAt,
-            is_favorite = isFavorite,
+            // Doc Firestore rất cũ có thể chứa status "FAVORITE" (enum đã xóa) → giữ lại qua cờ
+            is_favorite = isFavorite || status == LibraryBackupItem.LEGACY_STATUS_FAVORITE,
             syncStatus = SyncStatus.SYNCED,
         )
 
@@ -417,7 +419,7 @@ class LibraryRepository(
             last_read_chapter_id = lastChapterId,
             last_read_page_index = lastReadPageIndex,
             updated_at = updatedAt,
-            is_favorite = isFavorite,
+            is_favorite = isFavorite || status == LibraryBackupItem.LEGACY_STATUS_FAVORITE,
             syncStatus = SyncStatus.SYNCED,
         )
 

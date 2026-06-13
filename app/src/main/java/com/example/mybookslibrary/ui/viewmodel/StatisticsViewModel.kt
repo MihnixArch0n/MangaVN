@@ -60,12 +60,11 @@ class StatisticsViewModel
                 )
             }.combine(libraryDao.observeAll()) { state, libraryItems ->
                 state.copy(
-                    readingCount = libraryItems.count {
-                        it.status == LibraryStatus.READING && !it.is_favorite
-                    },
-                    completedCount = libraryItems.count {
-                        it.status == LibraryStatus.COMPLETED && !it.is_favorite
-                    },
+                    // "Đang đọc"/"Hoàn thành" cùng MỘT định nghĩa với filter chip ở Library
+                    // (đếm theo status, không loại trừ yêu thích) — tránh 2 màn ra 2 số khác nhau.
+                    // "Yêu thích" là metric độc lập chồng lấp 2 nhóm trên → card riêng, KHÔNG phải múi pie.
+                    readingCount = libraryItems.count { it.status == LibraryStatus.READING },
+                    completedCount = libraryItems.count { it.status == LibraryStatus.COMPLETED },
                     favoriteCount = libraryItems.count { it.is_favorite },
                 )
             }.combine(chapterDao.observeTopReadManga()) { state, topManga ->

@@ -22,8 +22,9 @@ import com.example.mybookslibrary.ui.theme.statusColors
 import com.example.mybookslibrary.ui.util.appString
 
 /**
- * Chip trạng thái (Đang đọc / Hoàn thành / Yêu thích) — pill shape, 10% alpha nền.
+ * Chip trạng thái (Đang đọc / Hoàn thành) — pill shape, 10% alpha nền.
  * Dùng thống nhất ở Library grid + bất kỳ nơi nào hiện trạng thái reading.
+ * Yêu thích KHÔNG phải status — là cờ `is_favorite` riêng, hiển thị bằng icon trái tim.
  */
 @Composable
 fun StatusChip(
@@ -34,13 +35,11 @@ fun StatusChip(
         when (status) {
             LibraryStatus.READING -> appString(R.string.status_reading)
             LibraryStatus.COMPLETED -> appString(R.string.status_completed)
-            LibraryStatus.FAVORITE -> appString(R.string.status_favorite)
         }
     val color =
         when (status) {
             LibraryStatus.READING -> MaterialTheme.colorScheme.tertiary
             LibraryStatus.COMPLETED -> MaterialTheme.statusColors.success
-            LibraryStatus.FAVORITE -> MaterialTheme.statusColors.favorite
         }
     Box(
         modifier =
