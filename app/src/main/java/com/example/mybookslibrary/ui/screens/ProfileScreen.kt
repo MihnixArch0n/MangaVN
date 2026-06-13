@@ -150,14 +150,23 @@ private fun ProfileHeader(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val hasAvatar = avatarUri.isNotBlank()
         Box(
             modifier = Modifier
                 .size(Dimens.AvatarMd)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                // Nền trung tính khi có ảnh (tránh ám cam của primaryContainer lộ qua viền/lúc load);
+                // chỉ dùng primaryContainer làm nền cho monogram chữ cái fallback.
+                .background(
+                    if (hasAvatar) {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
+                ),
             contentAlignment = Alignment.Center,
         ) {
-            if (avatarUri.isNotBlank()) {
+            if (hasAvatar) {
                 coil3.compose.AsyncImage(
                     model = avatarUri,
                     contentDescription = null,

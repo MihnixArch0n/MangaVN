@@ -121,6 +121,19 @@ class AuthRepository
 
                     preferencesDataStore.updateAuthStatus(AuthStatus.LOGGED_IN)
                     preferencesDataStore.updateFirebaseUid(user.uid)
+                    // Điền tên + avatar Google để Profile hiển thị (trước đây bỏ trống → tụt xuống
+                    // email, ảnh không hiện). CHỈ điền khi local còn trống — tôn trọng chỉnh sửa
+                    // của user ở EditProfile, không ghi đè mỗi lần đăng nhập lại.
+                    if (preferencesDataStore.getDisplayName().isBlank()) {
+                        preferencesDataStore.setDisplayName(
+                            user.displayName?.takeIf { it.isNotBlank() } ?: account.displayName,
+                        )
+                    }
+                    if (preferencesDataStore.getAvatarUri().isBlank()) {
+                        (user.photoUrl?.toString() ?: account.photoUrl)
+                            ?.takeIf { it.isNotBlank() }
+                            ?.let { preferencesDataStore.setAvatarUri(it) }
+                    }
                     Result.success(user)
                 }
             } catch (e: Exception) {

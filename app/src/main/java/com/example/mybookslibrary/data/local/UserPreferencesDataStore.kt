@@ -231,12 +231,16 @@ class UserPreferencesDataStore(
     fun observeDisplayName(): Flow<String> =
         safeData.map { it[DISPLAY_NAME] ?: "" }
 
+    suspend fun getDisplayName(): String = safeData.first()[DISPLAY_NAME] ?: ""
+
     suspend fun setDisplayName(name: String) {
         dataStore.edit { it[DISPLAY_NAME] = name }
     }
 
     fun observeAvatarUri(): Flow<String> =
         safeData.map { it[AVATAR_URI] ?: "" }
+
+    suspend fun getAvatarUri(): String = safeData.first()[AVATAR_URI] ?: ""
 
     suspend fun setAvatarUri(uri: String) {
         dataStore.edit { it[AVATAR_URI] = uri }

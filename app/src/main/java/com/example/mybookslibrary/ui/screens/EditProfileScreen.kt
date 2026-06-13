@@ -128,7 +128,14 @@ fun EditProfileScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primaryContainer),
+                            // Nền trung tính khi có ảnh; primaryContainer chỉ cho icon fallback.
+                            .background(
+                                if (avatarUri.isNotBlank()) {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                },
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
                         if (avatarUri.isNotBlank()) {

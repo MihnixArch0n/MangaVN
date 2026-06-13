@@ -43,6 +43,7 @@ class CredentialManagerGoogleSignInClient
                             idToken = token.idToken,
                             email = token.id,
                             displayName = token.displayName ?: "Google User",
+                            photoUrl = token.profilePictureUri?.toString(),
                         ),
                     )
                 } else {

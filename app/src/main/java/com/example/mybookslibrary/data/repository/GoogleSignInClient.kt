@@ -10,6 +10,7 @@ data class GoogleAccount(
     val idToken: String,
     val email: String,
     val displayName: String,
+    val photoUrl: String? = null,
 )
 
 /**
