@@ -474,13 +474,9 @@ jobs:
           # Tắt animation hệ thống: giảm flakiness do transition chưa xong khi assert.
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: |
-            ARGS=""
-            if [ -n "$NOTCLASS" ]; then
-              echo "Bỏ qua feature e2e không liên quan PR này: $NOTCLASS"
-              ARGS="-Pandroid.testInstrumentationRunnerArguments.notClass=$NOTCLASS"
-            fi
-            ./gradlew connectedDebugAndroidTest $ARGS --console=plain
+          # android-emulator-runner chạy script TỪNG DÒNG (mỗi dòng 1 lệnh sh -c riêng)
+          # nên if/fi nhiều dòng sẽ vỡ — phải gói trong 1 dòng bằng ${VAR:+...}.
+          script: ./gradlew connectedDebugAndroidTest ${NOTCLASS:+-Pandroid.testInstrumentationRunnerArguments.notClass=$NOTCLASS} --console=plain
 
       - name: Download unit exec từ build-test
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1 (Node 24)
