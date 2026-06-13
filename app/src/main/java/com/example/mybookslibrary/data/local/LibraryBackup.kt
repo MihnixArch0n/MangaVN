@@ -23,6 +23,7 @@ data class ChapterProgressBackupItem(
     @SerialName("total_pages") val totalPages: Int = 0,
     @SerialName("updated_at") val updatedAt: Long? = null,
 ) {
+    /** Chuyển item backup thành entity Room; trả null nếu thiếu khóa bắt buộc (chapter_id/manga_id). */
     fun toEntity(): ChapterProgressEntity? =
         ChapterProgressEntity(
             chapter_id = chapterId ?: return null,
@@ -34,6 +35,7 @@ data class ChapterProgressBackupItem(
         )
 }
 
+/** Chuyển entity tiến độ chương thành item backup để serialize. */
 fun ChapterProgressEntity.toBackupItem() =
     ChapterProgressBackupItem(
         chapterId = chapter_id,

@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -142,19 +143,24 @@ fun ReaderScreen(
             )
         }
         SnackbarHost(hostState = snackbarHostState)
-        // Chỉ báo trang nhỏ khi đã ẩn overlay (bottom bar ẩn cùng overlay nên không thấy bộ đếm).
-        AnimatedVisibility(
-            visible = !state.isOverlayVisible && state.pages.isNotEmpty(),
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = Dimens.SpacingXl),
-        ) {
-            ReaderPageIndicator(
-                currentPage = (state.lastReadPageIndex + 1).coerceIn(1, state.pages.size),
-                totalPages = state.pages.size,
-            )
-        }
+        ReaderPageIndicatorOverlay(state)
+    }
+}
+
+// Chỉ báo trang nhỏ khi ẩn overlay (bottom bar ẩn cùng overlay) — tách khỏi ReaderScreen cho gọn.
+@Composable
+private fun BoxScope.ReaderPageIndicatorOverlay(state: com.example.mybookslibrary.ui.viewmodel.ReaderState) {
+    AnimatedVisibility(
+        visible = !state.isOverlayVisible && state.pages.isNotEmpty(),
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(bottom = Dimens.SpacingXl),
+    ) {
+        ReaderPageIndicator(
+            currentPage = (state.lastReadPageIndex + 1).coerceIn(1, state.pages.size),
+            totalPages = state.pages.size,
+        )
     }
 }

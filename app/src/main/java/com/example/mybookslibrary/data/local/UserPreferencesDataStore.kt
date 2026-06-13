@@ -38,6 +38,7 @@ class UserPreferencesDataStore(
         private val READER_BRIGHTNESS = stringPreferencesKey("reader_brightness")
         private val READER_BACKGROUND = stringPreferencesKey("reader_background")
         private val READER_AUTO_ADVANCE = booleanPreferencesKey("reader_auto_advance")
+        private val SKIP_READ_CHAPTERS = booleanPreferencesKey("skip_read_chapters")
         private val LANGUAGE = stringPreferencesKey("language")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
@@ -195,6 +196,15 @@ class UserPreferencesDataStore(
 
     suspend fun setReaderAutoAdvance(enabled: Boolean) {
         dataStore.edit { it[READER_AUTO_ADVANCE] = enabled }
+    }
+
+    // Bỏ qua chương đã đọc xong khi sang chương sau (mặc định tắt).
+    fun observeSkipReadChapters(): Flow<Boolean> = safeData.map { it[SKIP_READ_CHAPTERS] ?: false }
+
+    suspend fun getSkipReadChapters(): Boolean = safeData.first()[SKIP_READ_CHAPTERS] ?: false
+
+    suspend fun setSkipReadChapters(enabled: Boolean) {
+        dataStore.edit { it[SKIP_READ_CHAPTERS] = enabled }
     }
 
     // ─── Ngôn ngữ ──────────────────────────────────────────────────

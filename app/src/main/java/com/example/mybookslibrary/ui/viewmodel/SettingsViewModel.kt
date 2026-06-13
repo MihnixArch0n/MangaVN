@@ -53,6 +53,7 @@ data class SettingsUiState(
     val keepScreenOn: Boolean = false,
     val volumeKeyNav: Boolean = false,
     val autoAdvance: Boolean = false,
+    val skipReadChapters: Boolean = false,
     val autoDownloadNext: Boolean = false,
     val newChapterNotifications: Boolean = false,
     val deleteAfterRead: Boolean = false,
@@ -84,6 +85,7 @@ class SettingsViewModel
                 val keepScreenOn = preferencesDataStore.getReaderKeepScreenOn()
                 val volumeKeyNav = preferencesDataStore.getReaderVolumeKeyNav()
                 val autoAdvance = preferencesDataStore.getReaderAutoAdvance()
+                val skipReadChapters = preferencesDataStore.getSkipReadChapters()
                 val autoDownloadNext = preferencesDataStore.getAutoDownloadNext()
                 val newChapterNotifications = preferencesDataStore.getNewChapterNotifications()
                 val deleteAfterRead = preferencesDataStore.getDeleteAfterRead()
@@ -97,6 +99,7 @@ class SettingsViewModel
                         keepScreenOn = keepScreenOn,
                         volumeKeyNav = volumeKeyNav,
                         autoAdvance = autoAdvance,
+                        skipReadChapters = skipReadChapters,
                         autoDownloadNext = autoDownloadNext,
                         newChapterNotifications = newChapterNotifications,
                         deleteAfterRead = deleteAfterRead,
@@ -135,6 +138,14 @@ class SettingsViewModel
                 val newValue = !_uiState.value.autoAdvance
                 preferencesDataStore.setReaderAutoAdvance(newValue)
                 _uiState.update { it.copy(autoAdvance = newValue) }
+            }
+        }
+
+        fun toggleSkipReadChapters() {
+            viewModelScope.launch(ioDispatcher) {
+                val newValue = !_uiState.value.skipReadChapters
+                preferencesDataStore.setSkipReadChapters(newValue)
+                _uiState.update { it.copy(skipReadChapters = newValue) }
             }
         }
 

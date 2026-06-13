@@ -11,6 +11,7 @@ import com.example.mybookslibrary.R
 import com.example.mybookslibrary.data.download.DownloadedChapterCache
 import com.example.mybookslibrary.data.download.OfflineDownloadManager
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.data.local.dao.AdjacentChapter
 import com.example.mybookslibrary.data.local.dao.ChapterDao
 import com.example.mybookslibrary.data.repository.OfflineDownloadRepository
 import com.example.mybookslibrary.di.IoDispatcher
@@ -39,6 +40,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.math.floor
 
 @HiltViewModel
 @Suppress("LongParameterList")
@@ -510,7 +512,13 @@ constructor(
 
     private suspend fun loadAdjacentChapters() {
         val prev = chapterDao.getPrevChapter(mangaId, chapterId)
-        val next = chapterDao.getNextChapter(mangaId, chapterId)
+        // Skip-read (PR-4b): resolve nextChapterId = chương kế CHƯA đọc xong → mọi consumer dùng chung.
+        val next =
+            if (userPreferencesDataStore.getSkipReadChapters()) {
+                chapterDao.getNextUnreadChapter(mangaId, chapterId)
+            } else {
+                chapterDao.getNextChapter(mangaId, chapterId)
+            }
         _state.update {
             it.copy(
                 prevChapterId = prev?.chapterId,
@@ -519,7 +527,21 @@ constructor(
                 nextChapterTitle = next?.buildTitle(),
             )
         }
+        maybeWarnChapterGap(prev)
         Timber.d("loadAdjacentChapters: prev=%s next=%s", prev?.chapterId, next?.chapterId)
+    }
+
+    // Cảnh báo nhảy số chương (PR-4b): nếu số chương hiện tại cách chương liền trước (theo feed)
+    // hơn 1 đơn vị nguyên → có chương bị thiếu trong nguồn → emit snackbar.
+    private suspend fun maybeWarnChapterGap(prev: AdjacentChapter?) {
+        val prevNum = prev?.chapterNumber?.toFloatOrNull() ?: return
+        val currNum = chapterDao.getChapterNumber(chapterId)?.toFloatOrNull() ?: return
+        val gapStart = floor(prevNum).toInt() + 1
+        val gapEnd = floor(currNum).toInt() - 1
+        if (gapEnd >= gapStart) {
+            // Chỉ phát số chương; text resolve ở ReaderEffectHandler qua appString (đúng in-app locale).
+            _effects.tryEmit(ReaderUiEffect.ShowGapWarning(gapStart, gapEnd))
+        }
     }
 
     private fun navigateToChapter(chapterId: String?, chapterTitle: String?) {

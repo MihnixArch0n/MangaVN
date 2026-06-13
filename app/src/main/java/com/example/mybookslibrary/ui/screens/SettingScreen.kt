@@ -156,6 +156,8 @@ fun SettingScreenContent(
                     if (uiState.volumeKeyNav) appString(R.string.settings_on) else appString(R.string.settings_off)
                 val autoAdvanceLabel =
                     if (uiState.autoAdvance) appString(R.string.settings_on) else appString(R.string.settings_off)
+                val skipReadLabel =
+                    if (uiState.skipReadChapters) appString(R.string.settings_on) else appString(R.string.settings_off)
                 val autoDownloadNextLabel =
                     if (uiState.autoDownloadNext) appString(R.string.settings_on) else appString(R.string.settings_off)
                 val newChapterNotificationsLabel =
@@ -177,6 +179,10 @@ fun SettingScreenContent(
                     SettingsDivider()
                     SettingsRow(appString(R.string.settings_auto_advance), autoAdvanceLabel) {
                         viewModel.toggleAutoAdvance()
+                    }
+                    SettingsDivider()
+                    SettingsRow(appString(R.string.settings_skip_read), skipReadLabel) {
+                        viewModel.toggleSkipReadChapters()
                     }
                     SettingsDivider()
                     SettingsRow(appString(R.string.settings_auto_download_next), autoDownloadNextLabel) {

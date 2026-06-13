@@ -163,6 +163,8 @@
     <string name="reader_transition_next">Tiếp theo: %1$s</string>
     <string name="reader_transition_action_next">Đọc chương sau</string>
     <string name="reader_transition_no_next">Đã là chương mới nhất</string>
+    <string name="reader_gap_warning_one">Thiếu Ch. %1$d (không có sẵn)</string>
+    <string name="reader_gap_warning_range">Thiếu Ch. %1$d–%2$d (không có sẵn)</string>
     <string name="cd_reader_page_indicator">Trang %1$d/%2$d</string>
 
     <!-- Cài đặt -->
@@ -183,6 +185,7 @@
     <string name="settings_keep_screen_on">Giữ màn hình sáng</string>
     <string name="settings_volume_key_nav">Lật trang bằng phím âm lượng</string>
     <string name="settings_auto_advance">Tự động sang chương sau</string>
+    <string name="settings_skip_read">Bỏ qua chương đã đọc</string>
     <string name="settings_auto_download_next">Tự động tải chương sau</string>
     <string name="settings_new_chapter_notifications">Thông báo chương mới</string>
     <string name="settings_delete_after_read">Xóa chương sau khi đọc</string>

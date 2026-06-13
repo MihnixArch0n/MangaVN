@@ -163,6 +163,8 @@
     <string name="reader_transition_next">Up next: %1$s</string>
     <string name="reader_transition_action_next">Read next chapter</string>
     <string name="reader_transition_no_next">This is the latest chapter</string>
+    <string name="reader_gap_warning_one">Missing Ch. %1$d (not available)</string>
+    <string name="reader_gap_warning_range">Missing Ch. %1$d–%2$d (not available)</string>
     <string name="cd_reader_page_indicator">Page %1$d of %2$d</string>
 
     <!-- Settings Screen -->
@@ -183,6 +185,7 @@
     <string name="settings_keep_screen_on">Keep screen on</string>
     <string name="settings_volume_key_nav">Volume key navigation</string>
     <string name="settings_auto_advance">Auto-advance to next chapter</string>
+    <string name="settings_skip_read">Skip read chapters</string>
     <string name="settings_auto_download_next">Auto-download next chapter</string>
     <string name="settings_new_chapter_notifications">New chapter notifications</string>
     <string name="settings_delete_after_read">Delete chapters after reading</string>

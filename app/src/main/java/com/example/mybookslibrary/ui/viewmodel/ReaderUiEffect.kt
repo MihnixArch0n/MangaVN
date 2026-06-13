@@ -37,4 +37,11 @@ sealed interface ReaderUiEffect {
         val chapterId: String,
         val chapterTitle: String,
     ) : ReaderUiEffect
+
+    // Cảnh báo nhảy số chương (PR-4b): thiếu các chương [gapStart..gapEnd] trong nguồn.
+    // Text resolve ở layer Compose (appString) để tôn trọng in-app locale.
+    data class ShowGapWarning(
+        val gapStart: Int,
+        val gapEnd: Int,
+    ) : ReaderUiEffect
 }

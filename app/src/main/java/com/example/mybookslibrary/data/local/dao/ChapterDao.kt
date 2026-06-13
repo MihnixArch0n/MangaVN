@@ -218,6 +218,23 @@ abstract class ChapterDao {
     )
     abstract suspend fun getNextChapter(mangaId: String, chapterId: String): AdjacentChapter?
 
+    // Chương kế CHƯA đọc xong (skip-read, PR-4b): bỏ qua chương COMPLETED, lấy chương feed kế chưa hoàn thành.
+    @Query(
+        """
+        SELECT m.chapter_id, m.chapter_number, m.volume FROM chapter_metadata m
+        LEFT JOIN chapter_progress p ON p.chapter_id = m.chapter_id
+        WHERE m.manga_id = :mangaId
+          AND m.feed_order > (SELECT feed_order FROM chapter_metadata WHERE chapter_id = :chapterId)
+          AND (p.status IS NULL OR p.status != 'COMPLETED')
+        ORDER BY m.feed_order ASC LIMIT 1
+        """,
+    )
+    abstract suspend fun getNextUnreadChapter(mangaId: String, chapterId: String): AdjacentChapter?
+
+    // Số chương (chapter_number) của 1 chapter — cho cảnh báo nhảy số chương (PR-4b).
+    @Query("SELECT chapter_number FROM chapter_metadata WHERE chapter_id = :chapterId LIMIT 1")
+    abstract suspend fun getChapterNumber(chapterId: String): String?
+
     @Query("DELETE FROM chapter_progress WHERE manga_id = :mangaId")
     protected abstract suspend fun deleteProgressByMangaId(mangaId: String)
 

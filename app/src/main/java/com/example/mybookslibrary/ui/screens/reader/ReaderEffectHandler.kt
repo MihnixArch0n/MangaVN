@@ -62,6 +62,9 @@ internal fun ReaderEffectHandler(
     val modeVerticalText = appString(R.string.reader_mode_vertical)
     val modeLtrText = appString(R.string.reader_mode_ltr)
     val modeRtlText = appString(R.string.reader_mode_rtl)
+    // Template gap warning resolve ở composable scope (đúng in-app locale); format số trong collect.
+    val gapWarningOneTemplate = appString(R.string.reader_gap_warning_one)
+    val gapWarningRangeTemplate = appString(R.string.reader_gap_warning_range)
 
     var errorMessageEvent by remember { mutableStateOf<String?>(null) }
     var errorType by remember { mutableStateOf(ReaderErrorType.SaveFailed) }
@@ -197,6 +200,15 @@ internal fun ReaderEffectHandler(
                         ReadingMode.RTL -> modeRtlText
                     }
                     snackbarHostState.showSnackbar(modeText)
+                }
+                is ReaderUiEffect.ShowGapWarning -> {
+                    val text =
+                        if (effect.gapStart == effect.gapEnd) {
+                            gapWarningOneTemplate.format(effect.gapStart)
+                        } else {
+                            gapWarningRangeTemplate.format(effect.gapStart, effect.gapEnd)
+                        }
+                    snackbarHostState.showSnackbar(text)
                 }
                 is ReaderUiEffect.ShowPageActionResult -> {
                     if (effect.errorMessage == null) {
