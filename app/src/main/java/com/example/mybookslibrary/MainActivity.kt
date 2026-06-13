@@ -23,14 +23,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.mybookslibrary.data.local.UserPreferencesDataStore
+import com.example.mybookslibrary.data.download.DownloadNotifier
 import com.example.mybookslibrary.data.repository.LibraryRepository
 import com.example.mybookslibrary.domain.model.AuthStatus
 import com.example.mybookslibrary.ui.navigation.LocalWindowWidthSizeClass
 import com.example.mybookslibrary.ui.navigation.MainNavHost
+import com.example.mybookslibrary.ui.navigation.Reader
 import com.example.mybookslibrary.ui.theme.MyBooksLibraryTheme
 import com.example.mybookslibrary.ui.util.LocalAppLocale
 import com.example.mybookslibrary.util.extractMangaIdFromMangaDexUrl
@@ -46,9 +49,16 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var libraryRepository: LibraryRepository
 
+    @Inject
+    lateinit var downloadNotifier: DownloadNotifier
+
+    private var incomingReader by androidx.compose.runtime.mutableStateOf<Reader?>(null)
+
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        incomingReader = intent.toNotificationReaderRoute()
+        incomingReader?.let { downloadNotifier.dismissFinishedNotification(it.chapterId) }
         requestNotificationPermissionIfNeeded()
         com.example.mybookslibrary.data.notification.ReadingReminderWorker.schedule(this)
         setContent {
@@ -124,6 +134,8 @@ class MainActivity : ComponentActivity() {
                         MainNavHost(
                             authStatus = session.authStatus,
                             incomingMangaId = incomingMangaId,
+                            incomingReader = incomingReader,
+                            onIncomingReaderConsumed = ::consumeIncomingReaderIntent,
                             onboardingWelcomeDone = resolvedOnboarding,
                             onWelcomeDone = {
                                 onboardingScope.launch {
@@ -141,6 +153,25 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        incomingReader = intent.toNotificationReaderRoute()
+        incomingReader?.let { downloadNotifier.dismissFinishedNotification(it.chapterId) }
+    }
+
+    private fun consumeIncomingReaderIntent() {
+        incomingReader = null
+        setIntent(
+            Intent(intent).apply {
+                action = null
+                removeExtra(EXTRA_MANGA_ID)
+                removeExtra(EXTRA_CHAPTER_ID)
+                removeExtra(EXTRA_CHAPTER_TITLE)
+            },
+        )
     }
 
     // Lật trang bằng phím âm lượng khi reader đang lắng nghe (xem ReaderVolumeKeyHandler).
@@ -166,9 +197,27 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private companion object {
+    companion object {
         const val POST_NOTIFICATIONS_REQUEST_CODE = 1001
+
+        const val ACTION_READ_DOWNLOADED_CHAPTER = "com.example.mybookslibrary.action.READ_DOWNLOADED_CHAPTER"
+        const val EXTRA_MANGA_ID = "manga_id"
+        const val EXTRA_CHAPTER_ID = "chapter_id"
+        const val EXTRA_CHAPTER_TITLE = "chapter_title"
     }
+}
+
+private fun Intent?.toNotificationReaderRoute(): Reader? {
+    if (this?.action != MainActivity.ACTION_READ_DOWNLOADED_CHAPTER) return null
+    val mangaId = getStringExtra(MainActivity.EXTRA_MANGA_ID).orEmpty()
+    val chapterId = getStringExtra(MainActivity.EXTRA_CHAPTER_ID).orEmpty()
+    if (mangaId.isBlank() || chapterId.isBlank()) return null
+    return Reader(
+        mangaId = mangaId,
+        chapterId = chapterId,
+        chapterTitle = getStringExtra(MainActivity.EXTRA_CHAPTER_TITLE).orEmpty(),
+        startPageIndex = 0,
+    )
 }
 
 private sealed interface AuthSession {

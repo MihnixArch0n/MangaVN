@@ -2,11 +2,14 @@ package com.example.mybookslibrary.data.download
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
+import com.example.mybookslibrary.MainActivity
 import com.example.mybookslibrary.R
 import com.example.mybookslibrary.util.ExcludeFromGeneratedCoverage
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -97,6 +100,7 @@ class DownloadNotifier
 
         @ExcludeFromGeneratedCoverage // NotificationManagerCompat + permission/SecurityException Android glue
         internal fun showFinishedNotification(
+            mangaId: String,
             chapterId: String,
             mangaTitle: String? = null,
             chapterLabel: String? = null,
@@ -118,6 +122,29 @@ class DownloadNotifier
                         NotificationCompat.BigTextStyle()
                             .bigText(joinNotificationDetails(mangaTitle, chapterLabel)),
                     )
+                    .setContentIntent(
+                        if (success) context.readPendingIntent(mangaId, chapterId, chapterLabel) else null,
+                    )
+                    .addAction(
+                        if (success) {
+                            notificationAction(
+                                title = context.getString(R.string.notification_action_read),
+                                pendingIntent = context.readPendingIntent(mangaId, chapterId, chapterLabel),
+                            )
+                        } else {
+                            notificationAction(
+                                title = context.getString(R.string.notification_action_retry),
+                                pendingIntent =
+                                    context.retryPendingIntent(mangaId, chapterId, mangaTitle, chapterLabel),
+                            )
+                        },
+                    )
+                    .addAction(
+                        notificationAction(
+                            title = context.getString(R.string.notification_action_dismiss),
+                            pendingIntent = context.dismissPendingIntent(chapterId),
+                        ),
+                    )
                     .setAutoCancel(true)
                     .setOnlyAlertOnce(false)
                     .build()
@@ -132,6 +159,10 @@ class DownloadNotifier
             } catch (securityException: SecurityException) {
                 Timber.w(securityException, "Finished notification skipped: missing notification permission")
             }
+        }
+
+        internal fun dismissFinishedNotification(chapterId: String) {
+            NotificationManagerCompat.from(context).cancel(finishedNotificationIdFor(chapterId))
         }
 
         private fun notificationIdFor(chapterId: String): Int =
@@ -159,3 +190,78 @@ class DownloadNotifier
             const val DETAIL_SEPARATOR = " · "
         }
     }
+
+private fun notificationAction(
+    title: String,
+    pendingIntent: PendingIntent,
+): NotificationCompat.Action =
+    NotificationCompat.Action.Builder(R.drawable.ic_stat_name, title, pendingIntent).build()
+
+private fun Context.readPendingIntent(
+    mangaId: String,
+    chapterId: String,
+    chapterLabel: String?,
+): PendingIntent =
+    PendingIntent.getActivity(
+        this,
+        actionRequestCode(chapterId, READ_ACTION_REQUEST_OFFSET),
+        Intent(this, MainActivity::class.java).apply {
+            action = MainActivity.ACTION_READ_DOWNLOADED_CHAPTER
+            putExtra(MainActivity.EXTRA_MANGA_ID, mangaId)
+            putExtra(MainActivity.EXTRA_CHAPTER_ID, chapterId)
+            putExtra(MainActivity.EXTRA_CHAPTER_TITLE, chapterLabel.orEmpty())
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        },
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+private fun Context.retryPendingIntent(
+    mangaId: String,
+    chapterId: String,
+    mangaTitle: String?,
+    chapterLabel: String?,
+): PendingIntent =
+    broadcastPendingIntent(
+        action = DownloadNotificationActionReceiver.ACTION_RETRY,
+        chapterId = chapterId,
+        requestOffset = RETRY_ACTION_REQUEST_OFFSET,
+        mangaId = mangaId,
+        mangaTitle = mangaTitle,
+        chapterLabel = chapterLabel,
+    )
+
+private fun Context.dismissPendingIntent(chapterId: String): PendingIntent =
+    broadcastPendingIntent(
+        action = DownloadNotificationActionReceiver.ACTION_DISMISS,
+        chapterId = chapterId,
+        requestOffset = DISMISS_ACTION_REQUEST_OFFSET,
+    )
+
+private fun Context.broadcastPendingIntent(
+    action: String,
+    chapterId: String,
+    requestOffset: Int,
+    mangaId: String? = null,
+    mangaTitle: String? = null,
+    chapterLabel: String? = null,
+): PendingIntent =
+    PendingIntent.getBroadcast(
+        this,
+        actionRequestCode(chapterId, requestOffset),
+        Intent(this, DownloadNotificationActionReceiver::class.java).apply {
+            this.action = action
+            putExtra(DownloadNotificationActionReceiver.EXTRA_CHAPTER_ID, chapterId)
+            putExtra(DownloadNotificationActionReceiver.EXTRA_MANGA_ID, mangaId)
+            putExtra(DownloadNotificationActionReceiver.EXTRA_MANGA_TITLE, mangaTitle)
+            putExtra(DownloadNotificationActionReceiver.EXTRA_CHAPTER_LABEL, chapterLabel)
+        },
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+private fun actionRequestCode(chapterId: String, offset: Int): Int =
+    offset + (chapterId.hashCode().absoluteValue % ACTION_REQUEST_ID_RANGE)
+
+private const val ACTION_REQUEST_ID_RANGE = 1_000
+private const val READ_ACTION_REQUEST_OFFSET = 51_000
+private const val RETRY_ACTION_REQUEST_OFFSET = 52_000
+private const val DISMISS_ACTION_REQUEST_OFFSET = 53_000

@@ -387,6 +387,9 @@
     <string name="notification_download_preparing">Đang chuẩn bị tải xuống</string>
     <string name="notification_download_progress_channel_name">Tiến trình tải xuống</string>
     <string name="notification_download_result_channel_name">Kết quả tải xuống</string>
+    <string name="notification_action_retry">Thử lại</string>
+    <string name="notification_action_read">Đọc</string>
+    <string name="notification_action_dismiss">Bỏ qua</string>
     <string name="profile_downloads">Tải xuống</string>
     <string name="profile_edit">Chỉnh sửa hồ sơ</string>
     <string name="profile_edit_title">Chỉnh sửa hồ sơ</string>

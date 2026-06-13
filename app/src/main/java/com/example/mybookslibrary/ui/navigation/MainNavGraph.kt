@@ -98,6 +98,8 @@ internal val bottomDestinations =
 fun MainNavHost(
     authStatus: AuthStatus,
     incomingMangaId: String? = null,
+    incomingReader: Reader? = null,
+    onIncomingReaderConsumed: () -> Unit = {},
     onboardingWelcomeDone: Boolean = true,
     onWelcomeDone: () -> Unit = {},
     inAppTourDone: Boolean = true,
@@ -146,6 +148,15 @@ fun MainNavHost(
             navController.navigate(MangaDetail(incomingMangaId)) {
                 launchSingleTop = true
             }
+        }
+    }
+
+    LaunchedEffect(incomingReader, authStatus) {
+        if (incomingReader != null && authStatus != AuthStatus.LOGGED_OUT) {
+            navController.navigate(incomingReader) {
+                launchSingleTop = true
+            }
+            onIncomingReaderConsumed()
         }
     }
 

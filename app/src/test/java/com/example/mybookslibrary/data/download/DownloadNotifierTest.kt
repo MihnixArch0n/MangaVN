@@ -82,7 +82,7 @@ class DownloadNotifierTest {
 
     @Test
     fun showFinishedNotification_postsWithIdOutsideProgressRange() {
-        notifier.showFinishedNotification("chapter-1", success = true)
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = true)
 
         val manager = context.getSystemService(NotificationManager::class.java)
         val posted = manager.activeNotifications.single()
@@ -99,7 +99,7 @@ class DownloadNotifierTest {
         val progressId =
             notifier.createForegroundInfo("chapter-1", progressPercent = 0, indeterminate = true).notificationId
 
-        notifier.showFinishedNotification("chapter-1", success = true)
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = true)
 
         val manager = context.getSystemService(NotificationManager::class.java)
         assertTrue(manager.activeNotifications.none { it.id == progressId })
@@ -108,6 +108,7 @@ class DownloadNotifierTest {
     @Test
     fun showFinishedNotification_showsMangaAndChapterMetadata() {
         notifier.showFinishedNotification(
+            mangaId = "manga-1",
             chapterId = "chapter-1",
             mangaTitle = "One Piece",
             chapterLabel = "Vol. 1 Ch. 2",
@@ -120,5 +121,31 @@ class DownloadNotifierTest {
                 .single()
                 .notification
         assertEquals("One Piece · Vol. 1 Ch. 2", notification.extras.getString(NotificationCompat.EXTRA_TEXT))
+    }
+
+    @Test
+    fun showFinishedNotification_successHasReadAndDismissActions() {
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = true)
+
+        val actions =
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .single()
+                .notification
+                .actions
+        assertEquals(listOf("Read", "Dismiss"), actions.map { it.title.toString() })
+    }
+
+    @Test
+    fun showFinishedNotification_failureHasRetryAndDismissActions() {
+        notifier.showFinishedNotification(mangaId = "manga-1", chapterId = "chapter-1", success = false)
+
+        val actions =
+            context.getSystemService(NotificationManager::class.java)
+                .activeNotifications
+                .single()
+                .notification
+                .actions
+        assertEquals(listOf("Retry", "Dismiss"), actions.map { it.title.toString() })
     }
 }

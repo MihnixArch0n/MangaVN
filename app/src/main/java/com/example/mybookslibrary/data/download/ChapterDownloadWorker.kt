@@ -144,6 +144,7 @@ class ChapterDownloadWorker @AssistedInject constructor(
                     ),
                 )
                 downloadNotifier.showFinishedNotification(
+                    mangaId = mangaId,
                     chapterId = chapterId,
                     mangaTitle = mangaTitle,
                     chapterLabel = chapterLabel,
@@ -169,6 +170,7 @@ class ChapterDownloadWorker @AssistedInject constructor(
                 errorMessage = t.message,
             )
             downloadNotifier.showFinishedNotification(
+                mangaId = mangaId,
                 chapterId = chapterId,
                 mangaTitle = mangaTitle,
                 chapterLabel = chapterLabel,
