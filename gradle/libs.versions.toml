@@ -56,7 +56,7 @@ robolectric = "4.16.1"
 # Property-based testing (kotest-property độc lập, chạy trong JUnit qua runBlocking)
 kotest = "6.1.11"
 # Screenshot testing trên Robolectric (version xác nhận từ GitHub releases 2026-05-20, hỗ trợ Gradle 9)
-roborazzi = "1.63.0"
+roborazzi = "1.64.0"
 # Scanner cho preview-gen của Roborazzi (version xác nhận trên Maven Central 2026-06)
 composablePreviewScanner = "0.9.0"
 
