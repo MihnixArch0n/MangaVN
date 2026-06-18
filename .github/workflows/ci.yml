@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-      - uses: gradle/actions/wrapper-validation@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6.1.1
+      - uses: gradle/actions/wrapper-validation@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
 
   static-analysis:
     needs: [changes, wrapper-validation]
@@ -127,7 +127,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           # Mã hóa để cache được configuration-cache giữa các run (chứa dữ liệu nhạy
           # cảm nên setup-gradle yêu cầu key). Secret chưa tồn tại → input rỗng, action bỏ qua.
@@ -187,7 +187,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           # Mã hóa để cache được configuration-cache giữa các run (chứa dữ liệu nhạy
           # cảm nên setup-gradle yêu cầu key). Secret chưa tồn tại → input rỗng, action bỏ qua.
@@ -334,7 +334,7 @@ jobs:
 
       - name: Submit dependency graph
         if: github.event_name == 'push'
-        uses: gradle/actions/dependency-submission@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6.1.1
+        uses: gradle/actions/dependency-submission@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
         continue-on-error: true
 
   # Smoke check R8/ProGuard: release build phải compile + minify thành công.
@@ -359,7 +359,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
           # Ghi cache cả từ PR branch: push liên tiếp trong cùng PR tái dùng
@@ -400,7 +400,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           # Mã hóa để cache được configuration-cache giữa các run (chứa dữ liệu nhạy
           # cảm nên setup-gradle yêu cầu key). Secret chưa tồn tại → input rỗng, action bỏ qua.
@@ -568,7 +568,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@5e2ebd065dc2488b7a6ad670704656cbbe1e8f60 # v6
+        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
           # Ghi cache cả từ PR branch: push liên tiếp trong cùng PR tái dùng
