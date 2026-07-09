@@ -58,7 +58,7 @@ kotest = "6.2.1"
 # Screenshot testing trên Robolectric (version xác nhận từ GitHub releases 2026-05-20, hỗ trợ Gradle 9)
 roborazzi = "1.67.0"
 # Scanner cho preview-gen của Roborazzi (version xác nhận trên Maven Central 2026-06)
-composablePreviewScanner = "0.9.0"
+composablePreviewScanner = "0.9.1"
 
 # Static analysis (version xác nhận tồn tại trên Maven/Plugin Portal 2026-06)
 detekt = "1.23.8"
