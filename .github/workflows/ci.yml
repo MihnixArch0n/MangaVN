@@ -448,7 +448,7 @@ jobs:
 
       - name: Tạo AVD và chụp boot snapshot (chỉ khi cache miss)
         if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
           api-level: 34
           arch: x86_64
@@ -459,7 +459,7 @@ jobs:
           script: echo "AVD snapshot đã tạo để cache."
 
       - name: Run instrumented tests on emulator
-        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         env:
           # Selective feature e2e: core suite (smoke/navigation/migration) LUÔN chạy;
           # feature e2e exclude theo mapping .github/e2e-test-map.json (job changes tính sẵn).
